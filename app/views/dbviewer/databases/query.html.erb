@@ -1,0 +1,77 @@
+<% content_for :title do %>
+  Query: <%= @table_name %>
+<% end %>
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Query: <%= @table_name %></h1>
+    <%= link_to "← Back to Table", database_path(@table_name), class: "btn btn-outline-secondary" %>
+  </div>
+  
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5>SQL Query</h5>
+    </div>
+    <div class="card-body">
+      <%= form_with url: query_database_path(@table_name), method: :post, local: true do |form| %>
+        <div class="mb-3">
+          <%= form.text_area :query, value: @query, class: 'form-control', rows: 5, 
+                placeholder: "Enter your SQL query here...", 
+                style: 'font-family: monospace;' %>
+        </div>
+        <div class="d-flex justify-content-end">
+          <%= form.submit "Run Query", class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  
+  <% if @error.present? %>
+    <div class="alert alert-danger" role="alert">
+      <strong>Error:</strong> <%= @error %>
+    </div>
+  <% end %>
+  
+  <% if @records.present? %>
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5>Results</h5>
+        <span class="badge bg-secondary">Rows: <%= @records.rows.count %></span>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped">
+            <% if @records.columns.any? %>
+              <thead>
+                <tr>
+                  <% @records.columns.each do |column_name| %>
+                    <th><%= column_name %></th>
+                  <% end %>
+                </tr>
+              </thead>
+              <tbody>
+                <% if @records.rows.any? %>
+                  <% @records.rows.each do |row| %>
+                    <tr>
+                      <% row.each do |cell| %>
+                        <td><%= format_cell_value(cell) %></td>
+                      <% end %>
+                    </tr>
+                  <% end %>
+                <% else %>
+                  <tr>
+                    <td colspan="<%= @records.columns.count %>">Query executed successfully, but returned no rows.</td>
+                  </tr>
+                <% end %>
+              </tbody>
+            <% else %>
+              <tr>
+                <td>Query executed successfully, but returned no columns.</td>
+              </tr>
+            <% end %>
+          </table>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

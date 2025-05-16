@@ -1,0 +1,63 @@
+/* DB Viewer custom styles */
+
+/* Table styling */
+.table-responsive {
+  overflow-x: auto;
+}
+
+/* Card enhancements */
+.card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  margin-bottom: 20px;
+}
+
+.card-header {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Table cell styles */
+td {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Highlight on hover for table rows */
+.table-striped > tbody > tr:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Navbar customization */
+.navbar {
+  margin-bottom: 20px;
+}
+
+/* Sort buttons */
+.sort-buttons {
+  display: inline-flex;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.sort-buttons .btn {
+  padding: 0.1rem 0.3rem;
+  font-size: 0.7rem;
+}
+
+.sort-buttons .btn.active {
+  background-color: #0d6efd;
+  color: white;
+}
+
+/* Pagination customization */
+.pagination {
+  margin-bottom: 0;
+  margin-top: 20px;
+}
+
+/* SQL Query textarea */
+textarea[name="query"] {
+  font-family: monospace;
+  font-size: 14px;
+}

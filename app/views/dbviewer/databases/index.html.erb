@@ -1,0 +1,60 @@
+<% content_for :title do %>
+  Database Tables
+<% end %>
+
+<div class="container mt-4">
+  <h1>Database Tables</h1>
+  
+  <% if flash[:error] %>
+    <div class="alert alert-danger" role="alert">
+      <%= flash[:error] %>
+    </div>
+  <% end %>
+  
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5>Available Tables</h5>
+      <span class="badge bg-primary"><%= @tables.size %> Tables</span>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+          <thead>
+            <tr>
+              <th>Table Name</th>
+              <th>Records</th>
+              <th>Columns</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if @tables.any? %>
+              <% @tables.each do |table| %>
+                <tr>
+                  <td><%= table[:name] %></td>
+                  <td><span class="badge bg-secondary"><%= table[:record_count] %></span></td>
+                  <td><span class="badge bg-info"><%= table[:columns_count] %></span></td>
+                  <td>
+                    <%= link_to "Browse", database_path(table[:name]), class: "btn btn-sm btn-outline-primary me-1" %>
+                    <%= link_to "Query", query_database_path(table[:name]), class: "btn btn-sm btn-outline-secondary" %>
+                  </td>
+                </tr>
+              <% end %>
+            <% else %>
+              <tr>
+                <td colspan="4" class="text-center">No tables found in the database.</td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <div class="mt-4 text-center text-muted">
+    <p class="small">
+      <i class="bi bi-info-circle-fill"></i> 
+      DBViewer is viewing the <%= Rails.env %> environment database.
+    </p>
+  </div>
+</div>
