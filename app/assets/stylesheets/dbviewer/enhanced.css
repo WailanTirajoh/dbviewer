@@ -71,8 +71,71 @@ html {
 }
 
 .dbviewer-scrollable {
-  max-height: 400px;
+  max-height: 500px;
   overflow-y: auto;
+  position: relative;
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+}
+
+/* Ensure the scrollable area works smoothly with the sticky header */
+.dbviewer-scrollable thead.dbviewer-table-header th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: #f8f9fa; /* Match the header background */
+}
+
+/* Add shadow to the header when scrolling */
+.dbviewer-scrollable.has-scroll thead.dbviewer-table-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 5px;
+  background: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0));
+  z-index: 1;
+}
+
+/* Single-line table cells with truncation for wide content */
+.dbviewer-scrollable table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 400px; /* Maximum width before truncation, as requested */
+  vertical-align: middle; /* Align content vertically */
+  height: 38px; /* Consistent row height */
+  line-height: 1.5; /* Ensure text displays in middle of row */
+  padding-top: 0; /* Remove vertical padding to maintain exact single line */
+  padding-bottom: 0; /* Remove vertical padding to maintain exact single line */
+}
+
+/* Add tooltip behavior on hover for truncated cells */
+.dbviewer-scrollable table td:hover {
+  position: relative;
+  overflow: visible;
+  white-space: normal;
+  z-index: 3;
+}
+
+/* Cell content hover effect */
+.dbviewer-scrollable table td:hover::before {
+  content: attr(title);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: auto;
+  min-width: 100%;
+  max-width: 400px;
+  padding: 0.5rem;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  z-index: 4;
 }
 
 .dbviewer-badge-column-type {
