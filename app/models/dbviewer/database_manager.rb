@@ -2,7 +2,8 @@ module Dbviewer
   class DatabaseManager
     attr_reader :connection, :adapter_name
 
-    PER_PAGE = 20
+    # Default number of records per page if not specified
+    DEFAULT_PER_PAGE = 20
 
     # Cache for dynamically created AR models
     @@dynamic_models = {}
@@ -32,8 +33,11 @@ module Dbviewer
       model.count
     end
 
-    def table_records(table_name, page = 1, order_by = nil, direction = 'ASC')
+    def table_records(table_name, page = 1, order_by = nil, direction = 'ASC', per_page = nil)
       page = [1, page.to_i].max
+      per_page = (per_page || DEFAULT_PER_PAGE).to_i
+      per_page = DEFAULT_PER_PAGE if per_page <= 0
+
       model = get_model_for(table_name)
       query = model.all
 
@@ -44,7 +48,7 @@ module Dbviewer
       end
 
       # Apply pagination
-      records = query.limit(PER_PAGE).offset((page - 1) * PER_PAGE)
+      records = query.limit(per_page).offset((page - 1) * per_page)
 
       # Transform the ActiveRecord::Relation to the format expected by the application
       to_result_set(records, table_name)
@@ -63,11 +67,10 @@ module Dbviewer
     end
 
     def execute_query(sql)
-      # For custom SQL queries, we still need to use exec_query
-      # However, we add a warning log to encourage using AR methods instead
-      Rails.logger.info("[DBViewer] Using raw SQL query: #{sql}") if defined?(Rails)
+      Rails.logger.info("[DBViewer] Using raw SQL query: #{sql}")
       connection.exec_query(sql)
-    end    # A safer alternative to execute_query
+    end
+
     def query_table(table_name, select: nil, order: nil, limit: nil, offset: nil)
       model = get_model_for(table_name)
       query = model.all

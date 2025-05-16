@@ -50,6 +50,14 @@ td {
   color: white;
 }
 
+/* Per-page dropdown styling */
+#per-page-select {
+  display: inline-block;
+  width: auto;
+  min-width: 80px;
+  font-size: 0.875rem;
+}
+
 /* Pagination customization */
 .pagination {
   margin-bottom: 0;

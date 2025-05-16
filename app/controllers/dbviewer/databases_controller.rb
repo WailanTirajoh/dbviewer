@@ -1,6 +1,8 @@
 module Dbviewer
   class DatabasesController < ApplicationController
-    PER_PAGE = 20
+    # Available per-page options for the dropdown
+    PER_PAGE_OPTIONS = [10, 20, 50, 100]
+    DEFAULT_PER_PAGE = 20
 
     def index
       @tables = database_manager.tables.map do |table_name|
@@ -18,9 +20,15 @@ module Dbviewer
       @current_page = (params[:page] || 1).to_i
       @order_by = params[:order_by] || database_manager.primary_key(@table_name) || (@columns.first ? @columns.first[:name] : nil)
       @order_direction = params[:order_direction] || 'ASC'
+
+      # Get per_page from params or use default
+      @per_page = params[:per_page] ? params[:per_page].to_i : DEFAULT_PER_PAGE
+      # Ensure per_page is one of the allowed options or default
+      @per_page = DEFAULT_PER_PAGE unless PER_PAGE_OPTIONS.include?(@per_page)
+
       @total_count = database_manager.table_count(@table_name)
-      @total_pages = (@total_count.to_f / PER_PAGE).ceil
-      @records = database_manager.table_records(@table_name, @current_page, @order_by, @order_direction)
+      @total_pages = (@total_count.to_f / @per_page).ceil
+      @records = database_manager.table_records(@table_name, @current_page, @order_by, @order_direction, @per_page)
     end
 
     def query
