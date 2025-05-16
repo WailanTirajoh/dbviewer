@@ -1,0 +1,96 @@
+<ul class="nav nav-tabs" id="structureTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="columns-tab" data-bs-toggle="tab" data-bs-target="#columns" type="button" role="tab" aria-controls="columns" aria-selected="true">Columns</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="indexes-tab" data-bs-toggle="tab" data-bs-target="#indexes" type="button" role="tab" aria-controls="indexes" aria-selected="false">Indexes</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="foreign-keys-tab" data-bs-toggle="tab" data-bs-target="#foreign-keys" type="button" role="tab" aria-controls="foreign-keys" aria-selected="false">Foreign Keys</button>
+  </li>
+</ul>
+
+<div class="tab-content pt-3" id="structureTabContent">
+  <div class="tab-pane fade show active" id="columns" role="tabpanel" aria-labelledby="columns-tab">
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Type</th>
+            <th>Nullable</th>
+            <th>Default</th>
+            <th>Primary Key</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @columns.each do |column| %>
+          <tr>
+            <td><%= column[:name] %></td>
+            <td><%= column[:type] %></td>
+            <td><%= column[:null] ? 'Yes' : 'No' %></td>
+            <td><%= column[:default].nil? ? 'NULL' : column[:default] %></td>
+            <td><%= column[:primary] ? 'Yes' : 'No' %></td>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div class="tab-pane fade" id="indexes" role="tabpanel" aria-labelledby="indexes-tab">
+    <% if @metadata && @metadata[:indexes].present? %>
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Columns</th>
+              <th>Unique</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @metadata[:indexes].each do |index| %>
+            <tr>
+              <td><%= index[:name] %></td>
+              <td><%= index[:columns].join(", ") %></td>
+              <td><%= index[:unique] ? 'Yes' : 'No' %></td>
+            </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="alert alert-info">No indexes found or not supported by this database.</div>
+    <% end %>
+  </div>
+  
+  <div class="tab-pane fade" id="foreign-keys" role="tabpanel" aria-labelledby="foreign-keys-tab">
+    <% if @metadata && @metadata[:foreign_keys].present? %>
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>From Column</th>
+              <th>To Table</th>
+              <th>To Column</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @metadata[:foreign_keys].each do |fk| %>
+            <tr>
+              <td><%= fk[:name] %></td>
+              <td><%= fk[:column] %></td>
+              <td><%= link_to fk[:to_table], database_path(fk[:to_table]) %></td>
+              <td><%= fk[:primary_key] %></td>
+            </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="alert alert-info">No foreign keys found or not supported by this database.</div>
+    <% end %>
+  </div>
+</div>

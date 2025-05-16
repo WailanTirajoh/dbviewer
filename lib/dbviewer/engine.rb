@@ -16,11 +16,22 @@ module Dbviewer
     # Initialize the engine safely
     initializer "dbviewer.setup", after: :load_config_initializers do |app|
       begin
-        Rails.logger.info "DBViewer engine initializing..." if Rails.logger
+        Rails.logger.info "[DBViewer] Engine initializing..." if Rails.logger
+
+        # Allow applications to configure DBViewer before setup
+        if File.exist?(Rails.root.join("config", "initializers", "dbviewer.rb"))
+          Rails.logger.info "[DBViewer] Loading custom configuration..." if Rails.logger
+        end
+
+        # Apply configuration and initialize components
+        Dbviewer.init
+
+        # Perform additional setup
         Dbviewer.setup
       rescue => e
         puts "Error initializing DBViewer: #{e.message}"
-        Rails.logger.error "Error initializing DBViewer: #{e.message}" if Rails.logger
+        Rails.logger.error "[DBViewer] Initialization error: #{e.message}" if Rails.logger
+        Rails.logger.error e.backtrace.join("\n") if Rails.logger
       end
     end
 

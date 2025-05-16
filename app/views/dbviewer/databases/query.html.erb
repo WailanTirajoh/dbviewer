@@ -25,15 +25,49 @@
         <strong>Read-Only Mode:</strong> For security reasons, only SELECT queries are allowed. Any other SQL operations (INSERT, UPDATE, DELETE, ALTER, etc.) will be rejected.
       </div>
       
+      <div class="card mb-3">
+        <div class="card-header">
+          <h6>Table Structure Reference</h6>
+        </div>
+        <div class="card-body p-2">
+          <% if @columns.present? %>
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered mb-0">
+                <thead>
+                  <tr>
+                    <th>Column</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @columns.each do |column| %>
+                    <tr>
+                      <td><code><%= column[:name] %><%= " (PK)" if column[:primary] %></code></td>
+                      <td><span class="badge bg-secondary"><%= column[:type] %></span></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <p class="mb-0">No column information available.</p>
+          <% end %>
+        </div>
+      </div>
+      
       <%= form_with url: query_database_path(@table_name), method: :post, local: true do |form| %>
         <div class="mb-3">
-          <%= form.text_area :query, value: @query, class: 'form-control', rows: 5, 
+          <%= form.text_area :query, value: @query, class: 'form-control', rows: 7, 
                 placeholder: "Enter your SELECT query here...", 
-                style: 'font-family: monospace;' %>
+                style: 'font-family: monospace; font-size: 14px;' %>
         </div>
-        <div class="d-flex justify-content-between align-items-center">
+        
+        <div class="d-flex justify-content-between align-items-start">
           <div class="form-text text-muted">
-            Example: <code>SELECT * FROM <%= @table_name %> WHERE column = 'value' LIMIT 100</code>
+            <strong>Examples:</strong><br>
+            <code>SELECT * FROM <%= @table_name %> LIMIT 100</code><br>
+            <code>SELECT column1, column2 FROM <%= @table_name %> WHERE column3 = 'value'</code><br>
+            <code>SELECT COUNT(*) FROM <%= @table_name %> GROUP BY category</code>
           </div>
           <div>
             <%= form.submit "Run Query", class: "btn btn-primary" %>
