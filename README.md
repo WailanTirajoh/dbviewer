@@ -128,7 +128,7 @@ Dbviewer.configure do |config|
 end
 ```
 
-The configuration is accessed through `Dbviewer.configuration` throughout the codebase.
+The configuration is accessed through `Dbviewer.configuration` throughout the codebase. You can also access it via `Dbviewer.config` which is an alias for backward compatibility.
 
 ## Security Features
 

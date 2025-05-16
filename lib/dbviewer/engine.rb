@@ -20,8 +20,11 @@ module Dbviewer
 
         # Allow applications to configure DBViewer before setup
         if File.exist?(Rails.root.join("config", "initializers", "dbviewer.rb"))
-          Rails.logger.info "[DBViewer] Loading custom configuration..." if Rails.logger
+          Rails.logger.info "[DBViewer] Loading custom configuration from initializer..." if Rails.logger
         end
+
+        # Instead of modifying constants directly, we'll use the class methods
+        # defined in the configuration module to provide access to config values
 
         # Apply configuration and initialize components
         Dbviewer.init

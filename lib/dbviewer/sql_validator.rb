@@ -28,7 +28,10 @@ module Dbviewer
     # @return [Boolean] true if the query is safe, false otherwise
     def self.safe_query?(sql)
       return false if sql.blank?
-      return false if sql.length > MAX_QUERY_LENGTH
+
+      # Get max query length from configuration if available
+      max_length = respond_to?(:max_query_length) ? max_query_length : MAX_QUERY_LENGTH
+      return false if sql.length > max_length
 
       normalized_sql = normalize(sql)
 
@@ -116,13 +119,14 @@ module Dbviewer
     # @param sql [String] The SQL query to validate
     # @raise [SecurityError] if the query is unsafe
     # @return [String] The normalized SQL query if it's safe
-    def self.validate!(sql)
-      if sql.blank?
+    def self.validate!(sql)      if sql.blank?
         raise SecurityError, "Empty query is not allowed"
       end
 
-      if sql.length > MAX_QUERY_LENGTH
-        raise SecurityError, "Query exceeds maximum allowed length (#{MAX_QUERY_LENGTH} chars)"
+      # Get max query length from configuration if available
+      max_length = respond_to?(:max_query_length) ? max_query_length : MAX_QUERY_LENGTH
+      if sql.length > max_length
+        raise SecurityError, "Query exceeds maximum allowed length (#{max_length} chars)"
       end
 
       normalized_sql = normalize(sql)

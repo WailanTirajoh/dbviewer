@@ -120,11 +120,16 @@ module Dbviewer
     # @return [ActiveRecord::Result] Result set with columns and rows
     def table_records(table_name, page = 1, order_by = nil, direction = 'ASC', per_page = nil)
       page = [1, page.to_i].max
-      per_page = (per_page || DEFAULT_PER_PAGE).to_i
-      per_page = DEFAULT_PER_PAGE if per_page <= 0
+
+      # Use class method if defined, otherwise fall back to constant
+      default_per_page = self.class.respond_to?(:default_per_page) ? self.class.default_per_page : DEFAULT_PER_PAGE
+      max_records = self.class.respond_to?(:max_records) ? self.class.max_records : MAX_RECORDS
+
+      per_page = (per_page || default_per_page).to_i
+      per_page = default_per_page if per_page <= 0
 
       # Ensure we don't fetch too many records for performance/memory reasons
-      per_page = [per_page, MAX_RECORDS].min
+      per_page = [per_page, max_records].min
 
       model = get_model_for(table_name)
       query = model.all
@@ -199,9 +204,12 @@ module Dbviewer
         # Validate and normalize the SQL
         normalized_sql = ::Dbviewer::SqlValidator.validate!(sql.to_s)
 
+        # Get max records from configuration if available
+        max_records = self.class.respond_to?(:max_records) ? self.class.max_records : MAX_RECORDS
+
         # Add a safety limit if not already present
         unless normalized_sql =~ /\bLIMIT\s+\d+\s*$/i
-          normalized_sql = "#{normalized_sql} LIMIT #{MAX_RECORDS}"
+          normalized_sql = "#{normalized_sql} LIMIT #{max_records}"
         end
 
         # Log and execute the query
@@ -234,7 +242,10 @@ module Dbviewer
         query = query.select(select) if select.present?
         query = query.where(where) if where.present?
         query = query.order(order) if order.present?
-        query = query.limit([limit || MAX_RECORDS, MAX_RECORDS].min) # Apply safety limit
+
+        # Get max records from configuration if available
+        max_records = self.class.respond_to?(:max_records) ? self.class.max_records : MAX_RECORDS
+        query = query.limit([limit || max_records, max_records].min) # Apply safety limit
         query = query.offset(offset) if offset.present?
 
         to_result_set(query, table_name)
@@ -315,11 +326,14 @@ module Dbviewer
 
     # Reset caches if they've been around too long
     def reset_cache_if_needed
-      if Time.now - @@cache_last_reset > CACHE_EXPIRY
+      # Get cache expiry from configuration if available
+      cache_expiry = self.class.respond_to?(:cache_expiry) ? self.class.cache_expiry : CACHE_EXPIRY
+
+      if Time.now - @@cache_last_reset > cache_expiry
         @@table_columns_cache = {}
         @@table_metadata_cache = {}
         @@cache_last_reset = Time.now
-        Rails.logger.info("[DBViewer] Cache reset due to expiry")
+        Rails.logger.info("[DBViewer] Cache reset due to expiry after #{cache_expiry} seconds")
       end
     end
 
