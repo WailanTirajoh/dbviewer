@@ -4,11 +4,11 @@ module Dbviewer
 
     def index
       begin
-        @tables = fetch_database_tables.map do |table_name|
+        @tables = database_manager.tables.map do |table_name|
           {
             name: table_name,
-            record_count: count_table_records(table_name),
-            columns_count: count_table_columns(table_name)
+            record_count: database_manager.record_count(table_name),
+            columns_count: database_manager.column_count(table_name)
           }
         end
       rescue => e
@@ -21,21 +21,38 @@ module Dbviewer
 
     def show
       @table_name = params[:id]
-      @columns = fetch_table_columns(@table_name)
-      @current_page = (params[:page] || 1).to_i
-      @order_by = params[:order_by] || primary_key_for(@table_name) || @columns.first[:name]
-      @order_direction = params[:order_direction] || 'ASC'
-      @total_count = fetch_table_count(@table_name)
-      @total_pages = (@total_count.to_f / PER_PAGE).ceil
-      @records = fetch_table_records(@table_name, @current_page, @order_by, @order_direction)
+
+      begin
+        @columns = database_manager.table_columns(@table_name)
+        @current_page = (params[:page] || 1).to_i
+        @order_by = params[:order_by] || database_manager.primary_key(@table_name) || (@columns.first ? @columns.first[:name] : nil)
+        @order_direction = params[:order_direction] || 'ASC'
+        @search = params[:search] || {}
+
+        # Get count and records with search applied
+        @total_count = database_manager.table_count(@table_name, @search)
+        @total_pages = (@total_count.to_f / PER_PAGE).ceil
+        @records = database_manager.table_records(@table_name, @current_page, @order_by, @order_direction, @search)
+      rescue => e
+        Rails.logger.error "Error in show action: #{e.message}"
+        Rails.logger.error e.backtrace.join("\n")
+
+        @columns ||= []
+        @records ||= nil
+        @total_count ||= 0
+        @total_pages ||= 0
+        @search ||= {}
+        flash.now[:error] = "Error displaying table: #{e.message}"
+      end
     end
 
     def query
       @table_name = params[:id]
-      @query = params[:query].presence || "SELECT * FROM #{ActiveRecord::Base.connection.quote_table_name(@table_name)} LIMIT 100"
+      quoted_table = database_manager.connection.quote_table_name(@table_name) rescue @table_name
+      @query = params[:query].presence || "SELECT * FROM #{quoted_table} LIMIT 100"
 
       begin
-        @records = ActiveRecord::Base.connection.exec_query(@query)
+        @records = database_manager.execute_query(@query)
         @error = nil
       rescue => e
         @records = nil
@@ -47,78 +64,8 @@ module Dbviewer
 
     private
 
-    def fetch_database_tables
-      tables = []
-      begin
-        return [] unless defined?(ActiveRecord::Base)
-        connection = ActiveRecord::Base.connection
-        return [] unless connection.respond_to?(:tables)
-
-        tables = connection.tables.sort
-      rescue => e
-        Rails.logger.error "DBViewer Error in fetch_database_tables: #{e.message}" if Rails.logger
-        tables = []
-      end
-      tables
-    end
-
-    def count_table_records(table_name)
-      result = ActiveRecord::Base.connection.exec_query(
-        "SELECT COUNT(*) FROM #{ActiveRecord::Base.connection.quote_table_name(table_name)}"
-      )
-      result.rows.first.first
-    rescue => e
-      0
-    end
-
-    def count_table_columns(table_name)
-      ActiveRecord::Base.connection.columns(table_name).size
-    rescue => e
-      0
-    end
-
-    def fetch_table_columns(table_name)
-      begin
-        return [] unless defined?(ActiveRecord::Base)
-        connection = ActiveRecord::Base.connection
-        return [] unless connection.respond_to?(:columns)
-
-        connection.columns(table_name).map do |column|
-          {
-            name: column.name,
-            type: column.type,
-            null: column.null,
-            default: column.default
-          }
-        end
-      rescue => e
-        Rails.logger.error "DBViewer Error in fetch_table_columns: #{e.message}" if Rails.logger
-        []
-      end
-    end
-
-    def primary_key_for(table_name)
-      ActiveRecord::Base.connection.primary_key(table_name)
-    rescue
-      nil
-    end
-
-    def fetch_table_count(table_name)
-      result = ActiveRecord::Base.connection.exec_query(
-        "SELECT COUNT(*) AS count FROM #{ActiveRecord::Base.connection.quote_table_name(table_name)}"
-      )
-      result.rows.first.first
-    end
-
-    def fetch_table_records(table_name, page = 1, order_by = nil, direction = 'ASC')
-      offset = (page - 1) * PER_PAGE
-      order_clause = order_by ? "ORDER BY #{ActiveRecord::Base.connection.quote_column_name(order_by)} #{direction}" : ""
-
-      ActiveRecord::Base.connection.exec_query(
-        "SELECT * FROM #{ActiveRecord::Base.connection.quote_table_name(table_name)}
-         #{order_clause}
-         LIMIT #{PER_PAGE} OFFSET #{offset}"
-      )
+    def database_manager
+      @database_manager ||= DatabaseManager.new
     end
   end
 end
