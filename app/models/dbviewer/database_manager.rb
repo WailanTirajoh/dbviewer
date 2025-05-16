@@ -4,13 +4,45 @@ module Dbviewer
 
     PER_PAGE = 20
 
+    # Use a class-level callback mechanism with Ruby metaprogramming
+    class << self
+      def ensure_connection_for(*method_names)
+        method_names.each do |method_name|
+          # Only apply to methods that exist to avoid errors
+          if instance_methods(false).include?(method_name)
+            # Store the original method
+            alias_method "#{method_name}_without_connection", method_name
+
+            # Define a new method that ensures connection before calling the original
+            define_method(method_name) do |*args, &block|
+              ensure_connection
+              send("#{method_name}_without_connection", *args, &block)
+            end
+          end
+        end
+      end
+
+      def method_added(method_name)
+        # Skip methods we've already processed or private/protected methods
+        return if @_processing_method || private_method_defined?(method_name) || protected_method_defined?(method_name)
+
+        # Prevent infinite recursion
+        @_processing_method = true
+
+        # Only process methods that aren't already ensure_connection-wrapped
+        unless method_name.to_s.end_with?('_without_connection') || method_name == :initialize || method_name == :ensure_connection
+          ensure_connection_for(method_name)
+        end
+
+        @_processing_method = false
+      end
+    end
+
     def initialize
       ensure_connection
     end
 
     def tables
-      ensure_connection
-
       begin
         return [] unless connection.respond_to?(:tables)
         connection.tables.sort
@@ -21,8 +53,6 @@ module Dbviewer
     end
 
     def table_columns(table_name)
-      ensure_connection
-
       begin
         return [] unless connection.respond_to?(:columns)
 
@@ -41,8 +71,6 @@ module Dbviewer
     end
 
     def table_count(table_name, search = {})
-      ensure_connection
-
       begin
         where_clause, params = build_search_conditions(table_name, search)
 
@@ -58,8 +86,6 @@ module Dbviewer
     end
 
     def table_records(table_name, page = 1, order_by = nil, direction = 'ASC', search = {})
-      ensure_connection
-
       begin
         page = [1, page.to_i].max
         offset = (page - 1) * PER_PAGE
@@ -87,8 +113,6 @@ module Dbviewer
     end
 
     def record_count(table_name)
-      ensure_connection
-
       begin
         result = connection.exec_query(
           "SELECT COUNT(*) FROM #{connection.quote_table_name(table_name)}"
@@ -101,8 +125,6 @@ module Dbviewer
     end
 
     def column_count(table_name)
-      ensure_connection
-
       begin
         connection.columns(table_name).size
       rescue => e
@@ -112,8 +134,6 @@ module Dbviewer
     end
 
     def primary_key(table_name)
-      ensure_connection
-
       begin
         connection.primary_key(table_name)
       rescue => e
@@ -123,8 +143,6 @@ module Dbviewer
     end
 
     def execute_query(sql)
-      ensure_connection
-
       begin
         connection.exec_query(sql)
       rescue => e
@@ -138,13 +156,23 @@ module Dbviewer
     def ensure_connection
       return @connection if @connection
 
-      if defined?(ActiveRecord::Base)
+      unless defined?(ActiveRecord::Base)
+        raise ConnectionError, "ActiveRecord is not available. This gem requires ActiveRecord to function."
+      end
+
+      begin
         @connection = ActiveRecord::Base.connection
         @adapter_name = @connection.adapter_name.downcase
-      else
-        raise "ActiveRecord is not available"
+        @connection
+      rescue => e
+        error_msg = "Failed to establish database connection: #{e.message}"
+        log_error(error_msg, e)
+        raise ConnectionError, error_msg
       end
     end
+
+    # Define a custom error class
+    class ConnectionError < StandardError; end
 
     def build_search_conditions(table_name, search)
       return ["", []] if search.blank?
@@ -250,5 +278,9 @@ module Dbviewer
       column_names = table_columns(table_name).map { |c| c[:name] }
       ActiveRecord::Result.new(column_names, [])
     end
+
+    # We no longer need to manually register methods
+    # The method_added callback automatically handles this for all public methods
+    # (except initialize and ensure_connection)
   end
 end
