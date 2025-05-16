@@ -1,8 +1,13 @@
+require 'dbviewer/database_manager'
+require 'dbviewer/sql_validator'
+
 module Dbviewer
   class DatabasesController < ApplicationController
-    # Available per-page options for the dropdown
-    PER_PAGE_OPTIONS = [10, 20, 50, 100]
+    # Default page size
     DEFAULT_PER_PAGE = 20
+
+    # Available per-page options for the dropdown - define as class constant for use in view
+    PER_PAGE_OPTIONS = [10, 20, 50, 100]
 
     def index
       @tables = database_manager.tables.map do |table_name|
@@ -35,8 +40,16 @@ module Dbviewer
       @table_name = params[:id]
       quoted_table = database_manager.connection.quote_table_name(@table_name) rescue @table_name
       @query = params[:query].presence || "SELECT * FROM #{quoted_table} LIMIT 100"
+      @read_only_mode = true # Flag to indicate we're in read-only mode
 
       begin
+        # Check if the query is valid using the SqlValidator
+        unless ::Dbviewer::SqlValidator.safe_query?(@query)
+          # If not, reset to a safe default query
+          @query = "SELECT * FROM #{quoted_table} LIMIT 100"
+          flash.now[:warning] = "Only SELECT queries are allowed. Your query contained potentially unsafe operations. Using default query instead."
+        end
+
         @records = database_manager.execute_query(@query)
         @error = nil
       rescue => e
@@ -50,7 +63,7 @@ module Dbviewer
     private
 
     def database_manager
-      @database_manager ||= DatabaseManager.new
+      @database_manager ||= ::Dbviewer::DatabaseManager.new
     end
   end
 end

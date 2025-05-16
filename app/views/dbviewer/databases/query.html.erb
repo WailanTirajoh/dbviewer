@@ -8,19 +8,36 @@
     <%= link_to "← Back to Table", database_path(@table_name), class: "btn btn-outline-secondary" %>
   </div>
   
+  <% if flash[:warning].present? %>
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+      <%= flash[:warning] %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% end %>
+  
   <div class="card mb-4">
     <div class="card-header">
-      <h5>SQL Query</h5>
+      <h5>SQL Query (Read-Only)</h5>
     </div>
     <div class="card-body">
+      <div class="alert alert-info mb-3">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Read-Only Mode:</strong> For security reasons, only SELECT queries are allowed. Any other SQL operations (INSERT, UPDATE, DELETE, ALTER, etc.) will be rejected.
+      </div>
+      
       <%= form_with url: query_database_path(@table_name), method: :post, local: true do |form| %>
         <div class="mb-3">
           <%= form.text_area :query, value: @query, class: 'form-control', rows: 5, 
-                placeholder: "Enter your SQL query here...", 
+                placeholder: "Enter your SELECT query here...", 
                 style: 'font-family: monospace;' %>
         </div>
-        <div class="d-flex justify-content-end">
-          <%= form.submit "Run Query", class: "btn btn-primary" %>
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="form-text text-muted">
+            Example: <code>SELECT * FROM <%= @table_name %> WHERE column = 'value' LIMIT 100</code>
+          </div>
+          <div>
+            <%= form.submit "Run Query", class: "btn btn-primary" %>
+          </div>
         </div>
       <% end %>
     </div>

@@ -2,6 +2,10 @@ module Dbviewer
   class Engine < ::Rails::Engine
     isolate_namespace Dbviewer
 
+    # Ensure lib directory is in the autoload path
+    config.autoload_paths << File.expand_path('../../', __FILE__)
+    config.eager_load_paths << File.expand_path('../../', __FILE__)
+
     initializer "dbviewer.assets" do |app|
       # app.config.assets.precompile += %w(dbviewer/application.css dbviewer/dbviewer.css)
     end
