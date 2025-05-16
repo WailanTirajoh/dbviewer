@@ -7,7 +7,10 @@ module Dbviewer
     config.eager_load_paths << File.expand_path('../../', __FILE__)
 
     initializer "dbviewer.assets" do |app|
-      # app.config.assets.precompile += %w(dbviewer/application.css dbviewer/dbviewer.css)
+      # Only configure assets if the assets pipeline is available
+      if app.config.respond_to?(:assets)
+        app.config.assets.precompile += %w(dbviewer/application.css dbviewer/dbviewer.css)
+      end
     end
 
     # Initialize the engine safely
