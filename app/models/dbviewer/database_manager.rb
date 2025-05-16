@@ -4,8 +4,22 @@ module Dbviewer
 
     PER_PAGE = 20
 
+    # Define a custom error class
+    class ConnectionError < StandardError; end
+
     # Use a class-level callback mechanism with Ruby metaprogramming
     class << self
+      # Map methods to their default return values on error
+      METHOD_ERROR_DEFAULTS = {
+        tables: [],
+        table_columns: [],
+        table_count: 0,
+        record_count: 0,
+        column_count: 0,
+        primary_key: nil,
+        execute_query: :raise_error # special case: re-raise the error
+      }
+
       def ensure_connection_for(*method_names)
         method_names.each do |method_name|
           # Only apply to methods that exist to avoid errors
@@ -22,6 +36,43 @@ module Dbviewer
         end
       end
 
+      # New method to add error handling wrapper
+      def with_error_handling_for(*method_names)
+        method_names.each do |method_name|
+          # Skip if the method doesn't exist
+          next unless instance_methods(false).include?(method_name)
+
+          # Store the original method
+          alias_method "#{method_name}_without_error_handling", method_name
+
+          # Define a new method that wraps error handling around the original
+          define_method(method_name) do |*args, &block|
+            begin
+              send("#{method_name}_without_error_handling", *args, &block)
+            rescue => e
+              # Get context information for better error messages
+              context = method_name.to_s
+              context += " for '#{args[0]}'" if args[0].is_a?(String) # Add table name if first arg is a string
+
+              log_error("Error in #{context}: #{e.message}", e)
+
+              # Handle default values based on method
+              default_value = self.class::METHOD_ERROR_DEFAULTS[method_name]
+
+              if default_value == :raise_error
+                raise e # Re-raise the error for methods that should propagate errors
+              elsif method_name == :table_records
+                # Special case for table_records which needs empty_result_set with the table name
+                empty_result_set(args[0]) # args[0] is the table_name
+              else
+                # Return the default value for this method
+                default_value
+              end
+            end
+          end
+        end
+      end
+
       def method_added(method_name)
         # Skip methods we've already processed or private/protected methods
         return if @_processing_method || private_method_defined?(method_name) || protected_method_defined?(method_name)
@@ -29,9 +80,22 @@ module Dbviewer
         # Prevent infinite recursion
         @_processing_method = true
 
-        # Only process methods that aren't already ensure_connection-wrapped
-        unless method_name.to_s.end_with?('_without_connection') || method_name == :initialize || method_name == :ensure_connection
-          ensure_connection_for(method_name)
+        # Only process methods that aren't already wrapped
+        if !method_name.to_s.end_with?('_without_connection') &&
+           !method_name.to_s.end_with?('_without_error_handling') &&
+           ![:initialize, :ensure_connection].include?(method_name)
+
+          # Add the method to both wrappers if it's in our defaults map
+          if METHOD_ERROR_DEFAULTS.key?(method_name) || method_name == :table_records
+            # First wrap with error handling
+            with_error_handling_for(method_name)
+
+            # Then wrap with connection handling (with_error_handling name)
+            ensure_connection_for("#{method_name}_without_error_handling".to_sym)
+          else
+            # Just wrap with connection handling for methods not in our defaults map
+            ensure_connection_for(method_name)
+          end
         end
 
         @_processing_method = false
@@ -43,112 +107,72 @@ module Dbviewer
     end
 
     def tables
-      begin
-        return [] unless connection.respond_to?(:tables)
-        connection.tables.sort
-      rescue => e
-        log_error("Error fetching tables: #{e.message}", e)
-        []
-      end
+      return [] unless connection.respond_to?(:tables)
+      connection.tables.sort
     end
 
     def table_columns(table_name)
-      begin
-        return [] unless connection.respond_to?(:columns)
+      return [] unless connection.respond_to?(:columns)
 
-        connection.columns(table_name).map do |column|
-          {
-            name: column.name,
-            type: column.type,
-            null: column.null,
-            default: column.default
-          }
-        end
-      rescue => e
-        log_error("Error fetching columns for table '#{table_name}': #{e.message}", e)
-        []
+      connection.columns(table_name).map do |column|
+        {
+          name: column.name,
+          type: column.type,
+          null: column.null,
+          default: column.default
+        }
       end
     end
 
     def table_count(table_name, search = {})
-      begin
-        where_clause, params = build_search_conditions(table_name, search)
+      where_clause, params = build_search_conditions(table_name, search)
 
-        quoted_table = connection.quote_table_name(table_name)
-        sql = "SELECT COUNT(*) AS count FROM #{quoted_table} #{where_clause}"
+      quoted_table = connection.quote_table_name(table_name)
+      sql = "SELECT COUNT(*) AS count FROM #{quoted_table} #{where_clause}"
 
-        result = connection.exec_query(sql, 'SQL', params)
-        result.rows.first.first
-      rescue => e
-        log_error("Error counting records for table '#{table_name}': #{e.message}", e)
-        0
-      end
+      result = connection.exec_query(sql, 'SQL', params)
+      result.rows.first.first
     end
 
     def table_records(table_name, page = 1, order_by = nil, direction = 'ASC', search = {})
-      begin
-        page = [1, page.to_i].max
-        offset = (page - 1) * PER_PAGE
+      page = [1, page.to_i].max
+      offset = (page - 1) * PER_PAGE
 
-        # Sanitize order direction
-        direction = %w[ASC DESC].include?(direction.to_s.upcase) ? direction.to_s.upcase : 'ASC'
+      # Sanitize order direction
+      direction = %w[ASC DESC].include?(direction.to_s.upcase) ? direction.to_s.upcase : 'ASC'
 
-        # Build order clause if order_by is provided
-        order_clause = ""
-        if order_by.present?
-          quoted_order = connection.quote_column_name(order_by)
-          order_clause = "ORDER BY #{quoted_order} #{direction}"
-        end
-
-        where_clause, params = build_search_conditions(table_name, search)
-        quoted_table = connection.quote_table_name(table_name)
-
-        sql = "SELECT * FROM #{quoted_table} #{where_clause} #{order_clause} LIMIT #{PER_PAGE} OFFSET #{offset}"
-
-        connection.exec_query(sql, 'SQL', params)
-      rescue => e
-        log_error("Error fetching records for table '#{table_name}': #{e.message}", e)
-        empty_result_set(table_name)
+      # Build order clause if order_by is provided
+      order_clause = ""
+      if order_by.present?
+        quoted_order = connection.quote_column_name(order_by)
+        order_clause = "ORDER BY #{quoted_order} #{direction}"
       end
+
+      where_clause, params = build_search_conditions(table_name, search)
+      quoted_table = connection.quote_table_name(table_name)
+
+      sql = "SELECT * FROM #{quoted_table} #{where_clause} #{order_clause} LIMIT #{PER_PAGE} OFFSET #{offset}"
+
+      connection.exec_query(sql, 'SQL', params)
     end
 
     def record_count(table_name)
-      begin
-        result = connection.exec_query(
-          "SELECT COUNT(*) FROM #{connection.quote_table_name(table_name)}"
-        )
-        result.rows.first.first
-      rescue => e
-        log_error("Error counting records for table '#{table_name}': #{e.message}", e)
-        0
-      end
+      result = connection.exec_query(
+        "SELECT COUNT(*) FROM #{connection.quote_table_name(table_name)}"
+      )
+      result.rows.first.first
     end
 
     def column_count(table_name)
-      begin
-        connection.columns(table_name).size
-      rescue => e
-        log_error("Error counting columns for table '#{table_name}': #{e.message}", e)
-        0
-      end
+      connection.columns(table_name).size
     end
 
     def primary_key(table_name)
-      begin
-        connection.primary_key(table_name)
-      rescue => e
-        log_error("Error fetching primary key for table '#{table_name}': #{e.message}", e)
-        nil
-      end
+      connection.primary_key(table_name)
     end
 
     def execute_query(sql)
-      begin
-        connection.exec_query(sql)
-      rescue => e
-        log_error("Error executing SQL query: #{e.message}", e)
-        raise e
-      end
+      connection.exec_query(sql)
     end
 
     private
@@ -170,9 +194,6 @@ module Dbviewer
         raise ConnectionError, error_msg
       end
     end
-
-    # Define a custom error class
-    class ConnectionError < StandardError; end
 
     def build_search_conditions(table_name, search)
       return ["", []] if search.blank?
