@@ -24,6 +24,43 @@ module Dbviewer
       Rails.logger.error("Database tables fetch error: #{e.message}\n#{e.backtrace.join("\n")}")
     end
 
+    # Action to display ERD (Entity Relationship Diagram)
+    def erd
+      # Ensure we have the necessary data for the ERD
+      @tables = fetch_tables_with_stats
+
+      if @tables.present?
+        @table_relationships = fetch_table_relationships
+      else
+        @table_relationships = []
+        flash.now[:warning] = "No tables found in database to generate ERD."
+      end
+
+      respond_to do |format|
+        format.html # Default to HTML view
+        format.json do
+          render json: {
+            tables: @tables,
+            relationships: @table_relationships
+          }
+        end
+      end
+    rescue => e
+      @tables = []
+      @table_relationships = []
+
+      error_msg = "Error generating ERD: #{e.message}"
+      flash.now[:error] = error_msg
+      Rails.logger.error("ERD generation error: #{e.message}\n#{e.backtrace.join("\n")}")
+
+      respond_to do |format|
+        format.html # Default to HTML view
+        format.json do
+          render json: { error: error_msg }, status: :unprocessable_entity
+        end
+      end
+    end
+
     # Action to show details and records for a specific table
     def show
       @table_name = params[:id]
@@ -37,6 +74,32 @@ module Dbviewer
       @total_count = fetch_table_record_count(@table_name)
       @total_pages = calculate_total_pages(@total_count, @per_page)
       @records = fetch_table_records(@table_name)
+
+      respond_to do |format|
+        format.html # Default HTML response
+        format.json do
+          render json: {
+            table_name: @table_name,
+            columns: @columns,
+            metadata: @metadata,
+            record_count: @total_count
+          }
+        end
+      rescue => e
+        @records = []
+        error_msg = "Error retrieving table data: #{e.message}"
+
+        respond_to do |format|
+          format.html do
+            flash.now[:error] = error_msg
+          end
+          format.json do
+            render json: { error: error_msg }, status: :unprocessable_entity
+          end
+        end
+
+        Rails.logger.error("Table data error: #{e.message}\n#{e.backtrace.join("\n")}")
+      end
     end
 
     # Action to execute custom SQL queries
@@ -80,7 +143,7 @@ module Dbviewer
 
     # Set pagination parameters from request or defaults
     def set_pagination_params
-      @current_page = [1, params[:page].to_i].max
+      @current_page = [ 1, params[:page].to_i ].max
       @per_page = params[:per_page] ? params[:per_page].to_i : self.class.default_per_page
       @per_page = self.class.default_per_page unless self.class.per_page_options.include?(@per_page)
     end
@@ -92,7 +155,7 @@ module Dbviewer
                   (@columns.first ? @columns.first[:name] : nil)
 
       @order_direction = params[:order_direction].upcase if params[:order_direction].present?
-      @order_direction = 'ASC' unless VALID_SORT_DIRECTIONS.include?(@order_direction)
+      @order_direction = "ASC" unless VALID_SORT_DIRECTIONS.include?(@order_direction)
     end
 
     # Get the total number of records in a table
@@ -162,6 +225,35 @@ module Dbviewer
       end
     end
 
+    # Fetch relationships between tables for ERD visualization
+    def fetch_table_relationships
+      relationships = []
+
+      @tables.each do |table|
+        table_name = table[:name]
+
+        # Get foreign keys defined in this table pointing to others
+        begin
+          metadata = database_manager.table_metadata(table_name)
+          if metadata && metadata[:foreign_keys].present?
+            metadata[:foreign_keys].each do |fk|
+              relationships << {
+                from_table: table_name,
+                to_table: fk[:to_table],
+                from_column: fk[:column],
+                to_column: fk[:primary_key],
+                name: fk[:name]
+              }
+            end
+          end
+        rescue => e
+          Rails.logger.error("Error fetching relationships for #{table_name}: #{e.message}")
+        end
+      end
+
+      relationships
+    end
+
     # Handle database connection errors
     def handle_database_error(exception)
       message = case exception
@@ -177,7 +269,7 @@ module Dbviewer
       Rails.logger.error("Database error: #{exception.message}\n#{exception.backtrace.join("\n")}")
 
       # Determine where to redirect based on the current action
-      if action_name == 'show' || action_name == 'query'
+      if action_name == "show" || action_name == "query"
         @error = message
         @records = nil
         render action_name

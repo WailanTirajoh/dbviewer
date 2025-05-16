@@ -336,3 +336,54 @@ html {
   width: 1.5rem; /* Fixed width for better alignment */
   text-align: center; /* Center the icon within the width */
 }
+
+/* ERD (Entity Relationship Diagram) styles */
+.erd-container {
+  position: relative;
+  overflow: auto;
+  background-color: #fafafa;
+  height: calc(100vh - 125px); /* Account for header and padding */
+}
+
+.erd-zoom-controls {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 5px;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.erd-table {
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  margin: 10px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.erd-table-header {
+  background-color: #f8f9fa;
+  padding: 8px 12px;
+  border-bottom: 1px solid #dee2e6;
+  font-weight: 600;
+  border-radius: 4px 4px 0 0;
+}
+
+.erd-relationship-line {
+  stroke: #6c757d;
+  stroke-width: 1px;
+}
+
+.erd-relationship-label {
+  font-size: 12px;
+  fill: #495057;
+}
+
+/* Make sure the SVG is properly sized */
+.mermaid svg {
+  max-width: none !important;
+  height: auto;
+}
