@@ -18,10 +18,9 @@ module Dbviewer
       @current_page = (params[:page] || 1).to_i
       @order_by = params[:order_by] || database_manager.primary_key(@table_name) || (@columns.first ? @columns.first[:name] : nil)
       @order_direction = params[:order_direction] || 'ASC'
-      @search = params[:search] || {}
       @total_count = database_manager.table_count(@table_name)
       @total_pages = (@total_count.to_f / PER_PAGE).ceil
-      @records = database_manager.table_records(@table_name, @current_page, @order_by, @order_direction, @search)
+      @records = database_manager.table_records(@table_name, @current_page, @order_by, @order_direction)
     end
 
     def query
