@@ -1,8 +1,8 @@
-<div class="dbviewer-sidebar-content">
+<div class="dbviewer-sidebar-top">
   <div class="dbviewer-table-filter-container">
     <i class="bi bi-search dbviewer-table-filter-icon"></i>
-    <input type="text" class="form-control form-control-sm dbviewer-table-filter" 
-           id="tableSearch" placeholder="Filter tables...">
+    <input type="text" class="form-control form-control-sm dbviewer-table-filter mb-0" 
+           id="tableSearch" placeholder="Filter tables..." aria-label="Filter tables">
   </div>
   
   <% if @tables.any? %>
@@ -10,11 +10,32 @@
       <i class="bi bi-info-circle me-1"></i>
       <span id="table-count"><%= @tables.size %></span> tables found
     </div>
-    
+</div>
+
+<div class="dbviewer-sidebar-content">
     <div class="list-group list-group-flush" id="tablesList">
       <% @tables.each do |table| %>
         <%= link_to database_path(table[:name]), title: table[:name],
-                    class: "list-group-item list-group-item-action d-flex align-items-center #{'active' if current_table?(table[:name])}" do %>
+                    class: "list-group-item list-group-item-action d-flex align-items-center #{'active' if current_table?(table[:name])}", 
+                    tabindex: "0", 
+                    data: { table_name: table[:name] },
+                    onkeydown: "
+                      if(event.key === 'ArrowDown') { 
+                        event.preventDefault();
+                        let next = this.nextElementSibling;
+                        while(next && next.classList.contains('d-none')) {
+                          next = next.nextElementSibling;
+                        }
+                        if(next) next.focus();
+                      } else if(event.key === 'ArrowUp') { 
+                        event.preventDefault();
+                        let prev = this.previousElementSibling;
+                        while(prev && prev.classList.contains('d-none')) {
+                          prev = prev.previousElementSibling;
+                        }
+                        if(prev) prev.focus();
+                        else document.getElementById('tableSearch')?.focus();
+                      }" do %>
           <div class="text-truncate">
             <i class="bi bi-table me-2"></i>
             <%= format_table_name(table[:name]) %>
@@ -39,18 +60,37 @@
     const searchInput = document.getElementById('tableSearch');
     
     if (searchInput) {
-      searchInput.addEventListener('input', function() {
-        const query = this.value.toLowerCase();
+      // Debounce function to limit how often the filter runs
+      function debounce(func, wait) {
+        let timeout;
+        return function() {
+          const context = this;
+          const args = arguments;
+          clearTimeout(timeout);
+          timeout = setTimeout(function() {
+            func.apply(context, args);
+          }, wait);
+        };
+      }
+      
+      // Filter function
+      const filterTables = debounce(function() {
+        const query = searchInput.value.toLowerCase();
         const tableItems = document.querySelectorAll('#tablesList .list-group-item-action');
         let visibleCount = 0;
         
         tableItems.forEach(function(item) {
-          const tableName = item.textContent.trim().toLowerCase();
-          if (tableName.includes(query)) {
-            item.style.display = '';
+          // Get the table name from the title attribute for more accurate matching
+          const tableName = (item.getAttribute('title') || item.textContent).trim().toLowerCase();
+          
+          // Also get the displayed text content for a broader match
+          const displayedText = item.textContent.trim().toLowerCase();
+          
+          if (tableName.includes(query) || displayedText.includes(query)) {
+            item.classList.remove('d-none');
             visibleCount++;
           } else {
-            item.style.display = 'none';
+            item.classList.add('d-none');
           }
         });
         
@@ -59,19 +99,61 @@
         if (tableCountElement) {
           tableCountElement.textContent = visibleCount;
         }
+        
+        // Show/hide no results message
+        let noResultsEl = document.getElementById('dbviewer-no-filter-results');
+        if (visibleCount === 0 && query !== '') {
+          if (!noResultsEl) {
+            noResultsEl = document.createElement('div');
+            noResultsEl.id = 'dbviewer-no-filter-results';
+            noResultsEl.className = 'list-group-item text-muted text-center py-3';
+            noResultsEl.innerHTML = '<i class="bi bi-search me-1"></i> No tables match "<span class="fw-bold"></span>"';
+            document.getElementById('tablesList').appendChild(noResultsEl);
+          }
+          noResultsEl.querySelector('.fw-bold').textContent = query;
+          noResultsEl.style.display = 'block';
+        } else if (noResultsEl) {
+          noResultsEl.style.display = 'none';
+        }
+      }, 150); // Debounce for 150ms
+      
+      // Set up event listeners for the search input
+      searchInput.addEventListener('input', filterTables);
+      searchInput.addEventListener('keyup', function(e) {
+        filterTables();
+        
+        // Add keyboard navigation for the filtered list
+        if (e.key === 'Enter' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          // Focus the first visible table item (not having d-none class)
+          const firstVisibleItem = document.querySelector('#tablesList .list-group-item-action:not(.d-none)');
+          if (firstVisibleItem) {
+            firstVisibleItem.focus();
+            // Make sure the item is visible in the scrollable area
+            firstVisibleItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
       });
+      searchInput.addEventListener('search', filterTables);  // For clearing via the "x" in some browsers
       
       // Clear the search box when clicking the X button
       const clearButton = document.createElement('button');
       clearButton.type = 'button';
       clearButton.className = 'btn btn-sm btn-link position-absolute';
       clearButton.style.right = '15px';
-      clearButton.style.top = '6px';
+      clearButton.style.top = '50%';
+      clearButton.style.transform = 'translateY(-50%)';
       clearButton.style.display = 'none';
-      clearButton.innerHTML = '<i class="bi bi-x-lg"></i>';
+      clearButton.style.color = '#6c757d';
+      clearButton.style.fontSize = '0.85rem';
+      clearButton.style.padding = '0.25rem';
+      clearButton.style.width = '1.5rem';
+      clearButton.style.textAlign = 'center';
+      clearButton.innerHTML = '<i class="bi bi-x-circle"></i>';
       clearButton.addEventListener('click', function() {
         searchInput.value = '';
-        searchInput.dispatchEvent(new Event('input'));
+        // Call filter directly without debouncing for immediate feedback
+        filterTables();
         this.style.display = 'none';
       });
       
@@ -83,6 +165,12 @@
         searchInput.addEventListener('input', function() {
           clearButton.style.display = this.value ? 'block' : 'none';
         });
+        
+        // Apply filter initially in case there's a value already (e.g., from browser autofill)
+        if (searchInput.value) {
+          filterTables();
+          clearButton.style.display = 'block';
+        }
       }
     }
   });
