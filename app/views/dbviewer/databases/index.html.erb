@@ -2,59 +2,66 @@
   Database Tables
 <% end %>
 
-<div class="container mt-4">
-  <h1>Database Tables</h1>
-  
-  <% if flash[:error] %>
-    <div class="alert alert-danger" role="alert">
-      <%= flash[:error] %>
-    </div>
-  <% end %>
-  
-  <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <h5>Available Tables</h5>
-      <span class="badge bg-primary"><%= @tables.size %> Tables</span>
-    </div>
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-bordered table-hover">
-          <thead>
-            <tr>
-              <th>Table Name</th>
-              <th>Records</th>
-              <th>Columns</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% if @tables.any? %>
-              <% @tables.each do |table| %>
+<% content_for :sidebar do %>
+  <%= render 'dbviewer/shared/sidebar' %>
+<% end %>
+
+<h1 class="mb-4">Database Viewer</h1>
+
+<% if flash[:error] %>
+  <div class="alert alert-danger" role="alert">
+    <%= flash[:error] %>
+  </div>
+<% end %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="dbviewer-card card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Available Tables</h5>
+        <span class="badge bg-primary"><%= @tables.size %> Tables</span>
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Select a table from the sidebar to view its contents or use the table below.</p>
+        
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Table Name</th>
+                <th>Records</th>
+                <th>Columns</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if @tables.any? %>
+                <% @tables.each do |table| %>
+                  <tr>
+                    <td><%= table[:name] %></td>
+                    <td><span class="badge bg-secondary"><%= table[:record_count] %></span></td>
+                    <td><span class="badge bg-info"><%= table[:columns_count] %></span></td>
+                    <td>
+                      <%= link_to database_path(table[:name]), class: "btn btn-sm btn-outline-primary me-1" do %>
+                        <i class="bi bi-table me-1"></i> Browse
+                      <% end %>
+                      <%= link_to query_database_path(table[:name]), class: "btn btn-sm btn-outline-secondary" do %>
+                        <i class="bi bi-code-square me-1"></i> Query
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              <% else %>
                 <tr>
-                  <td><%= table[:name] %></td>
-                  <td><span class="badge bg-secondary"><%= table[:record_count] %></span></td>
-                  <td><span class="badge bg-info"><%= table[:columns_count] %></span></td>
-                  <td>
-                    <%= link_to "Browse", database_path(table[:name]), class: "btn btn-sm btn-outline-primary me-1" %>
-                    <%= link_to "Query", query_database_path(table[:name]), class: "btn btn-sm btn-outline-secondary" %>
-                  </td>
+                  <td colspan="4" class="text-center">No tables found in the database.</td>
                 </tr>
               <% end %>
-            <% else %>
-              <tr>
-                <td colspan="4" class="text-center">No tables found in the database.</td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
-  
-  <div class="mt-4 text-center text-muted">
-    <p class="small">
-      <i class="bi bi-info-circle-fill"></i> 
-      DBViewer is viewing the <%= Rails.env %> environment database.
-    </p>
-  </div>
 </div>
+
+

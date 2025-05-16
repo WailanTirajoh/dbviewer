@@ -1,4 +1,10 @@
-/* DB Viewer custom styles */
+/* ========== DB Viewer custom styles ========== */
+
+/* Visual indicator that styles are loading */
+.dbviewer-styles-loaded body:after {
+  content: "";
+  display: none;
+}
 
 /* Table styling */
 .table-responsive {
@@ -30,7 +36,16 @@ td {
 
 /* Navbar customization */
 .navbar {
-  margin-bottom: 20px;
+  margin-bottom: 0;
+  position: fixed;
+  width: 100%;
+  z-index: 1030;
+  height: 56px;
+}
+
+/* Fixed navbar specific class */
+.dbviewer-navbar.fixed-top {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Sort buttons */

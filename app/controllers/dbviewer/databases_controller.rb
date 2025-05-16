@@ -29,6 +29,7 @@ module Dbviewer
       @table_name = params[:id]
       @columns = fetch_table_columns(@table_name)
       @metadata = fetch_table_metadata(@table_name)
+      @tables = fetch_tables_with_stats  # Fetch tables for sidebar
 
       set_pagination_params
       set_sorting_params
@@ -43,6 +44,10 @@ module Dbviewer
       @table_name = params[:id]
       @read_only_mode = true # Flag to indicate we're in read-only mode
       @columns = fetch_table_columns(@table_name)
+      @tables = fetch_tables_with_stats  # Fetch tables for sidebar
+
+      # Set active table for sidebar highlighting
+      @active_table = @table_name
 
       prepare_query
       execute_query

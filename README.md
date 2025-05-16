@@ -21,7 +21,9 @@ It's designed for development, debugging, and database analysis, offering a clea
   - Query execution statistics and timing
 - **UI Features**:
   - Responsive, Bootstrap-based interface that works on desktop and mobile
+  - Modern sidebar layout with quick access to all database tables
   - Clean tabbed interface for exploring different aspects of table structure
+  - Table filtering and search capabilities
   - Proper formatting for various data types (dates, JSON, arrays, etc.)
   - Enhanced data presentation with appropriate styling
 

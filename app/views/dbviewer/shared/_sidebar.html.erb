@@ -1,0 +1,89 @@
+<div class="dbviewer-sidebar-content">
+  <div class="dbviewer-table-filter-container">
+    <i class="bi bi-search dbviewer-table-filter-icon"></i>
+    <input type="text" class="form-control form-control-sm dbviewer-table-filter" 
+           id="tableSearch" placeholder="Filter tables...">
+  </div>
+  
+  <% if @tables.any? %>
+    <div class="px-3 py-2 text-muted small">
+      <i class="bi bi-info-circle me-1"></i>
+      <span id="table-count"><%= @tables.size %></span> tables found
+    </div>
+    
+    <div class="list-group list-group-flush" id="tablesList">
+      <% @tables.each do |table| %>
+        <%= link_to database_path(table[:name]), title: table[:name],
+                    class: "list-group-item list-group-item-action d-flex align-items-center #{'active' if current_table?(table[:name])}" do %>
+          <div class="text-truncate">
+            <i class="bi bi-table me-2"></i>
+            <%= format_table_name(table[:name]) %>
+          </div>
+          <div class="ms-auto flex-shrink-0">
+            <span class="badge bg-secondary me-1" title="Records"><%= table[:record_count] %></span>
+            <span class="badge bg-info" title="Columns"><%= table[:columns_count] %></span>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="list-group-item text-muted">
+      <i class="bi bi-exclamation-circle me-2"></i>
+      No tables found
+    </div>
+  <% end %>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('tableSearch');
+    
+    if (searchInput) {
+      searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        const tableItems = document.querySelectorAll('#tablesList .list-group-item-action');
+        let visibleCount = 0;
+        
+        tableItems.forEach(function(item) {
+          const tableName = item.textContent.trim().toLowerCase();
+          if (tableName.includes(query)) {
+            item.style.display = '';
+            visibleCount++;
+          } else {
+            item.style.display = 'none';
+          }
+        });
+        
+        // Update the tables count in the sidebar
+        const tableCountElement = document.getElementById('table-count');
+        if (tableCountElement) {
+          tableCountElement.textContent = visibleCount;
+        }
+      });
+      
+      // Clear the search box when clicking the X button
+      const clearButton = document.createElement('button');
+      clearButton.type = 'button';
+      clearButton.className = 'btn btn-sm btn-link position-absolute';
+      clearButton.style.right = '15px';
+      clearButton.style.top = '6px';
+      clearButton.style.display = 'none';
+      clearButton.innerHTML = '<i class="bi bi-x-lg"></i>';
+      clearButton.addEventListener('click', function() {
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input'));
+        this.style.display = 'none';
+      });
+      
+      const filterContainer = document.querySelector('.dbviewer-table-filter-container');
+      if (filterContainer) {
+        filterContainer.style.position = 'relative';
+        filterContainer.appendChild(clearButton);
+        
+        searchInput.addEventListener('input', function() {
+          clearButton.style.display = this.value ? 'block' : 'none';
+        });
+      }
+    }
+  });
+</script>

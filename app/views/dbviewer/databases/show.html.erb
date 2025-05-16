@@ -2,39 +2,45 @@
   Table: <%= @table_name %>
 <% end %>
 
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Table: <%= @table_name %></h1>
-    <div>
-      <%= link_to "Run SQL Query", query_database_path(@table_name), class: "btn btn-primary me-2" %>
-      <%= link_to "← Back to Tables", databases_path, class: "btn btn-outline-secondary" %>
-    </div>
+<% content_for :sidebar_active do %>active<% end %>
+
+<% content_for :sidebar do %>
+  <%= render 'dbviewer/shared/sidebar' %>
+<% end %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Table: <%= @table_name %></h1>
+  <div>
+    <%= link_to query_database_path(@table_name), class: "btn btn-primary" do %>
+      <i class="bi bi-code-square me-1"></i> Run SQL Query
+    <% end %>
   </div>
+</div>
   
-  <div class="card mb-4">
-    <div class="card-header">
-      <h5>Structure</h5>
-    </div>
-    <div class="card-body">
-      <%= render 'table_structure' %>
-    </div>
+<div class="dbviewer-card card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Structure</h5>
   </div>
+  <div class="card-body">
+    <%= render 'table_structure' %>
+  </div>
+</div>
   
-  <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <h5>Records</h5>
-      <div class="d-flex align-items-center">
-        <div class="me-3">
-          <label for="per-page-select" class="me-2">Per page:</label>
-          <select id="per-page-select" class="form-select form-select-sm" onchange="window.location.href='<%= database_path(@table_name) %>?per_page=' + this.value + '&page=1&order_by=<%= @order_by %>&order_direction=<%= @order_direction %>'">
-            <% Dbviewer::DatabasesController.per_page_options.each do |option| %>
-              <option value="<%= option %>" <%= 'selected' if @per_page == option %>><%= option %></option>
-            <% end %>
-          </select>
-        </div>
-        <span class="badge bg-secondary">Total: <%= @total_count %> records</span>
+<div class="dbviewer-card card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-table me-2"></i>Records</h5>
+    <div class="d-flex align-items-center">
+      <div class="me-3">
+        <label for="per-page-select" class="me-2">Per page:</label>
+        <select id="per-page-select" class="form-select form-select-sm" onchange="window.location.href='<%= database_path(@table_name) %>?per_page=' + this.value + '&page=1&order_by=<%= @order_by %>&order_direction=<%= @order_direction %>'">
+          <% Dbviewer::DatabasesController.per_page_options.each do |option| %>
+            <option value="<%= option %>" <%= 'selected' if @per_page == option %>><%= option %></option>
+          <% end %>
+        </select>
       </div>
+      <span class="badge bg-secondary">Total: <%= @total_count %> records</span>
     </div>
+  </div>
     <div class="card-body">
       <div class="table-responsive">
         <table class="table table-bordered table-striped">

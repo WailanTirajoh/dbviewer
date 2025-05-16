@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved database and SQL validation logic to dedicated services
 - Refactored controllers for better organization and maintainability
 - Enhanced the UI with tabbed interface for table details
+- Redesigned the interface with a persistent sidebar for table navigation
 - Updated SQL query execution with timing and statistics
 - Improved documentation with configuration options and examples
 

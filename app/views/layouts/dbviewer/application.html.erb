@@ -12,29 +12,220 @@
   <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   
-  <%= stylesheet_link_tag "dbviewer/application", media: "all" %>
+  <% if Rails.application.config.respond_to?(:assets) %>
+    <%= stylesheet_link_tag "dbviewer/application", media: "all" %>
+  <% end %>
+  
+  <!-- Critical CSS for proper layout - fallback if asset pipeline isn't available -->
+  <style>
+    /* Core layout styles */
+    .dbviewer-wrapper { display: flex; flex-direction: column; min-height: 100vh; }
+    .dbviewer-navbar { height: 56px; }
+    .dbviewer-navbar-spacer { height: 56px; } /* Creates space for the fixed navbar */
+    .dbviewer-content { display: flex; flex: 1; min-height: calc(100vh - 56px); padding-top: 0; }
+    
+    /* Sidebar styles */
+    .dbviewer-sidebar {
+      width: 260px;
+      background: #f8f9fa;
+      border-right: 1px solid #dee2e6;
+      height: calc(100vh - 56px);
+      position: fixed;
+      top: 56px; /* Positioned right below the fixed navbar */
+      left: 0;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease;
+      overflow-y: auto;
+    }
+    
+    .dbviewer-sidebar-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #dee2e6;
+      background: #f1f3f5;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .dbviewer-main {
+      flex: 1;
+      margin-left: 260px;
+      padding: 2rem 2.5rem;
+      padding-top: 1.5rem; /* Adjusted for fixed header */
+      min-width: 0;
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 991.98px) {
+      .dbviewer-sidebar { transform: translateX(-100%); }
+      .dbviewer-sidebar.active { transform: translateX(0); box-shadow: 5px 0 15px rgba(0,0,0,0.1); }
+      .dbviewer-main { margin-left: 0; padding: 1rem; }
+      
+      /* Overlay for mobile sidebar */
+      .dbviewer-sidebar-overlay {
+        position: fixed;
+        top: 56px; /* Start below the fixed navbar */
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s, visibility 0.3s;
+      }
+      
+      .dbviewer-sidebar-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+      
+      body.dbviewer-sidebar-open {
+        overflow: hidden;
+      }
+    }
+    
+    @media (max-width: 767.98px) {
+      .dbviewer-sidebar { width: 210px; }
+      .dbviewer-main { padding: 0.75rem; }
+    }
+    
+    /* Table filter input */
+    .dbviewer-table-filter-container { position: relative; padding: 0 1rem; }
+    .dbviewer-table-filter-icon { position: absolute; left: 1.8rem; top: 0.6rem; color: #6c757d; }
+    .dbviewer-table-filter { border-radius: 20px; padding-left: 2.25rem; margin-bottom: 1rem; }
+  </style>
 </head>
 <body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav">
-          <li class="nav-item">
-            <%= link_to "Tables", dbviewer.databases_path, class: "nav-link" %>
-          </li>
-        </ul>
+  <div class="dbviewer-wrapper">
+    <!-- Top Navigation Bar (Fixed) -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary dbviewer-navbar fixed-top">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="<%= dbviewer.databases_path %>">DB Viewer</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <%= link_to "Tables", dbviewer.databases_path, class: "nav-link" %>
+            </li>
+          </ul>
+          <span class="navbar-text ms-auto text-light">
+            <small><i class="bi bi-database"></i> <%= Rails.env %> environment</small>
+          </span>
+        </div>
+      </div>
+    </nav>
+    <!-- Spacer to prevent content from hiding under fixed navbar -->
+    <div class="dbviewer-navbar-spacer"></div>
+    
+    <!-- Main Content with Sidebar -->
+    <div class="dbviewer-content">
+      <!-- Sidebar (always present) -->
+      <div class="dbviewer-sidebar">
+        <div class="dbviewer-sidebar-header">
+          <h5 class="mb-0"><i class="bi bi-table"></i> Database Tables</h5>
+          <button class="btn btn-sm btn-link d-lg-none dbviewer-sidebar-close" type="button">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <%= yield :sidebar %>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="dbviewer-main">
+        <div class="dbviewer-main-content">
+          <div class="d-flex d-lg-none align-items-center mb-3">
+            <button class="btn btn-sm btn-outline-primary dbviewer-sidebar-toggle" type="button">
+              <i class="bi bi-list me-1"></i> Tables
+            </button>
+          </div>
+          
+          <%= yield %>
+        </div>
       </div>
     </div>
-  </nav>
-
-  <div class="container mt-4">
-    <%= yield %>
   </div>
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Check if styles are loaded properly -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const styleCheck = getComputedStyle(document.documentElement).getPropertyValue('--dbviewer-styles-loaded');
+      if (!styleCheck) {
+        console.log('DBViewer: Using fallback inline styles (asset pipeline may not be available)');
+      } else {
+        console.log('DBViewer: External CSS loaded successfully');
+      }
+    });
+  </script>
+  
+  <!-- Sidebar Toggle Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const toggleBtn = document.querySelector('.dbviewer-sidebar-toggle');
+      const closeBtn = document.querySelector('.dbviewer-sidebar-close');
+      const sidebar = document.querySelector('.dbviewer-sidebar');
+      const overlay = document.createElement('div');
+      
+      // Create and configure overlay for mobile
+      overlay.className = 'dbviewer-sidebar-overlay';
+      document.body.appendChild(overlay);
+      
+      function showSidebar() {
+        sidebar.classList.add('active');
+        document.body.classList.add('dbviewer-sidebar-open');
+        setTimeout(() => {
+          overlay.classList.add('active');
+        }, 50);
+      }
+      
+      function hideSidebar() {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+        setTimeout(() => {
+          document.body.classList.remove('dbviewer-sidebar-open');
+        }, 300);
+      }
+      
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+          if (sidebar.classList.contains('active')) {
+            hideSidebar();
+          } else {
+            showSidebar();
+          }
+        });
+      }
+      
+      if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+          hideSidebar();
+        });
+      }
+      
+      overlay.addEventListener('click', function() {
+        hideSidebar();
+      });
+      
+      // Close sidebar on window resize (from mobile to desktop)
+      let resizeTimer;
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+          if (window.innerWidth >= 992 && sidebar.classList.contains('active')) {
+            overlay.classList.remove('active');
+          }
+        }, 250);
+      });
+    });
+  </script>
 </body>
 </html>

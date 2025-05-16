@@ -2,14 +2,34 @@ module Dbviewer
   class Engine < ::Rails::Engine
     isolate_namespace Dbviewer
 
-    # Ensure lib directory is in the autoload path
-    config.autoload_paths << File.expand_path('../../', __FILE__)
-    config.eager_load_paths << File.expand_path('../../', __FILE__)
+    # Helper method to detect if the asset pipeline is available
+    def self.assets_pipeline_available?(app)
+      defined?(Sprockets) &&
+      app.config.respond_to?(:assets) &&
+      app.assets
+    rescue NoMethodError, LoadError
+      false
+    end
 
-    initializer "dbviewer.assets" do |app|
+    # Ensure lib directory is in the autoload path
+    config.autoload_paths << File.expand_path("../../", __FILE__)
+    config.eager_load_paths << File.expand_path("../../", __FILE__)
+
+    initializer "dbviewer.assets.precompile" do |app|
       # Only configure assets if the assets pipeline is available
-      if app.config.respond_to?(:assets)
-        app.config.assets.precompile += %w(dbviewer/application.css dbviewer/dbviewer.css)
+      if self.class.assets_pipeline_available?(app)
+        begin
+          app.config.assets.precompile += %w[dbviewer/application.css]
+
+          # Ensure the assets are available for precompilation
+          app.config.assets.paths << File.expand_path("../../../app/assets/stylesheets", __FILE__)
+
+          Rails.logger.info "[DBViewer] Asset pipeline configured successfully" if Rails.logger
+        rescue => e
+          Rails.logger.warn "[DBViewer] Could not configure asset pipeline: #{e.message}" if Rails.logger
+        end
+      else
+        Rails.logger.info "[DBViewer] Asset pipeline not available, using inline styles" if Rails.logger
       end
     end
 
