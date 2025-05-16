@@ -10,20 +10,28 @@ It's designed for development, debugging, and database analysis, offering a clea
   - View columns with their types, nullability, defaults, and primary key indicators
   - Examine table indexes and their uniqueness constraints
   - Explore foreign key relationships between tables
+- **Entity Relationship Diagram (ERD)**:
+  - Interactive visualization of database schema and table relationships
+  - Zoomable and pannable diagram to explore complex database structures
+  - Full table details including all columns and their data types
+  - Visual representation of foreign key relationships between tables
 - **Data Browsing**:
   - Browse table records with customizable pagination (10, 20, 50, or 100 records per page)
   - Sort data by any column in ascending or descending order
   - Navigate through large datasets with an intuitive pagination interface
+  - Scrollable table with fixed headers for improved navigation
+  - Single-line cell display with ellipsis for wide content (tooltips on hover)
 - **SQL Queries**:
   - Run custom SELECT queries against your database in a secure, read-only environment
   - View table structure reference while writing queries
   - Protection against potentially harmful SQL operations
   - Query execution statistics and timing
-- **UI Features**:
+- **Enhanced UI Features**:
   - Responsive, Bootstrap-based interface that works on desktop and mobile
-  - Modern sidebar layout with quick access to all database tables
+  - Fixed header navigation with quick access to all features
+  - Modern sidebar layout with improved filtering and scrollable table list
   - Clean tabbed interface for exploring different aspects of table structure
-  - Table filtering and search capabilities
+  - Advanced table filtering with keyboard navigation support
   - Proper formatting for various data types (dates, JSON, arrays, etc.)
   - Enhanced data presentation with appropriate styling
 
@@ -63,6 +71,7 @@ Then, visit `/dbviewer` in your browser to access the database viewer.
 - **Table Index** (`/dbviewer`): Shows all tables in your database with their record count and column count
 - **Table Details** (`/dbviewer/databases/:table_name`): Shows table structure and records with pagination
 - **SQL Query** (`/dbviewer/databases/:table_name/query`): Allows running custom SQL queries
+- **ERD View** (`/dbviewer/erd`): Interactive Entity Relationship Diagram of your database
 
 ## Extending DBViewer
 
@@ -173,6 +182,43 @@ By default, DBViewer only runs in development or test environments for security 
 
 ⚠️ **Warning**: This engine is designed for development purposes. It's not recommended to use it in production as it provides direct access to your database contents. If you must use it in production, ensure it's protected behind authentication and use the production access key mechanism with a strong random key.
 
+## UI Enhancements
+
+DBViewer includes several UI enhancements for a smoother user experience:
+
+### Fixed Navigation Header
+
+The top navigation bar remains fixed while scrolling, providing constant access to navigation controls.
+
+### Enhanced Table Filtering
+
+- Real-time filtering of tables in the sidebar
+- Keyboard navigation support for accessibility
+- Clear indication of filtered results count
+
+### Improved Table Display
+
+- Fixed table headers that remain visible when scrolling through records
+- Maximum height for table containers with smooth scrolling
+- Single-line cell display with ellipsis for content that exceeds 400px width
+- Hover tooltips that display the full content of truncated cells
+
+### Entity Relationship Diagram
+
+The ERD visualization provides several interactive features:
+
+- **Zoom Controls**: Easily zoom in/out with buttons or mouse wheel
+- **Panning**: Navigate large diagrams by dragging
+- **Reset View**: Quickly return to the default view
+- **Dynamic Loading**: Tables and their columns are loaded dynamically for better performance
+- **Relationship Lines**: Visual representation of foreign key relationships between tables
+
+### Responsiveness
+
+- Improved sidebar behavior on different screen sizes
+- Better spacing and layout for mobile devices
+- Optimized element sizing for touch interactions
+
 ## Contributing
 
 Bug reports and pull requests are welcome.
@@ -180,12 +226,3 @@ Bug reports and pull requests are welcome.
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
-
-```
-
-## Contributing
-Contribution directions go here.
-
-## License
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
-```
