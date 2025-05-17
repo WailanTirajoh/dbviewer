@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved table detail UI with two-column layout for structure and timeline visualization
 - Refactored controller code for better maintainability
 - Simplified JavaScript code with inline implementation
+- Moved Chart.js to layout template for better performance and code reuse
 - Improved sidebar search with real-time filtering
 - Enhanced table structure display with tabs and better visual hierarchy
 

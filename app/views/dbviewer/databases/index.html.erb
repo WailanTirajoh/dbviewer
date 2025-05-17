@@ -272,65 +272,6 @@
   </div>
 </div>
 
-<!-- All Tables List -->
-<div class="row">
-  <div class="col-12">
-    <div class="dbviewer-card card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <div>
-          <i class="bi bi-table me-2"></i>
-          All Tables
-        </div>
-        <span class="badge bg-primary"><%= @tables.size %> Tables</span>
-      </div>
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-hover">
-            <thead>
-              <tr>
-                <th>Table Name</th>
-                <th class="text-end">Records</th>
-                <th class="text-end">Columns</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% if @tables.any? %>
-                <% @tables.each do |table| %>
-                  <tr>
-                    <td><%= table[:name] %></td>
-                    <td class="text-end"><%= number_with_delimiter(table[:record_count]) %></td>
-                    <td class="text-end"><%= table[:columns_count] %></td>
-                    <td>
-                      <%= link_to database_path(table[:name]), class: "btn btn-sm btn-outline-primary me-1" do %>
-                        <i class="bi bi-table me-1"></i> Browse
-                      <% end %>
-                      <%= link_to query_database_path(table[:name]), class: "btn btn-sm btn-outline-secondary" do %>
-                        <i class="bi bi-code-square me-1"></i> Query
-                      <% end %>
-                    </td>
-                  </tr>
-                <% end %>
-              <% else %>
-                <tr>
-                  <td colspan="4" class="text-center py-4">
-                    <div class="text-muted">
-                      <i class="bi bi-info-circle me-1"></i> No tables found in the database
-                    </div>
-                  </td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Include Chart.js for data visualization -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Largest Tables Chart

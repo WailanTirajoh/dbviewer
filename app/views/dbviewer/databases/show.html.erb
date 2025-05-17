@@ -149,8 +149,6 @@
 </div>
 
 <% if @timestamp_data.present? %>
-<!-- Chart.js for timestamp visualization -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const timeGrouping = '<%= @time_grouping %>';
