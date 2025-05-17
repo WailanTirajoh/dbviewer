@@ -11,20 +11,26 @@ module Dbviewer
       @database_manager ||= ::Dbviewer::DatabaseManager.new
     end
 
-    # Fetch all tables with their record and column counts
-    def fetch_tables_with_stats
+    # Fetch all tables with their stats
+    # By default, don't include record counts for better performance on sidebar
+    def fetch_tables_with_stats(include_record_counts = false)
       database_manager.tables.map do |table_name|
-        {
+        table_stats = {
           name: table_name,
-          record_count: database_manager.record_count(table_name),
           columns_count: database_manager.column_count(table_name)
         }
+
+        # Only fetch record counts if explicitly requested
+        table_stats[:record_count] = database_manager.record_count(table_name) if include_record_counts
+
+        table_stats
       end
     end
 
     # Gather database analytics information
     def fetch_database_analytics
-      tables = fetch_tables_with_stats
+      # For analytics, we do need record counts
+      tables = fetch_tables_with_stats(include_record_counts: true)
 
       # Calculate overall statistics
       analytics = {

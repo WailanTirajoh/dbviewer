@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved Chart.js to layout template for better performance and code reuse
 - Improved sidebar search with real-time filtering
 - Enhanced table structure display with tabs and better visual hierarchy
+- Optimized sidebar performance by removing record counts
 
 ## [0.2.0] - 2025-05-17
 
