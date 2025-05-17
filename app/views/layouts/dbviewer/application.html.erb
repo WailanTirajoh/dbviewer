@@ -48,6 +48,33 @@
       flex-shrink: 0;
     }
     
+    .dbviewer-sidebar-header h5 {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 80%;
+      cursor: default;
+      position: relative;
+    }
+    
+    /* Tooltip for database name */
+    .dbviewer-sidebar-header h5[title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      left: 0;
+      top: 100%;
+      z-index: 1000;
+      background-color: #343a40;
+      color: white;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+      white-space: normal;
+      max-width: 250px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.2);
+      margin-top: 6px;
+    }
+    
     .dbviewer-sidebar-top {
       background: #f8f9fa;
       border-bottom: 1px solid #eaeaea;
@@ -103,6 +130,7 @@
     @media (max-width: 767.98px) {
       .dbviewer-sidebar { width: 210px; }
       .dbviewer-main { padding: 0.75rem; }
+      .dbviewer-sidebar-header h5 { max-width: 70%; font-size: 1rem; }
     }
     
     /* Table filter input */
@@ -162,7 +190,20 @@
       <!-- Sidebar (always present) -->
       <div class="dbviewer-sidebar">
         <div class="dbviewer-sidebar-header">
-          <h5 class="mb-0"><i class="bi bi-table"></i> Database Tables</h5>
+          <% 
+            db_name = get_database_name
+            # Use a shorter truncation for longer names
+            truncated_name = if db_name.length > 20
+                              "#{db_name[0..9]}..."
+                            elsif db_name.length > 15
+                              "#{db_name[0..12]}..."
+                            else
+                              db_name
+                            end
+          %>
+          <h5 class="mb-0" title="<%= db_name %> Tables">
+            <i class="bi bi-table"></i> <%= truncated_name %> Tables
+          </h5>
           <button class="btn btn-sm btn-link d-lg-none dbviewer-sidebar-close" type="button">
             <i class="bi bi-x-lg"></i>
           </button>

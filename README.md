@@ -186,6 +186,10 @@ By default, DBViewer only runs in development or test environments for security 
 
 DBViewer includes several UI enhancements for a smoother user experience:
 
+### Dynamic Database Name Display
+
+The sidebar header automatically displays the current database name, making it easier to identify which database you are working with. For databases with long names, the display is automatically truncated with an ellipsis (...), but hovering over the name reveals the full database name in a tooltip.
+
 ### Fixed Navigation Header
 
 The top navigation bar remains fixed while scrolling, providing constant access to navigation controls.

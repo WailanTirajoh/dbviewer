@@ -5,9 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - 2025-05-18
+## [0.3.1] - 2025-05-17
 
 ### Added
+
+- **Database name display** in the sidebar header for better database identification
+  - Automatically truncates long database names with an ellipsis
+  - Tooltip on hover shows the full database name
+  - Responsive design for all screen sizes
+
+## [0.3.0] - 2025-05-14
 
 - **Database Analytics Dashboard** with visual insights into database structure
 - Statistics showing total records, columns, and database size

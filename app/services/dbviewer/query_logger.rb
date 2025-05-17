@@ -14,39 +14,7 @@ module Dbviewer
       @current_request_id = nil
       @last_query_time = nil
 
-      # Monkey patch ActiveSupport::Notifications to include caller information
-      patch_active_support_notifications
-
       subscribe_to_sql_notifications
-    end
-
-    # Add caller information to SQL notifications
-    def patch_active_support_notifications
-      ActiveSupport::Notifications.module_eval do
-        class << self
-          alias_method :original_instrument, :instrument
-
-          def instrument(name, payload = {}, &block)
-            # Add caller info for SQL queries only
-            if name == "sql.active_record"
-              # Get the first non-framework caller
-              caller_location = caller_locations.find do |loc|
-                path = loc.path
-                !(path.include?("/active_record/") ||
-                  path.include?("/activesupport/") ||
-                  path.include?("/actionpack/"))
-              end
-
-              payload[:caller] = caller_location.try(:path) if caller_location
-            end
-
-            original_instrument(name, payload, &block)
-          end
-        end
-      end
-    rescue => e
-      # Fail gracefully if monkey patching doesn't work
-      puts "Warning: Unable to patch ActiveSupport::Notifications: #{e.message}"
     end
 
     # Clear all stored queries
@@ -261,7 +229,7 @@ module Dbviewer
 
       # Check if query name indicates it's from DBViewer
       if event.payload[:name].is_a?(String) &&
-         (event.payload[:name].include?("Dbviewer") || event.payload[:name].include?("DBViewer"))
+         (event.payload[:name].include?("Dbviewer") || event.payload[:name].include?("DBViewer") || event.payload[:name] == "SQL")
         return true
       end
 

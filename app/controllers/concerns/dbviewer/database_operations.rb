@@ -3,12 +3,37 @@ module Dbviewer
     extend ActiveSupport::Concern
 
     included do
-      helper_method :current_table? if respond_to?(:helper_method)
+      helper_method :current_table?, :get_database_name if respond_to?(:helper_method)
     end
 
     # Initialize the database manager
     def database_manager
       @database_manager ||= ::Dbviewer::DatabaseManager.new
+    end
+
+    # Get the name of the current database
+    def get_database_name
+      adapter = database_manager.connection.adapter_name.downcase
+
+      case adapter
+      when /mysql/
+        query = "SELECT DATABASE() as db_name"
+        result = database_manager.execute_query(query).first
+        result ? result["db_name"] : "Database"
+      when /postgres/
+        query = "SELECT current_database() as db_name"
+        result = database_manager.execute_query(query).first
+        result ? result["db_name"] : "Database"
+      when /sqlite/
+        # For SQLite, extract the database name from the connection_config
+        database_path = ActiveRecord::Base.connection.pool.spec.config[:database] || ""
+        File.basename(database_path, ".*") || "SQLite Database"
+      else
+        "Database" # Default fallback
+      end
+    rescue => e
+      Rails.logger.error("Error retrieving database name: #{e.message}")
+      "Database"
     end
 
     # Fetch all tables with their stats
