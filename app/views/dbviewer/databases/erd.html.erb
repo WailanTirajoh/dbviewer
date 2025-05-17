@@ -20,9 +20,18 @@
             <button id="zoomOut" class="btn btn-sm btn-outline-secondary me-1">
               <i class="bi bi-zoom-out"></i>
             </button>
-            <button id="resetView" class="btn btn-sm btn-outline-secondary">
+            <button id="resetView" class="btn btn-sm btn-outline-secondary me-1">
               <i class="bi bi-arrow-counterclockwise"></i> Reset
             </button>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="downloadButton" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-download"></i> Download
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="downloadButton">
+                <li><a class="dropdown-item" href="#" id="downloadSvg">SVG Format</a></li>
+                <li><a class="dropdown-item" href="#" id="downloadPng">PNG Format</a></li>
+              </ul>
+            </div>
           </div>
         </div>
         <div class="card-body p-0">
@@ -66,6 +75,41 @@
         fontSize: 20
       }
     });
+    
+    // ER Diagram download functionality
+    let diagramReady = false;
+    
+    // Function to show a temporary downloading indicator
+    function showDownloadingIndicator(format) {
+      // Create toast element
+      const toastEl = document.createElement('div');
+      toastEl.className = 'position-fixed bottom-0 end-0 p-3';
+      toastEl.style.zIndex = '5000';
+      toastEl.innerHTML = `
+        <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="toast-header">
+            <strong class="me-auto"><i class="bi bi-download"></i> Downloading ERD</strong>
+            <small>just now</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+          <div class="toast-body">
+            <div class="d-flex align-items-center">
+              <div class="spinner-border spinner-border-sm me-2" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              Preparing ${format} file for download...
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(toastEl);
+      
+      // Automatically remove after a delay
+      setTimeout(() => {
+        toastEl.remove();
+      }, 3000);
+    }
     
     // Generate the ERD diagram
     const tables = <%= raw @tables.to_json %>;
@@ -183,6 +227,8 @@
             // Wait a bit for the DOM to stabilize before initializing pan-zoom
             setTimeout(() => {
               setupZoomControls();
+              // Mark diagram as ready for download
+              diagramReady = true;
               isUpdatingDiagram = false;
             }, 100);
           } catch(err) {
@@ -309,7 +355,151 @@
       if (zoomDisplay) {
         zoomDisplay.textContent = '100%';
       }
+      
+      // Mark diagram as ready for download
+      diagramReady = true;
     }
+    
+    // Function to download the ERD as SVG
+    function downloadAsSVG() {
+      if (!diagramReady) {
+        alert('Please wait for the diagram to finish loading.');
+        return;
+      }
+      
+      // Show loading indicator
+      showDownloadingIndicator('SVG');
+      
+      try {
+        // Get the SVG element
+        const svgElement = document.querySelector('#erd-container svg');
+        if (!svgElement) {
+          alert('SVG diagram not found.');
+          return;
+        }
+        
+        // Create a clone of the SVG to modify for download
+        const clonedSvg = svgElement.cloneNode(true);
+        
+        // Set explicit dimensions to ensure proper rendering
+        clonedSvg.setAttribute('width', svgElement.getBoundingClientRect().width);
+        clonedSvg.setAttribute('height', svgElement.getBoundingClientRect().height);
+        
+        // Convert SVG to a string
+        const serializer = new XMLSerializer();
+        let svgString = serializer.serializeToString(clonedSvg);
+        
+        // Add XML declaration and doctype
+        svgString = '<?xml version="1.0" standalone="no"?>\n' + svgString;
+        
+        // Create a Blob with the SVG data
+        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        
+        // Create a timestamp for filename
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        
+        // Create download link and trigger download
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(blob);
+        downloadLink.download = `database_erd_${timestamp}.svg`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      } catch (error) {
+        console.error('Error downloading SVG:', error);
+        alert('Error downloading SVG. Please check console for details.');
+      }
+    }
+    
+    // Function to download the ERD as PNG
+    function downloadAsPNG() {
+      if (!diagramReady) {
+        alert('Please wait for the diagram to finish loading.');
+        return;
+      }
+      
+      // Show loading indicator
+      showDownloadingIndicator('PNG');
+      
+      try {
+        // Get the SVG element
+        const svgElement = document.querySelector('#erd-container svg');
+        if (!svgElement) {
+          alert('SVG diagram not found.');
+          return;
+        }
+        
+        // Create a clone of the SVG to modify for download
+        const clonedSvg = svgElement.cloneNode(true);
+        
+        // Set explicit dimensions to ensure proper rendering
+        const width = svgElement.getBoundingClientRect().width;
+        const height = svgElement.getBoundingClientRect().height;
+        clonedSvg.setAttribute('width', width);
+        clonedSvg.setAttribute('height', height);
+        
+        // Convert SVG to a string
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(clonedSvg);
+        
+        // Create a Blob with the SVG data
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const svgUrl = URL.createObjectURL(svgBlob);
+        
+        // Create an Image object to draw to canvas
+        const img = new Image();
+        img.onload = function() {
+          // Create canvas with appropriate dimensions
+          const canvas = document.createElement('canvas');
+          canvas.width = width * 2; // Scale up for better quality
+          canvas.height = height * 2;
+          
+          // Get drawing context and scale it
+          const ctx = canvas.getContext('2d');
+          ctx.scale(2, 2); // Scale up for better quality
+          
+          // Draw white background (SVG may have transparency)
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, width, height);
+          
+          // Draw the image onto the canvas
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Create timestamp for filename
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          
+          // Convert canvas to PNG and trigger download
+          canvas.toBlob(function(blob) {
+            const downloadLink = document.createElement('a');
+            downloadLink.href = URL.createObjectURL(blob);
+            downloadLink.download = `database_erd_${timestamp}.png`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+          }, 'image/png');
+          
+          // Clean up
+          URL.revokeObjectURL(svgUrl);
+        };
+        
+        // Set the image source to the SVG URL
+        img.src = svgUrl;
+      } catch (error) {
+        console.error('Error downloading PNG:', error);
+        alert('Error downloading PNG. Please check console for details.');
+      }
+    }
+    
+    // Set up event listeners for download buttons
+    document.getElementById('downloadSvg').addEventListener('click', function(e) {
+      e.preventDefault();
+      downloadAsSVG();
+    });
+    
+    document.getElementById('downloadPng').addEventListener('click', function(e) {
+      e.preventDefault();
+      downloadAsPNG();
+    });
   });
 </script>
 

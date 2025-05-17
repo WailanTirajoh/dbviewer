@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Charts displaying largest tables by record count and column count
 - Empty tables identification and listing
 - **Record creation timeline visualization** with hourly, daily, and weekly views
+- **Export to CSV functionality** for database tables with configurable options
+- **ERD download functionality** to save diagrams as SVG or PNG files
 - Persistent table search functionality with localStorage
 - Improved controller code organization with concerns
 
