@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **SQL Query Logs** page to monitor and debug database queries
   - Request-based grouping to identify related queries
   - Automatic N+1 query detection with optimization suggestions
+  - Top 5 slowest queries dashboard for quick performance analysis
+  - Collapsible performance sections (N+1 and slowest queries) to reduce visual clutter
   - Comprehensive query filtering and analysis tools
   - Filter-aware statistics that update based on applied filters
 - Persistent table search functionality with localStorage

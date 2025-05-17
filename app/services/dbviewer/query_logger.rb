@@ -57,7 +57,8 @@ module Dbviewer
         avg_duration_ms: queries.any? ? (queries.sum { |q| q[:duration_ms] } / queries.size.to_f).round(2) : 0,
         max_duration_ms: queries.map { |q| q[:duration_ms] }.max || 0,
         tables_queried: extract_queried_tables(queries),
-        potential_n_plus_1: detect_potential_n_plus_1(queries)
+        potential_n_plus_1: detect_potential_n_plus_1(queries),
+        slowest_queries: get_slowest_queries(queries)
       }
 
       # Calculate request groups statistics
@@ -192,6 +193,22 @@ module Dbviewer
       end
 
       tables.sort_by { |_table, count| -count }.first(10).to_h
+    end
+
+    # Get the slowest queries from the dataset
+    def get_slowest_queries(queries, limit: 5)
+      # Return top N slowest queries with relevant info
+      queries.sort_by { |q| -q[:duration_ms] }
+        .first(limit)
+        .map do |q|
+          {
+            sql: q[:sql],
+            duration_ms: q[:duration_ms],
+            timestamp: q[:timestamp],
+            request_id: q[:request_id],
+            name: q[:name]
+          }
+        end
     end
 
     # Extract table names from an SQL query string

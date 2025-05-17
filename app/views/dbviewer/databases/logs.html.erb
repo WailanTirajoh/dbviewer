@@ -110,7 +110,8 @@
   <!-- N+1 Query Warnings -->
   <% if @stats[:potential_n_plus_1].present? %>
     <div class="card mb-4 <%= 'border-info' if @filtered_stats %>">
-      <div class="card-header <%= @filtered_stats ? 'bg-info-subtle' : 'bg-warning-subtle' %>">
+      <div class="card-header <%= @filtered_stats ? 'bg-info-subtle' : 'bg-warning-subtle' %> cursor-pointer" 
+           data-bs-toggle="collapse" data-bs-target="#n1QueriesCollapse" aria-expanded="false" aria-controls="n1QueriesCollapse">
         <div class="d-flex justify-content-between align-items-center">
           <h5 class="card-title mb-0 <%= @filtered_stats ? 'text-info' : 'text-warning' %>">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -119,15 +120,19 @@
               <span class="badge bg-info text-dark ms-2">Filtered</span>
             <% end %>
           </h5>
-          <span class="badge <%= @filtered_stats ? 'bg-info' : 'bg-warning' %>">
-            <%= @stats[:potential_n_plus_1].size %> patterns detected
-          </span>
+          <div>
+            <span class="badge <%= @filtered_stats ? 'bg-info' : 'bg-warning' %> me-2">
+              <%= @stats[:potential_n_plus_1].size %> patterns detected
+            </span>
+            <i class="bi bi-chevron-down n1-collapse-icon"></i>
+          </div>
         </div>
       </div>
-      <div class="card-body">
-        <p class="text-muted mb-3">
-          These query patterns might indicate N+1 query problems. Consider using eager loading, joins, or batch loading to optimize them.
-        </p>
+      <div class="collapse" id="n1QueriesCollapse">
+        <div class="card-body">
+          <p class="text-muted mb-3">
+            These query patterns might indicate N+1 query problems. Consider using eager loading, joins, or batch loading to optimize them.
+          </p>
         
         <div class="list-group">
           <% @stats[:potential_n_plus_1].each do |issue| %>
@@ -158,6 +163,67 @@
             </div>
           <% end %>
         </div>
+      </div>
+      </div>
+    </div>
+  <% end %>
+  
+  <!-- Top 5 Slowest Queries -->
+  <% if @stats[:slowest_queries].present? %>
+    <div class="card mb-4 <%= 'border-info' if @filtered_stats %>">
+      <div class="card-header <%= @filtered_stats ? 'bg-info-subtle' : 'bg-danger-subtle' %> cursor-pointer"
+           data-bs-toggle="collapse" data-bs-target="#slowestQueriesCollapse" aria-expanded="false" aria-controls="slowestQueriesCollapse">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0 <%= @filtered_stats ? 'text-info' : 'text-danger' %>">
+            <i class="bi bi-hourglass-split me-2"></i>
+            Top 5 Slowest Queries
+            <% if @filtered_stats %>
+              <span class="badge bg-info text-dark ms-2">Filtered</span>
+            <% end %>
+          </h5>
+          <div>
+            <span class="badge bg-danger me-2">
+              <%= @stats[:slowest_queries].size %> queries
+            </span>
+            <i class="bi bi-chevron-down slowest-collapse-icon"></i>
+          </div>
+        </div>
+      </div>
+      <div class="collapse" id="slowestQueriesCollapse">
+        <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          <% @stats[:slowest_queries].each_with_index do |query, index| %>
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge bg-danger me-2 fs-6">#<%= index + 1 %></span>
+                <h6 class="mb-0 flex-grow-1">
+                  <%= query[:name] %>
+                </h6>
+                <div>
+                  <span class="badge bg-danger" title="Query duration">
+                    <%= number_with_precision(query[:duration_ms], precision: 2) %> ms
+                  </span>
+                </div>
+              </div>
+              
+              <div class="d-flex justify-content-between small text-muted mb-2">
+                <span>
+                  <i class="bi bi-clock me-1"></i>
+                  <%= query[:timestamp].strftime("%H:%M:%S.%L") %>
+                </span>
+                <a href="<%= logs_databases_path(request_id: query[:request_id]) %>" class="text-muted">
+                  <i class="bi bi-link-45deg"></i>
+                  Request: <%= query[:request_id] %>
+                </a>
+              </div>
+              
+              <div class="p-2 bg-light rounded small">
+                <pre class="mb-0 sql-query"><code><%= query[:sql] %></code></pre>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
       </div>
     </div>
   <% end %>
@@ -402,4 +468,43 @@
   details summary {
     cursor: pointer;
   }
+  
+  .cursor-pointer {
+    cursor: pointer;
+  }
+  
+  /* Rotate icon when expanded */
+  .collapsed-section[aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
+    transition: transform 0.3s ease;
+  }
+  
+  .collapsed-section[aria-expanded="false"] .bi-chevron-down {
+    transform: rotate(0deg);
+    transition: transform 0.3s ease;
+  }
 </style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Add Bootstrap collapse event handlers to animate icons
+    const n1CollapseTrigger = document.querySelector('[data-bs-target="#n1QueriesCollapse"]');
+    const slowestCollapseTrigger = document.querySelector('[data-bs-target="#slowestQueriesCollapse"]');
+    
+    if (n1CollapseTrigger) {
+      n1CollapseTrigger.classList.add('collapsed-section');
+      n1CollapseTrigger.addEventListener('click', function() {
+        const isExpanded = this.getAttribute('aria-expanded') === 'true';
+        this.setAttribute('aria-expanded', !isExpanded);
+      });
+    }
+    
+    if (slowestCollapseTrigger) {
+      slowestCollapseTrigger.classList.add('collapsed-section');
+      slowestCollapseTrigger.addEventListener('click', function() {
+        const isExpanded = this.getAttribute('aria-expanded') === 'true';
+        this.setAttribute('aria-expanded', !isExpanded);
+      });
+    }
+  });
+</script>
