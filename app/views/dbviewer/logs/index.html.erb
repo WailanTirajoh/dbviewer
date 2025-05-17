@@ -11,11 +11,11 @@
     </h1>
     <div>
       <% if @filtered_stats %>
-        <%= link_to logs_databases_path, class: "btn btn-outline-secondary me-2" do %>
+        <%= link_to logs_path, class: "btn btn-outline-secondary me-2" do %>
           <i class="bi bi-x-lg me-1"></i> Clear Filters
         <% end %>
       <% end %>
-      <%= link_to logs_databases_path(clear_logs: true), 
+      <%= link_to logs_path(clear_logs: true), 
                   class: "btn btn-outline-danger",
                   data: { confirm: "Are you sure you want to clear all query logs?" } do %>
         <i class="bi bi-trash3"></i> Clear Logs
@@ -151,7 +151,7 @@
                 </div>
               </div>
               
-              <a href="<%= logs_databases_path(request_id: issue[:request_id]) %>" 
+              <a href="<%= logs_path(request_id: issue[:request_id]) %>" 
                  class="small d-block mb-1 text-muted">
                 <i class="bi bi-link-45deg"></i>
                 Request: <%= issue[:request_id] %>
@@ -211,7 +211,7 @@
                   <i class="bi bi-clock me-1"></i>
                   <%= query[:timestamp].strftime("%H:%M:%S.%L") %>
                 </span>
-                <a href="<%= logs_databases_path(request_id: query[:request_id]) %>" class="text-muted">
+                <a href="<%= logs_path(request_id: query[:request_id]) %>" class="text-muted">
                   <i class="bi bi-link-45deg"></i>
                   Request: <%= query[:request_id] %>
                 </a>
@@ -255,7 +255,7 @@
       <h5 class="card-title mb-0">Filter Queries</h5>
     </div>
     <div class="card-body">
-      <%= form_with url: logs_databases_path, method: :get, class: "row g-3" do |f| %>
+      <%= form_with url: logs_path, method: :get, class: "row g-3" do |f| %>
         <div class="col-md-3">
           <label for="table_filter" class="form-label">Table Name</label>
           <input type="text" class="form-control" id="table_filter" name="table_filter" 
@@ -282,7 +282,7 @@
               <i class="bi bi-funnel"></i> Apply
             </button>
             <% if @filtered_stats %>
-              <a href="<%= logs_databases_path %>" class="btn btn-outline-secondary">
+              <a href="<%= logs_path %>" class="btn btn-outline-secondary">
                 <i class="bi bi-x-lg"></i>
               </a>
             <% end %>
