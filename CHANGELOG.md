@@ -13,15 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Statistics showing total records, columns, and database size
 - Charts displaying largest tables by record count and column count
 - Empty tables identification and listing
+- **Record creation timeline visualization** with hourly, daily, and weekly views
 - Persistent table search functionality with localStorage
 - Improved controller code organization with concerns
 
 ### Changed
 
 - Redesigned homepage with analytics focus instead of just table listings
+- Improved table detail UI with two-column layout for structure and timeline visualization
 - Refactored controller code for better maintainability
 - Simplified JavaScript code with inline implementation
 - Improved sidebar search with real-time filtering
+- Enhanced table structure display with tabs and better visual hierarchy
 
 ## [0.2.0] - 2025-05-17
 

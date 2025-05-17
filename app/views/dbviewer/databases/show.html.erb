@@ -16,7 +16,8 @@
     <% end %>
   </div>
 </div>
-  
+
+<!-- Records Section -->
 <div class="dbviewer-card card mb-4">
   <div class="card-header d-flex justify-content-between align-items-center">
     <h5 class="mb-0"><i class="bi bi-table me-2"></i>Records</h5>
@@ -90,12 +91,141 @@
   </div>
 </div>
 
-<div class="dbviewer-card card">
-  <div class="card-header">
-    <h5 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Structure</h5>
+<!-- Two-column layout for Timeline and Structure -->
+<div class="row two-column-layout">
+  <!-- Timeline Column -->
+  <div class="col-md-6 mb-4">
+    <% if @timestamp_data.present? %>
+      <div class="dbviewer-card card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Record Creation Timeline</h5>
+          <div>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Time grouping">
+              <%= link_to "Hourly", database_path(@table_name, time_group: "hourly", page: @current_page, order_by: @order_by, order_direction: @order_direction, per_page: @per_page), class: "btn btn-outline-primary #{@time_grouping == 'hourly' ? 'active' : ''}" %>
+              <%= link_to "Daily", database_path(@table_name, time_group: "daily", page: @current_page, order_by: @order_by, order_direction: @order_direction, per_page: @per_page), class: "btn btn-outline-primary #{@time_grouping == 'daily' ? 'active' : ''}" %>
+              <%= link_to "Weekly", database_path(@table_name, time_group: "weekly", page: @current_page, order_by: @order_by, order_direction: @order_direction, per_page: @per_page), class: "btn btn-outline-primary #{@time_grouping == 'weekly' ? 'active' : ''}" %>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="timestampChart"></canvas>
+          </div>
+          <div class="mt-3 text-center">
+            <small class="text-muted">
+              <i class="bi bi-info-circle"></i> 
+              Timeline shows <%= @time_grouping %> record creation patterns based on <code>created_at</code> column.
+            </small>
+          </div>
+        </div>
+      </div>
+    <% else %>
+      <div class="dbviewer-card card h-100">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Creation Timeline</h5>
+        </div>
+        <div class="card-body d-flex justify-content-center align-items-center text-center text-muted">
+          <div>
+            <i class="bi bi-calendar-x display-4 mb-3"></i>
+            <p>No creation timestamp data available for this table.</p>
+            <small>Timeline visualization is only available for tables with a <code>created_at</code> column.</small>
+          </div>
+        </div>
+      </div>
+    <% end %>
   </div>
-  <div class="card-body">
-    <%= render 'table_structure' %>
+  
+  <!-- Structure Column -->
+  <div class="col-md-6 mb-4">
+    <div class="dbviewer-card card h-100">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Table Structure</h5>
+      </div>
+      <div class="card-body structure-container">
+        <%= render 'table_structure' %>
+      </div>
+    </div>
   </div>
 </div>
-  
+
+<% if @timestamp_data.present? %>
+<!-- Chart.js for timestamp visualization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const timeGrouping = '<%= @time_grouping %>';
+    const chartData = <%= raw @timestamp_data.to_json %>;
+    
+    // Reverse the data so it's chronological
+    const labels = chartData.map(item => item.label).reverse();
+    const values = chartData.map(item => item.value).reverse();
+    
+    // Chart colors based on time grouping
+    let chartColor;
+    let chartTitle;
+    
+    switch(timeGrouping) {
+      case 'hourly':
+        chartColor = 'rgba(75, 192, 192, 0.7)';
+        chartTitle = 'Hourly Record Creation';
+        break;
+      case 'weekly':
+        chartColor = 'rgba(153, 102, 255, 0.7)';
+        chartTitle = 'Weekly Record Creation';
+        break;
+      default:
+        chartColor = 'rgba(54, 162, 235, 0.7)';
+        chartTitle = 'Daily Record Creation';
+    }
+    
+    const ctx = document.getElementById('timestampChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Records Created',
+          data: values,
+          backgroundColor: chartColor,
+          borderColor: chartColor.replace('0.7', '1.0'),
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          title: {
+            display: true,
+            text: chartTitle,
+            font: {
+              size: 16
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Number of Records'
+            },
+            ticks: {
+              precision: 0
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: timeGrouping.charAt(0).toUpperCase() + timeGrouping.slice(1)
+            }
+          }
+        }
+      }
+    });
+  });
+</script>
+<% end %>

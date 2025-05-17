@@ -107,6 +107,21 @@
     .dbviewer-table-filter-container { position: relative; padding: 0.5rem 1rem; margin-bottom: 0.25rem; }
     .dbviewer-table-filter-icon { position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: #6c757d; font-size: 0.85rem; padding: 0.25rem; width: 1.5rem; text-align: center; }
     .dbviewer-table-filter { border-radius: 20px; padding-left: 2.5rem; margin-bottom: 1rem; }
+    
+    /* Table structure and visualization components */
+    .dbviewer-card { box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); border: 1px solid #eaeaea; }
+    .dbviewer-scrollable { max-height: 500px; overflow-y: auto; }
+    .dbviewer-table-header { position: sticky; top: 0; background: #f8f9fa; z-index: 1; }
+    
+    /* Equal height for timeline and structure cards */
+    .two-column-layout .card { height: 100%; display: flex; flex-direction: column; }
+    .two-column-layout .card-body { flex: 1; display: flex; flex-direction: column; }
+    .two-column-layout .chart-container { flex: 1; min-height: 250px; }
+    .two-column-layout .structure-container { padding: 0; }
+    .two-column-layout .tab-content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+    .two-column-layout .tab-pane { flex: 1; overflow: hidden; }
+    .two-column-layout .table-responsive { overflow-x: auto; }
+    .two-column-layout .sticky-top { top: 0; z-index: 999; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
   </style>
 </head>
 <body>

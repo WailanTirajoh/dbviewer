@@ -195,5 +195,87 @@ module Dbviewer
     def current_table?(table_name)
       params[:id] == table_name
     end
+
+    # Check if a table has a created_at column for timestamp visualization
+    def has_timestamp_column?(table_name)
+      columns = fetch_table_columns(table_name)
+      columns.any? { |col| col[:name] == "created_at" && [ :datetime, :timestamp ].include?(col[:type]) }
+    end
+
+    # Fetch timestamp data for visualization (hourly, daily, weekly)
+    def fetch_timestamp_data(table_name, grouping = "daily")
+      return nil unless has_timestamp_column?(table_name)
+
+      quoted_table = safe_quote_table_name(table_name)
+      adapter = database_manager.connection.adapter_name.downcase
+
+      sql_query = case grouping
+      when "hourly"
+        case adapter
+        when /mysql/
+          "SELECT DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00') as time_group, COUNT(*) as count FROM #{quoted_table} GROUP BY time_group ORDER BY time_group DESC LIMIT 48"
+        when /postgres/
+          "SELECT date_trunc('hour', created_at) as time_group, COUNT(*) as count FROM #{quoted_table} GROUP BY time_group ORDER BY time_group DESC LIMIT 48"
+        else # SQLite and others
+          "SELECT strftime('%Y-%m-%d %H:00:00', created_at) as time_group, COUNT(*) as count FROM #{quoted_table} GROUP BY time_group ORDER BY time_group DESC LIMIT 48"
+        end
+      when "daily"
+        case adapter
+        when /mysql/
+          "SELECT DATE_FORMAT(created_at, '%Y-%m-%d') as time_group, COUNT(*) as count FROM #{quoted_table} GROUP BY time_group ORDER BY time_group DESC LIMIT 30"
+        when /postgres/
+          "SELECT date_trunc('day', created_at) as time_group, COUNT(*) as count FROM #{quoted_table} GROUP BY time_group ORDER BY time_group DESC LIMIT 30"
+        else # SQLite and others
+          "SELECT strftime('%Y-%m-%d', created_at) as time_group, COUNT(*) as count FROM #{quoted_table} GROUP BY time_group ORDER BY time_group DESC LIMIT 30"
+        end
+      when "weekly"
+        case adapter
+        when /mysql/
+          "SELECT DATE_FORMAT(created_at, '%Y-%u') as time_group, YEARWEEK(created_at) as sort_key, COUNT(*) as count FROM #{quoted_table} GROUP BY time_group ORDER BY sort_key DESC LIMIT 26"
+        when /postgres/
+          "SELECT date_trunc('week', created_at) as time_group, COUNT(*) as count FROM #{quoted_table} GROUP BY time_group ORDER BY time_group DESC LIMIT 26"
+        else # SQLite and others
+          "SELECT strftime('%Y-%W', created_at) as time_group, COUNT(*) as count FROM #{quoted_table} GROUP BY time_group ORDER BY time_group DESC LIMIT 26"
+        end
+      else
+        return nil
+      end
+
+      begin
+        result = database_manager.execute_query(sql_query)
+
+        # Format the data for the chart
+        result.map do |row|
+          time_str = row["time_group"].to_s
+          count = row["count"].to_i
+
+          # Format the label based on grouping type
+          label = case grouping
+          when "hourly"
+            # For hourly, show "May 10, 2PM"
+            time = time_str.is_a?(Time) ? time_str : Time.parse(time_str)
+            time.strftime("%b %d, %l%p")
+          when "daily"
+            # For daily, show "May 10"
+            time = time_str.is_a?(Time) ? time_str : (time_str.include?("-") ? Time.parse(time_str) : Time.now)
+            time.strftime("%b %d")
+          when "weekly"
+            # For weekly, show "Week 19" or the week's start date
+            if time_str.include?("-")
+              week_num = time_str.split("-").last.to_i
+              "Week #{week_num}"
+            else
+              time = time_str.is_a?(Time) ? time_str : Time.parse(time_str)
+              "Week #{time.strftime('%W')}"
+            end
+          end
+
+          { label: label, value: count, raw_date: time_str }
+        end
+      rescue => e
+        Rails.logger.error("[DBViewer] Error fetching timestamp data: #{e.message}")
+        nil
+      end
+    end
   end
 end

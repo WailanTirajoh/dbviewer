@@ -73,6 +73,12 @@ module Dbviewer
       @total_pages = calculate_total_pages(@total_count, @per_page)
       @records = fetch_table_records(@table_name)
 
+      # Fetch timestamp visualization data if the table has a created_at column
+      if has_timestamp_column?(@table_name)
+        @time_grouping = params[:time_group] || "daily"
+        @timestamp_data = fetch_timestamp_data(@table_name, @time_grouping)
+      end
+
       respond_to do |format|
         format.html # Default HTML response
         format.json do

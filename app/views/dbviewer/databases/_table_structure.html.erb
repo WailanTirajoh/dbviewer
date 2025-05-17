@@ -1,20 +1,26 @@
-<ul class="nav nav-tabs" id="structureTabs" role="tablist">
+<ul class="nav nav-tabs nav-fill mb-3" id="structureTabs" role="tablist">
   <li class="nav-item" role="presentation">
-    <button class="nav-link active" id="columns-tab" data-bs-toggle="tab" data-bs-target="#columns" type="button" role="tab" aria-controls="columns" aria-selected="true">Columns</button>
+    <button class="nav-link active" id="columns-tab" data-bs-toggle="tab" data-bs-target="#columns" type="button" role="tab" aria-controls="columns" aria-selected="true">
+      <i class="bi bi-grid me-1"></i> Columns
+    </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="indexes-tab" data-bs-toggle="tab" data-bs-target="#indexes" type="button" role="tab" aria-controls="indexes" aria-selected="false">Indexes</button>
+    <button class="nav-link" id="indexes-tab" data-bs-toggle="tab" data-bs-target="#indexes" type="button" role="tab" aria-controls="indexes" aria-selected="false">
+      <i class="bi bi-search me-1"></i> Indexes
+    </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="foreign-keys-tab" data-bs-toggle="tab" data-bs-target="#foreign-keys" type="button" role="tab" aria-controls="foreign-keys" aria-selected="false">Foreign Keys</button>
+    <button class="nav-link" id="foreign-keys-tab" data-bs-toggle="tab" data-bs-target="#foreign-keys" type="button" role="tab" aria-controls="foreign-keys" aria-selected="false">
+      <i class="bi bi-link me-1"></i> Foreign Keys
+    </button>
   </li>
 </ul>
 
-<div class="tab-content pt-3" id="structureTabContent">
+<div class="tab-content" id="structureTabContent">
   <div class="tab-pane fade show active" id="columns" role="tabpanel" aria-labelledby="columns-tab">
-    <div class="table-responsive">
-      <table class="table table-bordered table-striped">
-        <thead>
+    <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+      <table class="table table-sm table-striped">
+        <thead class="sticky-top bg-light">
           <tr>
             <th>Column</th>
             <th>Type</th>
@@ -26,11 +32,11 @@
         <tbody>
           <% @columns.each do |column| %>
           <tr>
-            <td><%= column[:name] %></td>
-            <td><%= column[:type] %></td>
-            <td><%= column[:null] ? 'Yes' : 'No' %></td>
-            <td><%= column[:default].nil? ? 'NULL' : column[:default] %></td>
-            <td><%= column[:primary] ? 'Yes' : 'No' %></td>
+            <td class="fw-medium"><%= column[:name] %></td>
+            <td><span class="badge bg-secondary"><%= column[:type] %></span></td>
+            <td><%= column[:null] ? '<span class="text-success">Yes</span>'.html_safe : '<span class="text-danger">No</span>'.html_safe %></td>
+            <td><code><%= column[:default].nil? ? 'NULL' : column[:default] %></code></td>
+            <td><%= column[:primary] ? '<i class="bi bi-key text-warning"></i> Yes'.html_safe : 'No' %></td>
           </tr>
           <% end %>
         </tbody>

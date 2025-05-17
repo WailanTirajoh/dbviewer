@@ -118,8 +118,8 @@ module Dbviewer
     # @param direction [String] Sort direction ('ASC' or 'DESC')
     # @param per_page [Integer] Number of records per page
     # @return [ActiveRecord::Result] Result set with columns and rows
-    def table_records(table_name, page = 1, order_by = nil, direction = 'ASC', per_page = nil)
-      page = [1, page.to_i].max
+    def table_records(table_name, page = 1, order_by = nil, direction = "ASC", per_page = nil)
+      page = [ 1, page.to_i ].max
 
       # Use class method if defined, otherwise fall back to constant
       default_per_page = self.class.respond_to?(:default_per_page) ? self.class.default_per_page : DEFAULT_PER_PAGE
@@ -129,14 +129,14 @@ module Dbviewer
       per_page = default_per_page if per_page <= 0
 
       # Ensure we don't fetch too many records for performance/memory reasons
-      per_page = [per_page, max_records].min
+      per_page = [ per_page, max_records ].min
 
       model = get_model_for(table_name)
       query = model.all
 
       # Apply sorting if provided
       if order_by.present? && column_exists?(table_name, order_by)
-        direction = %w[ASC DESC].include?(direction.to_s.upcase) ? direction.to_s.upcase : 'ASC'
+        direction = %w[ASC DESC].include?(direction.to_s.upcase) ? direction.to_s.upcase : "ASC"
         query = query.order("#{connection.quote_column_name(order_by)} #{direction}")
       end
 
@@ -245,7 +245,7 @@ module Dbviewer
 
         # Get max records from configuration if available
         max_records = self.class.respond_to?(:max_records) ? self.class.max_records : MAX_RECORDS
-        query = query.limit([limit || max_records, max_records].min) # Apply safety limit
+        query = query.limit([ limit || max_records, max_records ].min) # Apply safety limit
         query = query.offset(offset) if offset.present?
 
         to_result_set(query, table_name)
@@ -368,7 +368,7 @@ module Dbviewer
             self.primary_key = primary_key if primary_key.present?
           rescue => e
             # If we can't determine the primary key, default to id or set to nil
-            self.primary_key = 'id'
+            self.primary_key = "id"
           end
 
           # Disable STI
