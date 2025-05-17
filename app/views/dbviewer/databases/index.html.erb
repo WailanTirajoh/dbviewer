@@ -1,12 +1,19 @@
 <% content_for :title do %>
-  Database Tables
+  Database Analytics
 <% end %>
 
 <% content_for :sidebar do %>
   <%= render 'dbviewer/shared/sidebar' %>
 <% end %>
 
-<h1 class="mb-4">Database Viewer</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Database Analytics</h1>
+  <div>
+    <%= link_to erd_path, class: "btn btn-outline-primary" do %>
+      <i class="bi bi-diagram-3 me-1"></i> View ERD
+    <% end %>
+  </div>
+</div>
 
 <% if flash[:error] %>
   <div class="alert alert-danger" role="alert">
@@ -14,23 +21,276 @@
   </div>
 <% end %>
 
+<!-- Overview Cards -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="dbviewer-card card h-100">
+      <div class="card-body text-center">
+        <h1 class="display-4 fw-bold text-primary"><%= @analytics[:total_tables] %></h1>
+        <p class="text-muted">Tables</p>
+        <div class="mt-2">
+          <i class="bi bi-table fs-3 text-primary"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="dbviewer-card card h-100">
+      <div class="card-body text-center">
+        <h1 class="display-4 fw-bold text-success"><%= number_with_delimiter(@analytics[:total_records]) %></h1>
+        <p class="text-muted">Total Records</p>
+        <div class="mt-2">
+          <i class="bi bi-list-ul fs-3 text-success"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="dbviewer-card card h-100">
+      <div class="card-body text-center">
+        <h1 class="display-4 fw-bold text-info"><%= @analytics[:total_columns] %></h1>
+        <p class="text-muted">Total Columns</p>
+        <div class="mt-2">
+          <i class="bi bi-columns-gap fs-3 text-info"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="dbviewer-card card h-100">
+      <div class="card-body text-center">
+        <% if @analytics[:schema_size] %>
+          <h1 class="display-4 fw-bold text-warning"><%= number_to_human_size(@analytics[:schema_size]) %></h1>
+        <% else %>
+          <h1 class="display-4 fw-bold text-warning">--</h1>
+        <% end %>
+        <p class="text-muted">Database Size</p>
+        <div class="mt-2">
+          <i class="bi bi-hdd-stack fs-3 text-warning"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <!-- Top 5 Tables by Record Count -->
+  <div class="col-md-6 mb-4">
+    <div class="dbviewer-card card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+          <i class="bi bi-bar-chart-line me-2 text-primary"></i>
+          Largest Tables
+        </div>
+        <span class="badge bg-primary">Records</span>
+      </div>
+      <div class="card-body">
+        <% if @analytics[:largest_tables].any? %>
+          <div class="chart-container" style="position: relative; height:280px;">
+            <canvas id="largestTablesChart"></canvas>
+          </div>
+          <div class="mt-3">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover">
+                <thead>
+                  <tr>
+                    <th>Table</th>
+                    <th class="text-end">Records</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @analytics[:largest_tables].each do |table| %>
+                    <tr>
+                      <td><%= table[:name] %></td>
+                      <td class="text-end"><%= number_with_delimiter(table[:record_count]) %></td>
+                      <td class="text-end">
+                        <%= link_to database_path(table[:name]), class: "btn btn-sm btn-outline-primary" do %>
+                          <i class="bi bi-table"></i>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        <% else %>
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-bar-chart-line display-4 mb-3"></i>
+            <p>No table data available</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top 5 Tables by Column Count -->
+  <div class="col-md-6 mb-4">
+    <div class="dbviewer-card card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+          <i class="bi bi-columns-gap me-2 text-info"></i>
+          Tables with Most Columns
+        </div>
+        <span class="badge bg-info">Columns</span>
+      </div>
+      <div class="card-body">
+        <% if @analytics[:widest_tables].any? %>
+          <div class="chart-container" style="position: relative; height:280px;">
+            <canvas id="widestTablesChart"></canvas>
+          </div>
+          <div class="mt-3">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover">
+                <thead>
+                  <tr>
+                    <th>Table</th>
+                    <th class="text-end">Columns</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @analytics[:widest_tables].each do |table| %>
+                    <tr>
+                      <td><%= table[:name] %></td>
+                      <td class="text-end"><%= table[:columns_count] %></td>
+                      <td class="text-end">
+                        <%= link_to database_path(table[:name]), class: "btn btn-sm btn-outline-primary" do %>
+                          <i class="bi bi-table"></i>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        <% else %>
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-columns-gap display-4 mb-3"></i>
+            <p>No table data available</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <!-- Statistics -->
+  <div class="col-md-6 mb-4">
+    <div class="dbviewer-card card h-100">
+      <div class="card-header">
+        <i class="bi bi-clipboard-data me-2 text-success"></i>
+        Database Statistics
+      </div>
+      <div class="card-body">
+        <div class="row align-items-center mb-3">
+          <div class="col-8">
+            <h6>Average Records Per Table</h6>
+            <div class="progress" style="height: 10px;">
+              <div class="progress-bar bg-primary" role="progressbar" style="width: <%= [@analytics[:avg_records_per_table] * 100 / (@analytics[:largest_tables].first&.dig(:record_count) || 1), 100].min %>%"></div>
+            </div>
+          </div>
+          <div class="col-4 text-end">
+            <span class="fs-5 fw-bold"><%= @analytics[:avg_records_per_table] %></span>
+          </div>
+        </div>
+        
+        <div class="row align-items-center mb-3">
+          <div class="col-8">
+            <h6>Average Columns Per Table</h6>
+            <div class="progress" style="height: 10px;">
+              <div class="progress-bar bg-info" role="progressbar" style="width: <%= [@analytics[:avg_columns_per_table] * 100 / (@analytics[:widest_tables].first&.dig(:columns_count) || 1), 100].min %>%"></div>
+            </div>
+          </div>
+          <div class="col-4 text-end">
+            <span class="fs-5 fw-bold"><%= @analytics[:avg_columns_per_table] %></span>
+          </div>
+        </div>
+        
+        <div class="row align-items-center">
+          <div class="col-8">
+            <h6>Empty Tables</h6>
+            <div class="progress" style="height: 10px;">
+              <div class="progress-bar bg-warning" role="progressbar" style="width: <%= @analytics[:empty_tables].size * 100 / (@analytics[:total_tables] || 1) %>%"></div>
+            </div>
+          </div>
+          <div class="col-4 text-end">
+            <span class="fs-5 fw-bold"><%= @analytics[:empty_tables].size %></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Empty Tables -->
+  <div class="col-md-6 mb-4">
+    <div class="dbviewer-card card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+          <i class="bi bi-file-earmark-x me-2 text-warning"></i>
+          Empty Tables
+        </div>
+        <span class="badge bg-warning text-dark"><%= @analytics[:empty_tables].size %> Tables</span>
+      </div>
+      <div class="card-body">
+        <% if @analytics[:empty_tables].any? %>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover">
+              <thead>
+                <tr>
+                  <th>Table Name</th>
+                  <th>Columns</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @analytics[:empty_tables].each do |table| %>
+                  <tr>
+                    <td><%= table[:name] %></td>
+                    <td><%= table[:columns_count] %></td>
+                    <td class="text-end">
+                      <%= link_to database_path(table[:name]), class: "btn btn-sm btn-outline-primary" do %>
+                        <i class="bi bi-table"></i>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-check-circle display-4 mb-3"></i>
+            <p>No empty tables found</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- All Tables List -->
 <div class="row">
   <div class="col-12">
     <div class="dbviewer-card card">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Available Tables</h5>
+        <div>
+          <i class="bi bi-table me-2"></i>
+          All Tables
+        </div>
         <span class="badge bg-primary"><%= @tables.size %> Tables</span>
       </div>
       <div class="card-body">
-        <p class="text-muted">Select a table from the sidebar to view its contents or use the table below.</p>
-        
         <div class="table-responsive">
           <table class="table table-hover">
             <thead>
               <tr>
                 <th>Table Name</th>
-                <th>Records</th>
-                <th>Columns</th>
+                <th class="text-end">Records</th>
+                <th class="text-end">Columns</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -39,8 +299,8 @@
                 <% @tables.each do |table| %>
                   <tr>
                     <td><%= table[:name] %></td>
-                    <td><span class="badge bg-secondary"><%= table[:record_count] %></span></td>
-                    <td><span class="badge bg-info"><%= table[:columns_count] %></span></td>
+                    <td class="text-end"><%= number_with_delimiter(table[:record_count]) %></td>
+                    <td class="text-end"><%= table[:columns_count] %></td>
                     <td>
                       <%= link_to database_path(table[:name]), class: "btn btn-sm btn-outline-primary me-1" do %>
                         <i class="bi bi-table me-1"></i> Browse
@@ -53,7 +313,11 @@
                 <% end %>
               <% else %>
                 <tr>
-                  <td colspan="4" class="text-center">No tables found in the database.</td>
+                  <td colspan="4" class="text-center py-4">
+                    <div class="text-muted">
+                      <i class="bi bi-info-circle me-1"></i> No tables found in the database
+                    </div>
+                  </td>
                 </tr>
               <% end %>
             </tbody>
@@ -63,5 +327,76 @@
     </div>
   </div>
 </div>
+
+<!-- Include Chart.js for data visualization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Largest Tables Chart
+    <% if @analytics[:largest_tables].any? %>
+      const largestTablesCtx = document.getElementById('largestTablesChart').getContext('2d');
+      new Chart(largestTablesCtx, {
+        type: 'bar',
+        data: {
+          labels: <%= raw @analytics[:largest_tables].map { |t| t[:name] }.to_json %>,
+          datasets: [{
+            label: 'Record Count',
+            data: <%= raw @analytics[:largest_tables].map { |t| t[:record_count] }.to_json %>,
+            backgroundColor: 'rgba(13, 110, 253, 0.6)',
+            borderColor: 'rgba(13, 110, 253, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    <% end %>
+
+    // Widest Tables Chart
+    <% if @analytics[:widest_tables].any? %>
+      const widestTablesCtx = document.getElementById('widestTablesChart').getContext('2d');
+      new Chart(widestTablesCtx, {
+        type: 'bar',
+        data: {
+          labels: <%= raw @analytics[:widest_tables].map { |t| t[:name] }.to_json %>,
+          datasets: [{
+            label: 'Column Count',
+            data: <%= raw @analytics[:widest_tables].map { |t| t[:columns_count] }.to_json %>,
+            backgroundColor: 'rgba(13, 202, 240, 0.6)',
+            borderColor: 'rgba(13, 202, 240, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    <% end %>
+  });
+</script>
 
 

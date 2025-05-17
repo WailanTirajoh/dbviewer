@@ -22,6 +22,79 @@ module Dbviewer
       end
     end
 
+    # Gather database analytics information
+    def fetch_database_analytics
+      tables = fetch_tables_with_stats
+
+      # Calculate overall statistics
+      analytics = {
+        total_tables: tables.size,
+        total_records: tables.sum { |t| t[:record_count] },
+        total_columns: tables.sum { |t| t[:columns_count] },
+        largest_tables: tables.sort_by { |t| -t[:record_count] }.first(5),
+        widest_tables: tables.sort_by { |t| -t[:columns_count] }.first(5),
+        empty_tables: tables.select { |t| t[:record_count] == 0 }
+      }
+
+      # Calculate schema size if possible
+      begin
+        analytics[:schema_size] = calculate_schema_size
+      rescue => e
+        Rails.logger.error("Error calculating schema size: #{e.message}")
+        analytics[:schema_size] = nil
+      end
+
+      # Calculate average rows per table
+      if tables.any?
+        analytics[:avg_records_per_table] = (analytics[:total_records].to_f / tables.size).round(1)
+        analytics[:avg_columns_per_table] = (analytics[:total_columns].to_f / tables.size).round(1)
+      else
+        analytics[:avg_records_per_table] = 0
+        analytics[:avg_columns_per_table] = 0
+      end
+
+      analytics
+    end
+
+    # Calculate approximate schema size
+    def calculate_schema_size
+      adapter = database_manager.connection.adapter_name.downcase
+
+      case adapter
+      when /mysql/
+        query = <<-SQL
+          SELECT
+            SUM(data_length + index_length) AS size
+          FROM
+            information_schema.TABLES
+          WHERE
+            table_schema = DATABASE()
+        SQL
+        result = database_manager.execute_query(query).first
+        result ? result["size"].to_i : nil
+      when /postgres/
+        query = <<-SQL
+          SELECT pg_database_size(current_database()) AS size
+        SQL
+        result = database_manager.execute_query(query).first
+        result ? result["size"].to_i : nil
+      when /sqlite/
+        # For SQLite, we can use the page count and page size
+        query = "PRAGMA page_count"
+        page_count = database_manager.execute_query(query).first.values.first.to_i
+
+        query = "PRAGMA page_size"
+        page_size = database_manager.execute_query(query).first.values.first.to_i
+
+        page_count * page_size
+      else
+        nil # Unsupported database type for size calculation
+      end
+    rescue => e
+      Rails.logger.error("Error calculating database size: #{e.message}")
+      nil
+    end
+
     # Get column information for a specific table
     def fetch_table_columns(table_name)
       database_manager.table_columns(table_name)

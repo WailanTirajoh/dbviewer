@@ -5,12 +5,23 @@ module Dbviewer
     include Dbviewer::PaginationConcern
     include Dbviewer::ErrorHandling
 
-    # Action to list all available database tables
+    # Action to show database analytics overview
     def index
       @tables = fetch_tables_with_stats
+      @analytics = fetch_database_analytics
     rescue => e
       @tables = []
-      log_error(e, "Database tables fetch error")
+      @analytics = {
+        total_tables: 0,
+        total_records: 0,
+        total_columns: 0,
+        largest_tables: [],
+        widest_tables: [],
+        empty_tables: [],
+        avg_records_per_table: 0,
+        avg_columns_per_table: 0
+      }
+      log_error(e, "Database analytics fetch error")
     end
 
     # Action to display ERD (Entity Relationship Diagram)

@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-05-18
+
+### Added
+
+- **Database Analytics Dashboard** with visual insights into database structure
+- Statistics showing total records, columns, and database size
+- Charts displaying largest tables by record count and column count
+- Empty tables identification and listing
+- Persistent table search functionality with localStorage
+- Improved controller code organization with concerns
+
+### Changed
+
+- Redesigned homepage with analytics focus instead of just table listings
+- Refactored controller code for better maintainability
+- Simplified JavaScript code with inline implementation
+- Improved sidebar search with real-time filtering
+
 ## [0.2.0] - 2025-05-17
 
 ### Added
