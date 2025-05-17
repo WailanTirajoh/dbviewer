@@ -318,7 +318,7 @@
             <% if @queries.present? %>
               <% 
                 current_request_id = nil
-                @queries.each_with_index do |query, index| 
+                @queries.sort_by { |q| q[:request_id] }.each_with_index do |query, index|
                   new_request = current_request_id != query[:request_id]
                   current_request_id = query[:request_id]
                   
