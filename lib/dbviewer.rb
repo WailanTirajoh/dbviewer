@@ -45,46 +45,21 @@ module Dbviewer
 
     # Initialize engine with default values or user-provided configuration
     def init
-      # Apply configuration values to components
-      apply_configuration
+      Dbviewer::DatabaseManager.singleton_class.class_eval do
+        define_method(:configuration) { Dbviewer.configuration }
+        define_method(:default_per_page) { Dbviewer.configuration.default_per_page }
+        define_method(:max_records) { Dbviewer.configuration.max_records }
+        define_method(:cache_expiry) { Dbviewer.configuration.cache_expiry }
+      end
+
+      # Define class methods to access configuration
+      Dbviewer::SqlValidator.singleton_class.class_eval do
+        define_method(:configuration) { Dbviewer.configuration }
+        define_method(:max_query_length) { Dbviewer.configuration.max_query_length }
+      end
 
       # Log initialization
       Rails.logger.info("[DBViewer] Initialized with configuration: #{configuration.inspect}")
-    end
-
-    private
-
-    # Apply configuration values to the appropriate components
-    def apply_configuration
-      # Get the configuration object
-      config_obj = configuration
-
-      # Instead of redefining constants, we'll make the configuration accessible
-      # through class methods in the respective classes
-
-      # Setup DatabaseManager configuration access
-      if defined?(Dbviewer::DatabaseManager)
-        # Define class methods to access configuration
-        Dbviewer::DatabaseManager.singleton_class.class_eval do
-          define_method(:configuration) { Dbviewer.configuration }
-
-          # Define accessors for specific configuration values
-          define_method(:default_per_page) { Dbviewer.configuration.default_per_page }
-          define_method(:max_records) { Dbviewer.configuration.max_records }
-          define_method(:cache_expiry) { Dbviewer.configuration.cache_expiry }
-        end
-      end
-
-      # Setup SqlValidator configuration access
-      if defined?(Dbviewer::SqlValidator)
-        # Define class methods to access configuration
-        Dbviewer::SqlValidator.singleton_class.class_eval do
-          define_method(:configuration) { Dbviewer.configuration }
-
-          # Define accessors for specific configuration values
-          define_method(:max_query_length) { Dbviewer.configuration.max_query_length }
-        end
-      end
     end
   end
 end

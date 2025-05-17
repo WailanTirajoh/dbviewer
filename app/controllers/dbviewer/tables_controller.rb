@@ -24,6 +24,18 @@ module Dbviewer
         @time_grouping = params[:time_group] || "daily"
         @timestamp_data = fetch_timestamp_data(@table_name, @time_grouping)
       end
+
+      respond_to do |format|
+        format.html # Default HTML response
+        format.json do
+          render json: {
+            table_name: @table_name,
+            columns: @columns,
+            metadata: @metadata,
+            record_count: @total_count
+          }
+        end
+      end
     end
 
     def query

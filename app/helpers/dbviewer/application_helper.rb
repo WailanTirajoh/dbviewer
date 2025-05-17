@@ -80,17 +80,17 @@ module Dbviewer
 
     # Helper for highlighting tables link
     def tables_nav_class
-      active_nav_class("tables", "index")
+      active_nav_class("tables")
     end
 
     # Helper for highlighting ERD link
     def erd_nav_class
-      active_nav_class("tables", "erd")
+      active_nav_class("entity_relationship_diagrams")
     end
 
     # Helper for highlighting SQL Logs link
     def logs_nav_class
-      active_nav_class("logs", "index")
+      active_nav_class("logs")
     end
   end
 end
