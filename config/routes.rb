@@ -3,6 +3,7 @@ Dbviewer::Engine.routes.draw do
     member do
       get "query"
       post "query"
+      get "export_csv"
     end
   end
 

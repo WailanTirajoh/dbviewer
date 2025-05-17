@@ -196,6 +196,44 @@ module Dbviewer
       params[:id] == table_name
     end
 
+    # Export table data to CSV
+    def export_table_to_csv(table_name, limit = 10000, include_headers = true)
+      require "csv"
+
+      begin
+        records = database_manager.table_records(
+          table_name,
+          1, # First page
+          nil, # Default sorting
+          "asc",
+          limit # Limit number of records
+        )
+
+        csv_data = CSV.generate do |csv|
+          # Add headers if requested
+          csv << records.columns if include_headers
+
+          # Add rows
+          records.rows.each do |row|
+            csv << row.map { |cell| format_csv_value(cell) }
+          end
+        end
+
+        csv_data
+      rescue => e
+        Rails.logger.error("CSV Export error for table #{table_name}: #{e.message}")
+        raise "Error exporting to CSV: #{e.message}"
+      end
+    end
+
+    private
+
+    # Format cell values for CSV export to handle nil values and special characters
+    def format_csv_value(value)
+      return "" if value.nil?
+      value.to_s
+    end
+
     # Check if a table has a created_at column for timestamp visualization
     def has_timestamp_column?(table_name)
       columns = fetch_table_columns(table_name)

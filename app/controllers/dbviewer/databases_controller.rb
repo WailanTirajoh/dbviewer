@@ -117,5 +117,28 @@ module Dbviewer
 
       render :query
     end
+
+    # Action to export table data to CSV
+    def export_csv
+      table_name = params[:id]
+      limit = (params[:limit] || 10000).to_i
+      include_headers = params[:include_headers] != "0"
+
+      begin
+        csv_data = export_table_to_csv(table_name, limit, include_headers)
+
+        # Set filename with timestamp for uniqueness
+        timestamp = Time.now.strftime("%Y%m%d%H%M%S")
+        filename = "#{table_name}_export_#{timestamp}.csv"
+
+        # Send data as file
+        send_data csv_data,
+                  type: "text/csv; charset=utf-8; header=present",
+                  disposition: "attachment; filename=#{filename}"
+      rescue => e
+        flash[:error] = "CSV export error: #{e.message}"
+        redirect_to database_path(table_name)
+      end
+    end
   end
 end
