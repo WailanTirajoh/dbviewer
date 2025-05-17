@@ -213,12 +213,12 @@ module Dbviewer
         end
 
         # Log and execute the query
-        Rails.logger.info("[DBViewer] Executing SQL query: #{normalized_sql}")
+        Rails.logger.debug("[DBViewer] Executing SQL query: #{normalized_sql}")
         start_time = Time.now
         result = connection.exec_query(normalized_sql)
         duration = Time.now - start_time
 
-        Rails.logger.info("[DBViewer] Query completed in #{duration.round(2)}s, returned #{result.rows.size} rows")
+        Rails.logger.debug("[DBViewer] Query completed in #{duration.round(2)}s, returned #{result.rows.size} rows")
         result
       rescue => e
         Rails.logger.error("[DBViewer] SQL query error: #{e.message} for query: #{sql}")
@@ -333,7 +333,7 @@ module Dbviewer
         @@table_columns_cache = {}
         @@table_metadata_cache = {}
         @@cache_last_reset = Time.now
-        Rails.logger.info("[DBViewer] Cache reset due to expiry after #{cache_expiry} seconds")
+        Rails.logger.debug("[DBViewer] Cache reset due to expiry after #{cache_expiry} seconds")
       end
     end
 
@@ -343,7 +343,7 @@ module Dbviewer
       @@table_columns_cache = {}
       @@table_metadata_cache = {}
       @@cache_last_reset = Time.now
-      Rails.logger.info("[DBViewer] All caches cleared")
+      Rails.logger.debug("[DBViewer] All caches cleared")
     end
 
     # Dynamically create an ActiveRecord model for a table
