@@ -1,0 +1,212 @@
+<%# sidebar content %>
+<% content_for :sidebar do %>
+  <%= render 'dbviewer/shared/sidebar' %>
+<% end %>
+
+<div class="container-fluid px-0">
+  <div class="row mb-3">
+    <div class="col">
+      <h1 class="h3 mb-2">Database Overview</h1>
+      <p class="text-muted">
+        Connected to database: <strong><%= get_database_name %></strong>
+      </p>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card h-100 text-center border-0 bg-light">
+        <div class="card-body">
+          <h5 class="text-muted mb-1">Tables</h5>
+          <h2 class="mb-0"><%= @analytics[:total_tables] %></h2>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="card h-100 text-center border-0 bg-light">
+        <div class="card-body">
+          <h5 class="text-muted mb-1">Records</h5>
+          <h2 class="mb-0"><%= number_with_delimiter(@analytics[:total_records]) %></h2>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="card h-100 text-center border-0 bg-light">
+        <div class="card-body">
+          <h5 class="text-muted mb-1">Columns</h5>
+          <h2 class="mb-0"><%= @analytics[:total_columns] %></h2>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="card h-100 text-center border-0 bg-light">
+        <div class="card-body">
+          <h5 class="text-muted mb-1">Avg Records/Table</h5>
+          <h2 class="mb-0"><%= @analytics[:avg_records_per_table] %></h2>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row g-3">
+    <div class="col-md-6 mb-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="card-title mb-0">Largest Tables</h5>
+        </div>
+        <div class="card-body">
+          <% if @analytics[:largest_tables].any? %>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover">
+                <thead>
+                  <tr>
+                    <th>Table Name</th>
+                    <th class="text-end">Records</th>
+                    <th class="text-end">Columns</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @analytics[:largest_tables].each do |table| %>
+                    <tr>
+                      <td>
+                        <a href="<%= dbviewer.database_path(table[:name]) %>">
+                          <%= table[:name] %>
+                        </a>
+                      </td>
+                      <td class="text-end"><%= number_with_delimiter(table[:record_count]) %></td>
+                      <td class="text-end"><%= table[:columns_count] %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center my-4 text-muted">
+              <p>No table data available</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="card-title mb-0">Tables with Most Columns</h5>
+        </div>
+        <div class="card-body">
+          <% if @analytics[:widest_tables].any? %>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover">
+                <thead>
+                  <tr>
+                    <th>Table Name</th>
+                    <th class="text-end">Columns</th>
+                    <th class="text-end">Records</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @analytics[:widest_tables].each do |table| %>
+                    <tr>
+                      <td>
+                        <a href="<%= dbviewer.database_path(table[:name]) %>">
+                          <%= table[:name] %>
+                        </a>
+                      </td>
+                      <td class="text-end"><%= table[:columns_count] %></td>
+                      <td class="text-end"><%= number_with_delimiter(table[:record_count]) %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center my-4 text-muted">
+              <p>No table data available</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 mb-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">Recent SQL Queries</h5>
+          <a href="<%= dbviewer.logs_databases_path %>" class="btn btn-sm btn-outline-primary">View All Logs</a>
+        </div>
+        <div class="card-body p-0">
+          <% begin %>
+            <% require_dependency "dbviewer/query_logger" %>
+            <% queries = Dbviewer::QueryLogger.instance.recent_queries(limit: 5) %>
+            
+            <% if queries.any? %>
+              <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Query</th>
+                      <th class="text-end" style="width: 120px">Duration</th>
+                      <th class="text-end" style="width: 180px">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% queries.each do |query| %>
+                      <tr>
+                        <td class="text-truncate" style="max-width: 500px;">
+                          <code><%= query[:sql] %></code>
+                        </td>
+                        <td class="text-end">
+                          <span class="<%= query[:duration_ms] > 100 ? 'text-danger' : '' %>">
+                            <%= query[:duration_ms] %> ms
+                          </span>
+                        </td>
+                        <td class="text-end text-muted">
+                          <small><%= query[:timestamp].strftime("%H:%M:%S") %></small>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            <% else %>
+              <div class="text-center my-4 text-muted">
+                <p>No queries recorded yet</p>
+              </div>
+            <% end %>
+          <% rescue => e %>
+            <div class="text-center my-4 text-muted">
+              <p>Error loading query logs: <%= e.message %></p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('tableSearch');
+    const tablesList = document.getElementById('tablesList');
+    const tables = tablesList.querySelectorAll('.list-group-item');
+
+    if (searchInput) {
+      searchInput.addEventListener('keyup', function() {
+        const query = this.value.trim().toLowerCase();
+        
+        Array.from(tables).forEach(function(table) {
+          const tableName = table.textContent.trim().toLowerCase();
+          if (tableName.includes(query)) {
+            table.style.display = '';
+          } else {
+            table.style.display = 'none';
+          }
+        });
+      });
+    }
+  });
+</script>

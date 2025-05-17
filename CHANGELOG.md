@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatically truncates long database names with an ellipsis
   - Tooltip on hover shows the full database name
   - Responsive design for all screen sizes
+- **Dedicated Dashboard/Homepage** separate from tables listing
+  - Database analytics with key statistics
+  - Overview of largest and most complex tables
+  - Recent SQL queries display
+  - Improved navigation between features
 
 ### Changed
 

@@ -42,7 +42,6 @@
       border-bottom: 1px solid #dee2e6;
       background: #f1f3f5;
       font-weight: 500;
-      display: flex;
       align-items: center;
       justify-content: space-between;
       flex-shrink: 0;
@@ -159,7 +158,7 @@
     <!-- Top Navigation Bar (Fixed) -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary dbviewer-navbar fixed-top">
       <div class="container-fluid">
-        <a class="navbar-brand" href="<%= dbviewer.databases_path %>">DB Viewer</a>
+        <a class="navbar-brand" href="<%= dbviewer.root_path %>">DB Viewer</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -167,13 +166,13 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
             <li class="nav-item">
-              <%= link_to "Tables", dbviewer.databases_path, class: "nav-link" %>
+              <%= link_to raw('<i class="bi bi-table"></i> Tables'), dbviewer.databases_path, class: "nav-link #{tables_nav_class}" %>
             </li>
             <li class="nav-item">
-              <%= link_to raw('<i class="bi bi-diagram-3"></i> ERD'), dbviewer.erd_path, class: "nav-link" %>
+              <%= link_to raw('<i class="bi bi-diagram-3"></i> ERD'), dbviewer.erd_path, class: "nav-link #{erd_nav_class}" %>
             </li>
             <li class="nav-item">
-              <%= link_to raw('<i class="bi bi-journal-code"></i> SQL Logs'), dbviewer.logs_databases_path, class: "nav-link" %>
+              <%= link_to raw('<i class="bi bi-journal-code"></i> SQL Logs'), dbviewer.logs_databases_path, class: "nav-link #{logs_nav_class}" %>
             </li>
           </ul>
           <span class="navbar-text ms-auto text-light">
@@ -189,25 +188,6 @@
     <div class="dbviewer-content">
       <!-- Sidebar (always present) -->
       <div class="dbviewer-sidebar">
-        <div class="dbviewer-sidebar-header">
-          <% 
-            db_name = get_database_name
-            # Use a shorter truncation for longer names
-            truncated_name = if db_name.length > 20
-                              "#{db_name[0..9]}..."
-                            elsif db_name.length > 15
-                              "#{db_name[0..12]}..."
-                            else
-                              db_name
-                            end
-          %>
-          <h5 class="mb-0" title="<%= db_name %> Tables">
-            <i class="bi bi-table"></i> <%= truncated_name %> Tables
-          </h5>
-          <button class="btn btn-sm btn-link d-lg-none dbviewer-sidebar-close" type="button">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
         <%= yield :sidebar %>
       </div>
 

@@ -5,6 +5,7 @@ It's designed for development, debugging, and database analysis, offering a clea
 
 ## Features
 
+- **Dashboard**: View a comprehensive dashboard with database analytics, largest tables, most complex tables, and recent SQL queries
 - **Table Overview**: View a list of all tables with record count, column count, and quick access links
 - **Detailed Schema Information**:
   - View columns with their types, nullability, defaults, and primary key indicators

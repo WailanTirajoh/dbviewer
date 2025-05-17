@@ -1,18 +1,14 @@
 <div class="dbviewer-sidebar-top">
-  <div class="dbviewer-table-filter-container">
+  <div class="dbviewer-table-filter-container p-1 mb-0">
     <i class="bi bi-search dbviewer-table-filter-icon"></i>
     <input type="text" class="form-control form-control-sm dbviewer-table-filter mb-0" 
            id="tableSearch" placeholder="Filter tables..." aria-label="Filter tables">
   </div>
   
-  <% if @tables.any? %>
-    <div class="px-3 py-2 text-muted small">
-      <i class="bi bi-info-circle me-1"></i>
-      <span id="table-count"><%= @tables.size %></span> tables found
-    </div>
 </div>
 
 <div class="dbviewer-sidebar-content">
+  <% if @tables.any? %>
     <div class="list-group list-group-flush" id="tablesList">
       <% @tables.each do |table| %>
         <%= link_to database_path(table[:name]), title: table[:name],
@@ -52,6 +48,11 @@
       No tables found
     </div>
   <% end %>
+</div>
+
+<div class="px-3 py-2 text-muted small">
+  <i class="bi bi-info-circle me-1"></i>
+  <span id="table-count"><%= @tables.size %></span> tables found
 </div>
 
 <script>

@@ -5,10 +5,10 @@ module Dbviewer
     include Dbviewer::PaginationConcern
     include Dbviewer::ErrorHandling
 
-    # Action to show database analytics overview
+    # Action to list all tables
     def index
+      # No longer fetch analytics, focus only on tables
       @tables = fetch_tables_with_stats
-      @analytics = fetch_database_analytics
     end
 
     # Action to display ERD (Entity Relationship Diagram)

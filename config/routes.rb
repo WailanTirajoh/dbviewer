@@ -14,5 +14,8 @@ Dbviewer::Engine.routes.draw do
   # ERD preview route
   get "erd", to: "databases#erd", as: :erd
 
-  root to: "databases#index"
+  # Homepage
+  get "dashboard", to: "home#index", as: :dashboard
+
+  root to: "home#index"
 end
