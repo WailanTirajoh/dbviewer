@@ -75,7 +75,7 @@ module Dbviewer
         @last_query_time = current_time
 
         # Create and store the query
-        storage.add({
+        @storage.add({
           sql: event.payload[:sql],
           name: event.payload[:name],
           timestamp: current_time,

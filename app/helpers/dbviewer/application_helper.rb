@@ -90,7 +90,7 @@ module Dbviewer
 
     # Helper for highlighting SQL Logs link
     def logs_nav_class
-      active_nav_class("databases", "logs")
+      active_nav_class("logs", "index")
     end
   end
 end

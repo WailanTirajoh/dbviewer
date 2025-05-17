@@ -4,21 +4,8 @@ module Dbviewer
 
     # Action to list all tables
     def index
-      require_dependency "dbviewer/logger"
-
       # Get filter parameters
-      @table_filter = params[:table_filter]
-      @request_id = params[:request_id]
-      @min_duration = params[:min_duration]
-      @limit = (params[:limit] || 100).to_i
-      @limit = 1000 if @limit > 1000 # Cap at 1000 for performance
-
-      # Clear logs if requested
-      if params[:clear_logs] == "true"
-        Dbviewer::Logger.instance.clear
-        flash[:success] = "Query logs cleared successfully"
-        redirect_to logs_path and return
-      end
+      set_filters
 
       # Get query logs with optional filtering
       @queries = Dbviewer::Logger.instance.recent_queries(
@@ -44,6 +31,22 @@ module Dbviewer
         format.html # render logs.html.erb
         format.json { render json: { queries: @queries, stats: @stats } }
       end
+    end
+
+    def destroy_all
+      Dbviewer::Logger.instance.clear
+      flash[:success] = "Query logs cleared successfully"
+      redirect_to logs_path
+    end
+
+    private
+
+    def set_filters
+      @table_filter = params[:table_filter]
+      @request_id = params[:request_id]
+      @min_duration = params[:min_duration]
+      @limit = (params[:limit] || 100).to_i
+      @limit = 1000 if @limit > 1000
     end
   end
 end

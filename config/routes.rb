@@ -9,7 +9,11 @@ Dbviewer::Engine.routes.draw do
 
   # ERD preview route
   get "erd", to: "databases#erd", as: :erd
-  resources :logs, only: [ :index ]
+  resources :logs, only: [ :index ] do
+    collection do
+      delete :destroy_all
+    end
+  end
 
   # Homepage
   get "dashboard", to: "home#index", as: :dashboard
