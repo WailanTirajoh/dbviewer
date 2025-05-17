@@ -9,17 +9,18 @@ module Dbviewer
       @last_query_time = nil
       @mutex = Mutex.new
 
+      setup_storage
       subscribe_to_sql_notifications
     end
 
     # Clear all stored queries
     def clear
-      storage.clear
+      @storage.clear
     end
 
     # Get recent queries, optionally filtered
     def recent_queries(limit: 100, table_filter: nil, request_id: nil, min_duration: nil)
-      storage.filter(
+      @storage.filter(
         limit: limit,
         table_filter: table_filter,
         request_id: request_id,
@@ -29,7 +30,7 @@ module Dbviewer
 
     # Get stats about all queries
     def stats
-      stats_for_queries(storage.all)
+      stats_for_queries(@storage.all)
     end
 
     # Calculate stats for a specific set of queries (can be filtered)
@@ -44,7 +45,7 @@ module Dbviewer
     end
 
     # TODO: pass storage class as a parameter to the constructor
-    def storage
+    def setup_storage
       @storage ||= case mode
       when :file
         Storage::FileStorage.new
