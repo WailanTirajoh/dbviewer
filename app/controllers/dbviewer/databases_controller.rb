@@ -167,8 +167,14 @@ module Dbviewer
         min_duration: @min_duration
       )
 
-      # Get query stats
-      @stats = Dbviewer::QueryLogger.instance.stats
+      # Get query stats - if filtering is applied, only use stats from the filtered queries
+      if @request_id.present? || @table_filter.present? || @min_duration.present?
+        @stats = Dbviewer::QueryLogger.instance.stats_for_queries(@queries)
+        @filtered_stats = true
+      else
+        @stats = Dbviewer::QueryLogger.instance.stats
+        @filtered_stats = false
+      end
 
       # Prepare tables list for sidebar
       @tables = fetch_tables_with_stats

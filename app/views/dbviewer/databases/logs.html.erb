@@ -5,11 +5,16 @@
 <% end %>
 
 <div class="container-fluid">
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-2">
     <h1>
       <i class="bi bi-journal-code me-2"></i>SQL Query Logs
     </h1>
     <div>
+      <% if @filtered_stats %>
+        <%= link_to logs_databases_path, class: "btn btn-outline-secondary me-2" do %>
+          <i class="bi bi-x-lg me-1"></i> Clear Filters
+        <% end %>
+      <% end %>
       <%= link_to logs_databases_path(clear_logs: true), 
                   class: "btn btn-outline-danger",
                   data: { confirm: "Are you sure you want to clear all query logs?" } do %>
@@ -18,12 +23,32 @@
     </div>
   </div>
   
+  <% if @filtered_stats %>
+    <div class="alert alert-info mb-4 d-flex justify-content-between align-items-center">
+      <div>
+        <i class="bi bi-funnel-fill me-2"></i> 
+        <strong>Filtered view:</strong> 
+        <% filter_parts = [] %>
+        <% filter_parts << "Request ID: #{@request_id}" if @request_id.present? %>
+        <% filter_parts << "Table: #{@table_filter}" if @table_filter.present? %>
+        <% filter_parts << "Min Duration: #{@min_duration} ms" if @min_duration.present? %>
+        <%= filter_parts.join(", ") %>
+      </div>
+      <span class="badge bg-primary"><%= @stats[:total_count] %> matching queries</span>
+    </div>
+  <% end %>
+  
   <!-- Stats Cards -->
   <div class="row mb-4">
     <div class="col-md-3">
-      <div class="card h-100">
+      <div class="card h-100 <%= 'border-info' if @filtered_stats %>">
         <div class="card-body">
-          <h5 class="card-title">Queries</h5>
+          <div class="d-flex justify-content-between">
+            <h5 class="card-title">Queries</h5>
+            <% if @filtered_stats %>
+              <span class="badge bg-info text-dark">Filtered</span>
+            <% end %>
+          </div>
           <h2><%= @stats[:total_count] %></h2>
           <div class="text-muted small mt-2">
             <div>Requests: <%= @stats[:request_count] || 0 %></div>
@@ -33,9 +58,14 @@
       </div>
     </div>
     <div class="col-md-3">
-      <div class="card h-100">
+      <div class="card h-100 <%= 'border-info' if @filtered_stats %>">
         <div class="card-body">
-          <h5 class="card-title">Total Duration</h5>
+          <div class="d-flex justify-content-between">
+            <h5 class="card-title">Total Duration</h5>
+            <% if @filtered_stats %>
+              <span class="badge bg-info text-dark">Filtered</span>
+            <% end %>
+          </div>
           <h2><%= number_with_precision(@stats[:total_duration_ms], precision: 2) %> ms</h2>
           <div class="text-muted small mt-2">
             <div>Max per request: <%= @stats[:max_queries_per_request] || 0 %> queries</div>
@@ -44,9 +74,14 @@
       </div>
     </div>
     <div class="col-md-3">
-      <div class="card h-100">
+      <div class="card h-100 <%= 'border-info' if @filtered_stats %>">
         <div class="card-body">
-          <h5 class="card-title">Average Duration</h5>
+          <div class="d-flex justify-content-between">
+            <h5 class="card-title">Average Duration</h5>
+            <% if @filtered_stats %>
+              <span class="badge bg-info text-dark">Filtered</span>
+            <% end %>
+          </div>
           <h2><%= number_with_precision(@stats[:avg_duration_ms], precision: 2) %> ms</h2>
           <div class="text-muted small mt-2">
             <div>Per query</div>
@@ -55,9 +90,14 @@
       </div>
     </div>
     <div class="col-md-3">
-      <div class="card h-100">
+      <div class="card h-100 <%= 'border-info' if @filtered_stats %>">
         <div class="card-body">
-          <h5 class="card-title">Max Duration</h5>
+          <div class="d-flex justify-content-between">
+            <h5 class="card-title">Max Duration</h5>
+            <% if @filtered_stats %>
+              <span class="badge bg-info text-dark">Filtered</span>
+            <% end %>
+          </div>
           <h2><%= number_with_precision(@stats[:max_duration_ms], precision: 2) %> ms</h2>
           <div class="text-muted small mt-2">
             <div>Slowest query</div>
@@ -69,14 +109,17 @@
   
   <!-- N+1 Query Warnings -->
   <% if @stats[:potential_n_plus_1].present? %>
-    <div class="card mb-4">
-      <div class="card-header bg-warning-subtle">
+    <div class="card mb-4 <%= 'border-info' if @filtered_stats %>">
+      <div class="card-header <%= @filtered_stats ? 'bg-info-subtle' : 'bg-warning-subtle' %>">
         <div class="d-flex justify-content-between align-items-center">
-          <h5 class="card-title mb-0 text-warning">
+          <h5 class="card-title mb-0 <%= @filtered_stats ? 'text-info' : 'text-warning' %>">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
             Potential N+1 Query Issues
+            <% if @filtered_stats %>
+              <span class="badge bg-info text-dark ms-2">Filtered</span>
+            <% end %>
           </h5>
-          <span class="badge bg-warning">
+          <span class="badge <%= @filtered_stats ? 'bg-info' : 'bg-warning' %>">
             <%= @stats[:potential_n_plus_1].size %> patterns detected
           </span>
         </div>
@@ -123,9 +166,14 @@
   <% if @stats[:tables_queried].present? %>
   <div class="row mb-4">
     <div class="col-md-12">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">Table Access Frequency</h5>
+      <div class="card <%= 'border-info' if @filtered_stats %>">
+        <div class="card-header <%= @filtered_stats ? 'bg-info-subtle' : '' %>">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Table Access Frequency</h5>
+            <% if @filtered_stats %>
+              <span class="badge bg-info text-dark">Filtered</span>
+            <% end %>
+          </div>
         </div>
         <div class="card-body">
           <canvas id="tablesChart" width="400" height="150"></canvas>
@@ -163,7 +211,16 @@
                  placeholder="Max results" min="1" max="1000" value="<%= @limit %>">
         </div>
         <div class="col-md-2 d-flex align-items-end">
-          <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+          <div class="d-flex gap-2 w-100">
+            <button type="submit" class="btn btn-primary flex-grow-1">
+              <i class="bi bi-funnel"></i> Apply
+            </button>
+            <% if @filtered_stats %>
+              <a href="<%= logs_databases_path %>" class="btn btn-outline-secondary">
+                <i class="bi bi-x-lg"></i>
+              </a>
+            <% end %>
+          </div>
         </div>
       <% end %>
     </div>
@@ -256,7 +313,7 @@
               <% end %>
             <% else %>
               <tr>
-                <td colspan="5" class="text-center py-5 text-muted">
+                <td colspan="6" class="text-center py-5 text-muted">
                   <i class="bi bi-database-x fs-2 d-block mb-2"></i>
                   No SQL queries logged yet.
                   <p class="mt-2">Navigate through the application to see queries being logged here.</p>

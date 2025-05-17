@@ -43,23 +43,27 @@ module Dbviewer
       result.reverse.first(limit)
     end
 
-    # Get stats about queries
+    # Get stats about all queries
     def stats
       queries_copy = @mutex.synchronize { @queries.dup }
+      stats_for_queries(queries_copy)
+    end
 
+    # Calculate stats for a specific set of queries (can be filtered)
+    def stats_for_queries(queries)
       result = {
-        total_count: queries_copy.size,
-        total_duration_ms: queries_copy.sum { |q| q[:duration_ms] },
-        avg_duration_ms: queries_copy.any? ? (queries_copy.sum { |q| q[:duration_ms] } / queries_copy.size.to_f).round(2) : 0,
-        max_duration_ms: queries_copy.map { |q| q[:duration_ms] }.max || 0,
-        tables_queried: extract_queried_tables(queries_copy),
-        potential_n_plus_1: detect_potential_n_plus_1(queries_copy)
+        total_count: queries.size,
+        total_duration_ms: queries.sum { |q| q[:duration_ms] },
+        avg_duration_ms: queries.any? ? (queries.sum { |q| q[:duration_ms] } / queries.size.to_f).round(2) : 0,
+        max_duration_ms: queries.map { |q| q[:duration_ms] }.max || 0,
+        tables_queried: extract_queried_tables(queries),
+        potential_n_plus_1: detect_potential_n_plus_1(queries)
       }
 
       # Calculate request groups statistics
-      requests = queries_copy.group_by { |q| q[:request_id] }
+      requests = queries.group_by { |q| q[:request_id] }
       result[:request_count] = requests.size
-      result[:avg_queries_per_request] = queries_copy.any? ? (queries_copy.size.to_f / requests.size).round(2) : 0
+      result[:avg_queries_per_request] = queries.any? ? (queries.size.to_f / requests.size).round(2) : 0
       result[:max_queries_per_request] = requests.map { |_id, queries| queries.size }.max || 0
 
       result

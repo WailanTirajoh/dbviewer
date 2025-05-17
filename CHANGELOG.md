@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Request-based grouping to identify related queries
   - Automatic N+1 query detection with optimization suggestions
   - Comprehensive query filtering and analysis tools
+  - Filter-aware statistics that update based on applied filters
 - Persistent table search functionality with localStorage
 - Improved controller code organization with concerns
 
