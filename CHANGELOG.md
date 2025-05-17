@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Record creation timeline visualization** with hourly, daily, and weekly views
 - **Export to CSV functionality** for database tables with configurable options
 - **ERD download functionality** to save diagrams as SVG or PNG files
+- **SQL Query Logs** page to monitor and debug database queries
+  - Request-based grouping to identify related queries
+  - Automatic N+1 query detection with optimization suggestions
+  - Comprehensive query filtering and analysis tools
 - Persistent table search functionality with localStorage
 - Improved controller code organization with concerns
 

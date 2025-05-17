@@ -140,5 +140,47 @@ module Dbviewer
         redirect_to database_path(table_name)
       end
     end
+
+    # Action to display SQL query logs
+    def logs
+      require_dependency "dbviewer/query_logger"
+
+      # Get filter parameters
+      @table_filter = params[:table_filter]
+      @request_id = params[:request_id]
+      @min_duration = params[:min_duration]
+      @limit = (params[:limit] || 100).to_i
+      @limit = 1000 if @limit > 1000 # Cap at 1000 for performance
+
+      # Clear logs if requested
+      if params[:clear_logs] == "true"
+        Dbviewer::QueryLogger.instance.clear
+        flash[:success] = "Query logs cleared successfully"
+        redirect_to logs_databases_path and return
+      end
+
+      # Get query logs with optional filtering
+      @queries = Dbviewer::QueryLogger.instance.recent_queries(
+        limit: @limit,
+        table_filter: @table_filter,
+        request_id: @request_id,
+        min_duration: @min_duration
+      )
+
+      # Get query stats
+      @stats = Dbviewer::QueryLogger.instance.stats
+
+      # Prepare tables list for sidebar
+      @tables = fetch_tables_with_stats
+
+      respond_to do |format|
+        format.html # render logs.html.erb
+        format.json { render json: { queries: @queries, stats: @stats } }
+      end
+    rescue => e
+      flash[:error] = "Error retrieving SQL logs: #{e.message}"
+      @queries = []
+      @stats = { total_count: 0, total_duration_ms: 0, avg_duration_ms: 0, max_duration_ms: 0, tables_queried: {} }
+    end
   end
 end

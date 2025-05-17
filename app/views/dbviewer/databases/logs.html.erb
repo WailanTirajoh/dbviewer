@@ -1,0 +1,348 @@
+<% content_for :title, "SQL Query Logs" %>
+
+<% content_for :sidebar do %>
+  <%= render 'dbviewer/shared/sidebar' %>
+<% end %>
+
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+      <i class="bi bi-journal-code me-2"></i>SQL Query Logs
+    </h1>
+    <div>
+      <%= link_to logs_databases_path(clear_logs: true), 
+                  class: "btn btn-outline-danger",
+                  data: { confirm: "Are you sure you want to clear all query logs?" } do %>
+        <i class="bi bi-trash3"></i> Clear Logs
+      <% end %>
+    </div>
+  </div>
+  
+  <!-- Stats Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Queries</h5>
+          <h2><%= @stats[:total_count] %></h2>
+          <div class="text-muted small mt-2">
+            <div>Requests: <%= @stats[:request_count] || 0 %></div>
+            <div>Avg per request: <%= number_with_precision(@stats[:avg_queries_per_request] || 0, precision: 1) %></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Total Duration</h5>
+          <h2><%= number_with_precision(@stats[:total_duration_ms], precision: 2) %> ms</h2>
+          <div class="text-muted small mt-2">
+            <div>Max per request: <%= @stats[:max_queries_per_request] || 0 %> queries</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Average Duration</h5>
+          <h2><%= number_with_precision(@stats[:avg_duration_ms], precision: 2) %> ms</h2>
+          <div class="text-muted small mt-2">
+            <div>Per query</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Max Duration</h5>
+          <h2><%= number_with_precision(@stats[:max_duration_ms], precision: 2) %> ms</h2>
+          <div class="text-muted small mt-2">
+            <div>Slowest query</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- N+1 Query Warnings -->
+  <% if @stats[:potential_n_plus_1].present? %>
+    <div class="card mb-4">
+      <div class="card-header bg-warning-subtle">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0 text-warning">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Potential N+1 Query Issues
+          </h5>
+          <span class="badge bg-warning">
+            <%= @stats[:potential_n_plus_1].size %> patterns detected
+          </span>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="text-muted mb-3">
+          These query patterns might indicate N+1 query problems. Consider using eager loading, joins, or batch loading to optimize them.
+        </p>
+        
+        <div class="list-group">
+          <% @stats[:potential_n_plus_1].each do |issue| %>
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="mb-0">
+                  <%= issue[:table] ? "Table: <strong>#{issue[:table]}</strong>".html_safe : "Multiple tables" %>
+                </h6>
+                <div>
+                  <span class="badge bg-danger me-1" title="Number of similar queries">
+                    <%= issue[:count] %> similar queries
+                  </span>
+                  <span class="badge bg-warning" title="Total time spent">
+                    <%= number_with_precision(issue[:total_duration_ms], precision: 1) %> ms total
+                  </span>
+                </div>
+              </div>
+              
+              <a href="<%= logs_databases_path(request_id: issue[:request_id]) %>" 
+                 class="small d-block mb-1 text-muted">
+                <i class="bi bi-link-45deg"></i>
+                Request: <%= issue[:request_id] %>
+              </a>
+              
+              <div class="p-2 bg-light rounded small">
+                <code class="d-block" style="white-space: pre-wrap;"><%= issue[:pattern] %></code>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+  
+  <!-- Table Access Chart -->
+  <% if @stats[:tables_queried].present? %>
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Table Access Frequency</h5>
+        </div>
+        <div class="card-body">
+          <canvas id="tablesChart" width="400" height="150"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% end %>
+  
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="card-title mb-0">Filter Queries</h5>
+    </div>
+    <div class="card-body">
+      <%= form_with url: logs_databases_path, method: :get, class: "row g-3" do |f| %>
+        <div class="col-md-3">
+          <label for="table_filter" class="form-label">Table Name</label>
+          <input type="text" class="form-control" id="table_filter" name="table_filter" 
+                 placeholder="Filter by table name" value="<%= @table_filter %>">
+        </div>
+        <div class="col-md-3">
+          <label for="request_id" class="form-label">Request ID</label>
+          <input type="text" class="form-control" id="request_id" name="request_id" 
+                 placeholder="Filter by request ID" value="<%= @request_id %>">
+        </div>
+        <div class="col-md-2">
+          <label for="min_duration" class="form-label">Min Duration (ms)</label>
+          <input type="number" class="form-control" id="min_duration" name="min_duration" 
+                 placeholder="e.g., 100" min="0" step="0.1" value="<%= @min_duration %>">
+        </div>
+        <div class="col-md-2">
+          <label for="limit" class="form-label">Result Limit</label>
+          <input type="number" class="form-control" id="limit" name="limit" 
+                 placeholder="Max results" min="1" max="1000" value="<%= @limit %>">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  
+  <!-- Query Logs Table -->
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="card-title mb-0">Query Logs</h5>
+      <div>
+        <span class="badge bg-secondary me-2"><%= @queries.size %> queries</span>
+        <span class="badge bg-info"><%= @queries.map {|q| q[:request_id] }.uniq.size %> requests</span>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0">
+          <thead class="dbviewer-table-header">
+            <tr>
+              <th style="width: 3%;">#</th>
+              <th style="width: 13%;">Timestamp</th>
+              <th style="width: 8%;">Duration</th>
+              <th style="width: 14%;">Request ID</th>
+              <th style="width: 10%;">Name</th>
+              <th style="width: 52%;">SQL Query</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if @queries.present? %>
+              <% 
+                current_request_id = nil
+                @queries.each_with_index do |query, index| 
+                  new_request = current_request_id != query[:request_id]
+                  current_request_id = query[:request_id]
+                  
+                  # Count queries in this request group
+                  request_query_count = @queries.count { |q| q[:request_id] == current_request_id }
+                  total_request_time = @queries.select { |q| q[:request_id] == current_request_id }
+                                              .sum { |q| q[:duration_ms] }
+              %>
+                <% if new_request %>
+                  <tr class="request-group-header bg-light">
+                    <td colspan="6" class="py-1">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">
+                          <i class="bi bi-shuffle me-2"></i> 
+                          Request: <%= current_request_id %>
+                        </span>
+                        <div>
+                          <span class="badge bg-primary me-2" title="Number of queries in this request">
+                            <%= request_query_count %> queries
+                          </span>
+                          <span class="badge bg-secondary" title="Total time for this request">
+                            <%= number_with_precision(total_request_time, precision: 2) %> ms
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                <% end %>
+                <tr>
+                  <td><%= index + 1 %></td>
+                  <td><%= query[:timestamp].strftime("%H:%M:%S.%L") %></td>
+                  <td>
+                    <% duration_class = case 
+                      when query[:duration_ms] > 500 then "text-danger fw-bold" 
+                      when query[:duration_ms] > 100 then "text-warning"
+                      else "text-success"
+                      end %>
+                    <span class="<%= duration_class %>">
+                      <%= number_with_precision(query[:duration_ms], precision: 2) %> ms
+                    </span>
+                  </td>
+                  <td>
+                    <span class="small text-secondary">
+                      <%= query[:request_id] %>
+                    </span>
+                  </td>
+                  <td><%= query[:name] %></td>
+                  <td>
+                    <pre class="mb-0 sql-query"><code><%= query[:sql] %></code></pre>
+                    <% if query[:binds].present? %>
+                      <details class="mt-1 small">
+                        <summary class="text-secondary">Binds</summary>
+                        <code><%= query[:binds].inspect %></code>
+                      </details>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            <% else %>
+              <tr>
+                <td colspan="5" class="text-center py-5 text-muted">
+                  <i class="bi bi-database-x fs-2 d-block mb-2"></i>
+                  No SQL queries logged yet.
+                  <p class="mt-2">Navigate through the application to see queries being logged here.</p>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if @stats[:tables_queried].present? %>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('tablesChart').getContext('2d');
+    const tableData = <%= raw @stats[:tables_queried].to_json %>;
+    
+    const labels = Object.keys(tableData);
+    const values = Object.values(tableData);
+    
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Query Count',
+          data: values,
+          backgroundColor: 'rgba(75, 192, 192, 0.6)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          title: {
+            display: true,
+            text: 'Number of Queries by Table'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.parsed.y} queries`;
+              }
+            }
+          }
+        }
+      }
+    });
+  });
+</script>
+<% end %>
+
+<style>
+  .sql-query {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 100px;
+    overflow-y: auto;
+    font-size: 0.85rem;
+    background-color: #f8f9fa;
+    border-radius: 3px;
+    padding: 0.5rem;
+  }
+  
+  .request-group-header {
+    border-top: 2px solid #dee2e6;
+  }
+  
+  .request-group-header:first-child {
+    border-top: none;
+  }
+  
+  details summary {
+    cursor: pointer;
+  }
+</style>

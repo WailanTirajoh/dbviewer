@@ -1,5 +1,9 @@
 Dbviewer::Engine.routes.draw do
   resources :databases, only: [ :index, :show ] do
+    collection do
+      get "logs", to: "databases#logs", as: :logs
+    end
+
     member do
       get "query"
       post "query"

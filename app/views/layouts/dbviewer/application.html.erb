@@ -144,6 +144,9 @@
             <li class="nav-item">
               <%= link_to raw('<i class="bi bi-diagram-3"></i> ERD'), dbviewer.erd_path, class: "nav-link" %>
             </li>
+            <li class="nav-item">
+              <%= link_to raw('<i class="bi bi-journal-code"></i> SQL Logs'), dbviewer.logs_databases_path, class: "nav-link" %>
+            </li>
           </ul>
           <span class="navbar-text ms-auto text-light">
             <small><i class="bi bi-database"></i> <%= Rails.env %> environment</small>
