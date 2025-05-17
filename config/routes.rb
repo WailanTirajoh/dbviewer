@@ -7,8 +7,8 @@ Dbviewer::Engine.routes.draw do
     end
   end
 
-  # ERD preview route
-  get "erd", to: "tables#erd", as: :erd
+  resources :entity_relationship_diagrams, only: [ :index ]
+
   resources :logs, only: [ :index ] do
     collection do
       delete :destroy_all

@@ -10,28 +10,6 @@ module Dbviewer
       @tables = fetch_tables_with_stats
     end
 
-    # Action to display ERD (Entity Relationship Diagram)
-    def erd
-      @tables = fetch_tables_with_stats
-
-      if @tables.present?
-        @table_relationships = fetch_table_relationships
-      else
-        @table_relationships = []
-        flash.now[:warning] = "No tables found in database to generate ERD."
-      end
-
-      respond_to do |format|
-        format.html # Default to HTML view
-        format.json do
-          render json: {
-            tables: @tables,
-            relationships: @table_relationships
-          }
-        end
-      end
-    end
-
     # Action to show details and records for a specific table
     def show
       @table_name = params[:id]
