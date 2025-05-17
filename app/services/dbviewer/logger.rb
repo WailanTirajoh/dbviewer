@@ -3,16 +3,12 @@ module Dbviewer
   class Logger
     include Singleton
 
-    attr_reader :storage
-
     def initialize
       @request_counter = 0
       @current_request_id = nil
       @last_query_time = nil
       @mutex = Mutex.new
 
-      # Initialize the appropriate storage backend based on configuration
-      setup_storage
       subscribe_to_sql_notifications
     end
 
@@ -41,20 +37,18 @@ module Dbviewer
       QueryAnalyzer.generate_stats(queries)
     end
 
-    # For backward compatibility - delegate to storage
-    def collection
-      storage
-    end
-
     private
 
-    def setup_storage
-      mode = Dbviewer.configuration.query_logging_mode || :memory
+    def mode
+      @mode ||= Dbviewer.configuration.query_logging_mode || :memory
+    end
 
-      @storage = case mode
+    # TODO: pass storage class as a parameter to the constructor
+    def storage
+      @storage ||= case mode
       when :file
         Storage::FileStorage.new
-      else # :memory or any other value as fallback
+      else
         Storage::InMemoryStorage.new
       end
 
@@ -93,10 +87,12 @@ module Dbviewer
       end
     end
 
+    # Generate a request ID if:
+    # 1. This is the first query, or
+    # 2. More than 1 second has passed since the last query
+    #
+    # TODO: explore rails request ID and implement it here, otherwise fallback to current approach
     def update_request_id(current_time)
-      # Generate a new request ID if:
-      # 1. This is the first query, or
-      # 2. More than 1 second has passed since the last query
       if @current_request_id.nil? || @last_query_time.nil? || (current_time - @last_query_time) > 1.0
         @current_request_id = "req-#{Time.now.to_i}-#{@request_counter += 1}"
       end
