@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Collapsible performance sections (N+1 and slowest queries) to reduce visual clutter
   - Comprehensive query filtering and analysis tools
   - Filter-aware statistics that update based on applied filters
+  - Automatic filtering of internal DBViewer queries to show only application queries
 - Persistent table search functionality with localStorage
 - Improved controller code organization with concerns
 

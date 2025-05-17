@@ -13,7 +13,40 @@ module Dbviewer
       @request_counter = 0
       @current_request_id = nil
       @last_query_time = nil
+
+      # Monkey patch ActiveSupport::Notifications to include caller information
+      patch_active_support_notifications
+
       subscribe_to_sql_notifications
+    end
+
+    # Add caller information to SQL notifications
+    def patch_active_support_notifications
+      ActiveSupport::Notifications.module_eval do
+        class << self
+          alias_method :original_instrument, :instrument
+
+          def instrument(name, payload = {}, &block)
+            # Add caller info for SQL queries only
+            if name == "sql.active_record"
+              # Get the first non-framework caller
+              caller_location = caller_locations.find do |loc|
+                path = loc.path
+                !(path.include?("/active_record/") ||
+                  path.include?("/activesupport/") ||
+                  path.include?("/actionpack/"))
+              end
+
+              payload[:caller] = caller_location.try(:path) if caller_location
+            end
+
+            original_instrument(name, payload, &block)
+          end
+        end
+      end
+    rescue => e
+      # Fail gracefully if monkey patching doesn't work
+      puts "Warning: Unable to patch ActiveSupport::Notifications: #{e.message}"
     end
 
     # Clear all stored queries
@@ -136,7 +169,8 @@ module Dbviewer
                 event.payload[:sql].include?("SHOW TABLES") ||
                 event.payload[:sql].include?("sqlite_master") ||
                 event.payload[:sql].include?("information_schema") ||
-                event.payload[:sql].include?("pg_catalog")
+                event.payload[:sql].include?("pg_catalog") ||
+                from_dbviewer?(event)
 
         # Record the query details
         @mutex.synchronize do
@@ -159,7 +193,8 @@ module Dbviewer
             duration_ms: event.duration.round(2),
             binds: format_binds(event.payload[:binds]),
             request_id: @current_request_id,
-            thread_id: Thread.current.object_id.to_s
+            thread_id: Thread.current.object_id.to_s,
+            caller: event.payload[:caller]
           }
 
           # Trim if we have too many queries
@@ -209,6 +244,36 @@ module Dbviewer
             name: q[:name]
           }
         end
+    end
+
+    # Check if the query is from the DBViewer library
+    def from_dbviewer?(event)
+      # Check if the SQL itself references DBViewer tables
+      if event.payload[:sql].match(/\b(from|join|update|into)\s+["`']?dbviewer_/i)
+        return true
+      end
+
+      # Check the caller information if available
+      caller = event.payload[:caller]
+      if caller.is_a?(String) && caller.include?("/dbviewer/")
+        return true
+      end
+
+      # Check if query name indicates it's from DBViewer
+      if event.payload[:name].is_a?(String) &&
+         (event.payload[:name].include?("Dbviewer") || event.payload[:name].include?("DBViewer"))
+        return true
+      end
+
+      # Check for common DBViewer operations
+      sql = event.payload[:sql].downcase
+      if sql.include?("table_structure") ||
+         sql.include?("schema_migrations") ||
+         sql.include?("database_analytics")
+        return true
+      end
+
+      false
     end
 
     # Extract table names from an SQL query string
