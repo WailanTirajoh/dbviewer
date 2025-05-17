@@ -9,24 +9,10 @@ module Dbviewer
     def index
       @tables = fetch_tables_with_stats
       @analytics = fetch_database_analytics
-    rescue => e
-      @tables = []
-      @analytics = {
-        total_tables: 0,
-        total_records: 0,
-        total_columns: 0,
-        largest_tables: [],
-        widest_tables: [],
-        empty_tables: [],
-        avg_records_per_table: 0,
-        avg_columns_per_table: 0
-      }
-      log_error(e, "Database analytics fetch error")
     end
 
     # Action to display ERD (Entity Relationship Diagram)
     def erd
-      # Ensure we have the necessary data for the ERD
       @tables = fetch_tables_with_stats
 
       if @tables.present?
@@ -43,18 +29,6 @@ module Dbviewer
             tables: @tables,
             relationships: @table_relationships
           }
-        end
-      end
-    rescue => e
-      @tables = []
-      @table_relationships = []
-
-      error_msg = log_error(e, "ERD generation error")
-
-      respond_to do |format|
-        format.html # Default to HTML view
-        format.json do
-          render json: { error: error_msg }, status: :unprocessable_entity
         end
       end
     end
@@ -89,16 +63,6 @@ module Dbviewer
             record_count: @total_count
           }
         end
-      rescue => e
-        @records = []
-        error_msg = log_error(e, "Table data error")
-
-        respond_to do |format|
-          format.html # Flash message already set in log_error
-          format.json do
-            render json: { error: error_msg }, status: :unprocessable_entity
-          end
-        end
       end
     end
 
@@ -124,21 +88,16 @@ module Dbviewer
       limit = (params[:limit] || 10000).to_i
       include_headers = params[:include_headers] != "0"
 
-      begin
-        csv_data = export_table_to_csv(table_name, limit, include_headers)
+      csv_data = export_table_to_csv(table_name, limit, include_headers)
 
-        # Set filename with timestamp for uniqueness
-        timestamp = Time.now.strftime("%Y%m%d%H%M%S")
-        filename = "#{table_name}_export_#{timestamp}.csv"
+      # Set filename with timestamp for uniqueness
+      timestamp = Time.now.strftime("%Y%m%d%H%M%S")
+      filename = "#{table_name}_export_#{timestamp}.csv"
 
-        # Send data as file
-        send_data csv_data,
-                  type: "text/csv; charset=utf-8; header=present",
-                  disposition: "attachment; filename=#{filename}"
-      rescue => e
-        flash[:error] = "CSV export error: #{e.message}"
-        redirect_to database_path(table_name)
-      end
+      # Send data as file
+      send_data csv_data,
+                type: "text/csv; charset=utf-8; header=present",
+                disposition: "attachment; filename=#{filename}"
     end
 
     # Action to display SQL query logs
@@ -183,10 +142,6 @@ module Dbviewer
         format.html # render logs.html.erb
         format.json { render json: { queries: @queries, stats: @stats } }
       end
-    rescue => e
-      flash[:error] = "Error retrieving SQL logs: #{e.message}"
-      @queries = []
-      @stats = { total_count: 0, total_duration_ms: 0, avg_duration_ms: 0, max_duration_ms: 0, tables_queried: {} }
     end
   end
 end

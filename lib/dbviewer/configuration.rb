@@ -22,17 +22,29 @@ module Dbviewer
     # Timeout for SQL queries in seconds
     attr_accessor :query_timeout
 
+    # Query logging storage mode (:memory or :file)
+    attr_accessor :query_logging_mode
+
+    # Path for query log file when in :file mode
+    attr_accessor :query_log_path
+
+    # Maximum number of queries to keep in memory
+    attr_accessor :max_memory_queries
+
     # Admin access credentials (username, password)
     attr_accessor :admin_credentials
 
     def initialize
-      @per_page_options = [10, 20, 50, 100]
+      @per_page_options = [ 10, 20, 50, 100 ]
       @default_per_page = 20
       @max_records = 10000
       @max_query_length = 10000
       @cache_expiry = 300
       @enable_data_export = false
       @query_timeout = 30
+      @query_logging_mode = :memory
+      @query_log_path = "log/dbviewer.log"
+      @max_memory_queries = 1000
       @admin_credentials = nil
     end
   end

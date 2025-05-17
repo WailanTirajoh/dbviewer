@@ -3,26 +3,27 @@ module Dbviewer
   class QueryLogger
     include Singleton
 
-    attr_reader :collection
+    attr_reader :storage
 
     def initialize
-      @collection = QueryCollection.new
       @request_counter = 0
       @current_request_id = nil
       @last_query_time = nil
       @mutex = Mutex.new
 
+      # Initialize the appropriate storage backend based on configuration
+      setup_storage
       subscribe_to_sql_notifications
     end
 
     # Clear all stored queries
     def clear
-      collection.clear
+      storage.clear
     end
 
     # Get recent queries, optionally filtered
     def recent_queries(limit: 100, table_filter: nil, request_id: nil, min_duration: nil)
-      collection.filter(
+      storage.filter(
         limit: limit,
         table_filter: table_filter,
         request_id: request_id,
@@ -32,7 +33,7 @@ module Dbviewer
 
     # Get stats about all queries
     def stats
-      stats_for_queries(collection.all)
+      stats_for_queries(storage.all)
     end
 
     # Calculate stats for a specific set of queries (can be filtered)
@@ -40,7 +41,25 @@ module Dbviewer
       QueryAnalyzer.generate_stats(queries)
     end
 
+    # For backward compatibility - delegate to storage
+    def collection
+      storage
+    end
+
     private
+
+    def setup_storage
+      mode = Dbviewer.configuration.query_logging_mode || :memory
+
+      @storage = case mode
+      when :file
+        FileStorage.new
+      else # :memory or any other value as fallback
+        InMemoryStorage.new
+      end
+
+      Rails.logger.info("[DBViewer] Query Logger initialized with #{mode} storage mode")
+    end
 
     def subscribe_to_sql_notifications
       ActiveSupport::Notifications.subscribe("sql.active_record") do |*args|
@@ -61,7 +80,7 @@ module Dbviewer
         @last_query_time = current_time
 
         # Create and store the query
-        collection.add({
+        storage.add({
           sql: event.payload[:sql],
           name: event.payload[:name],
           timestamp: current_time,

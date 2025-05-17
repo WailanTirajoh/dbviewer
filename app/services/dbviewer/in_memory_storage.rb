@@ -1,13 +1,29 @@
 module Dbviewer
-  # QueryCollection handles the storage and retrieval of SQL queries
-  # This class is maintained for backward compatibility
-  # New code should use InMemoryStorage or FileStorage directly
-  class QueryCollection < InMemoryStorage
-    # Maximum number of queries to keep in memory
-    MAX_QUERIES = 1000
-
+  # InMemoryStorage implements QueryStorage for storing queries in memory
+  class InMemoryStorage < QueryStorage
     def initialize
-      super
+      @queries = []
+      @mutex = Mutex.new
+    end
+
+    # Get all queries
+    def all
+      @mutex.synchronize { @queries.dup }
+    end
+
+    # Add a new query to the collection
+    def add(query)
+      @mutex.synchronize do
+        @queries << query
+        # Trim if we have too many queries
+        max_queries = Dbviewer.configuration.max_memory_queries || 1000
+        @queries.shift if @queries.size > max_queries
+      end
+    end
+
+    # Clear all stored queries
+    def clear
+      @mutex.synchronize { @queries.clear }
     end
 
     # Get recent queries, optionally filtered

@@ -136,10 +136,39 @@ Dbviewer.configure do |config|
   config.max_records = 10000                         # Maximum records to return in any query
   config.enable_data_export = false                  # Whether to allow data exporting
   config.query_timeout = 30                          # SQL query timeout in seconds
+
+  # Query logging options
+  config.query_logging_mode = :memory                # Storage mode for SQL queries (:memory or :file)
+  config.query_log_path = "log/dbviewer.log"         # Path for query log file when in :file mode
+  config.max_memory_queries = 1000                   # Maximum number of queries to store in memory
 end
 ```
 
 The configuration is accessed through `Dbviewer.configuration` throughout the codebase. You can also access it via `Dbviewer.config` which is an alias for backward compatibility.
+
+## Query Logging
+
+DBViewer includes a powerful SQL query logging system that captures and analyzes database queries. You can access this log through the `/dbviewer/logs` endpoint. The logging system offers two storage backends:
+
+### In-Memory Storage (Default)
+
+By default, queries are stored in memory. This provides fast access but queries are lost when the application restarts:
+
+```ruby
+config.query_logging_mode = :memory       # Store queries in memory (default)
+config.max_memory_queries = 1000          # Maximum number of queries stored
+```
+
+### File-Based Storage
+
+For persistent logging across application restarts, you can use file-based storage:
+
+```ruby
+config.query_logging_mode = :file         # Store queries in a log file
+config.query_log_path = "log/dbviewer.log" # Path where query log file will be stored
+```
+
+The file format uses one JSON entry per line, making it easy to analyze with standard tools.
 
 ## Security Features
 

@@ -3,24 +3,33 @@ require "test_helper"
 module Dbviewer
   class QueryLoggerTest < ActiveSupport::TestCase
     setup do
+      # Store original configuration
+      @original_mode = Dbviewer.configuration.query_logging_mode
+      Dbviewer.configuration.query_logging_mode = :memory
+
       # Reset the singleton instance for testing
       QueryLogger.instance_variable_set(:@singleton__instance__, nil)
       @logger = QueryLogger.instance
 
-      # Stub out the collection to avoid ActiveSupport::Notifications in tests
-      @mock_collection = Minitest::Mock.new
-      @logger.instance_variable_set(:@collection, @mock_collection)
+      # Stub out the storage to avoid ActiveSupport::Notifications in tests
+      @mock_storage = Minitest::Mock.new
+      @logger.instance_variable_set(:@storage, @mock_storage)
     end
 
-    test "clear delegates to collection" do
-      @mock_collection.expect :clear, nil
+    teardown do
+      # Restore original configuration
+      Dbviewer.configuration.query_logging_mode = @original_mode
+    end
+
+    test "clear delegates to storage" do
+      @mock_storage.expect :clear, nil
       @logger.clear
-      @mock_collection.verify
+      @mock_storage.verify
     end
 
-    test "recent_queries delegates to collection with correct parameters" do
+    test "recent_queries delegates to storage with correct parameters" do
       expected_args = { limit: 50, table_filter: "users", request_id: "123", min_duration: 10 }
-      @mock_collection.expect :filter, [], [ expected_args ]
+      @mock_storage.expect :filter, [], [ expected_args ]
 
       @logger.recent_queries(
         limit: 50,
@@ -29,12 +38,12 @@ module Dbviewer
         min_duration: 10
       )
 
-      @mock_collection.verify
+      @mock_storage.verify
     end
 
-    test "stats retrieves all queries from collection" do
+    test "stats retrieves all queries from storage" do
       sample_queries = [ { duration_ms: 1.0 } ]
-      @mock_collection.expect :all, sample_queries
+      @mock_storage.expect :all, sample_queries
 
       # We don't want to run the actual analysis in this test
       QueryAnalyzer.stub :generate_stats, { total_count: 1 } do
@@ -42,7 +51,7 @@ module Dbviewer
         assert_equal({ total_count: 1 }, stats)
       end
 
-      @mock_collection.verify
+      @mock_storage.verify
     end
 
     test "stats_for_queries delegates to QueryAnalyzer" do
@@ -54,10 +63,10 @@ module Dbviewer
       end
     end
 
-    test "process_sql_event adds query to collection" do
-      # Create a real collection for this test
-      real_collection = QueryCollection.new
-      @logger.instance_variable_set(:@collection, real_collection)
+    test "process_sql_event adds query to storage" do
+      # Create a real storage for this test
+      real_storage = InMemoryStorage.new
+      @logger.instance_variable_set(:@storage, real_storage)
 
       # Create a mock event
       mock_event = Minitest::Mock.new
@@ -68,7 +77,7 @@ module Dbviewer
       @logger.send(:process_sql_event, mock_event)
 
       # Verify the query was added
-      queries = real_collection.all
+      queries = real_storage.all
       assert_equal 1, queries.size
       assert_equal "SELECT 1", queries.first[:sql]
       assert_equal "Test", queries.first[:name]
@@ -78,7 +87,7 @@ module Dbviewer
       # Initial call - should create a new request ID
       @logger.send(:update_request_id, Time.now)
       first_id = @logger.instance_variable_get(:@current_request_id)
-      assert_match /^req-\d+-\d+$/, first_id
+      assert_match(/^req-\d+-\d+$/, first_id)
 
       # Quick second call - should use the same ID
       @logger.send(:update_request_id, Time.now)
