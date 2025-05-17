@@ -44,8 +44,8 @@
     <div class="col-md-3">
       <div class="card h-100 text-center border-0 bg-light">
         <div class="card-body">
-          <h5 class="text-muted mb-1">Avg Records/Table</h5>
-          <h2 class="mb-0"><%= @analytics[:avg_records_per_table] %></h2>
+          <h5 class="text-muted mb-1">Database Size</h5>
+          <h2 class="mb-0"><%= number_to_human_size(@analytics[:schema_size]) %></h2>
         </div>
       </div>
     </div>
