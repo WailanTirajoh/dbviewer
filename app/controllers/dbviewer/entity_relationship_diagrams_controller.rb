@@ -1,8 +1,5 @@
 module Dbviewer
   class EntityRelationshipDiagramsController < ApplicationController
-    include Dbviewer::DatabaseOperations
-
-    # Action to display ERD (Entity Relationship Diagram)
     def index
       @tables = fetch_tables_with_stats
 

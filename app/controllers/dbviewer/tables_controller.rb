@@ -1,16 +1,11 @@
 module Dbviewer
   class TablesController < ApplicationController
-    # Include concerns for modular functionality
-    include Dbviewer::DatabaseOperations
     include Dbviewer::PaginationConcern
-    include Dbviewer::ErrorHandling
 
-    # Action to list all tables
     def index
       @tables = fetch_tables_with_stats
     end
 
-    # Action to show details and records for a specific table
     def show
       @table_name = params[:id]
       @columns = fetch_table_columns(@table_name)
@@ -29,21 +24,8 @@ module Dbviewer
         @time_grouping = params[:time_group] || "daily"
         @timestamp_data = fetch_timestamp_data(@table_name, @time_grouping)
       end
-
-      respond_to do |format|
-        format.html # Default HTML response
-        format.json do
-          render json: {
-            table_name: @table_name,
-            columns: @columns,
-            metadata: @metadata,
-            record_count: @total_count
-          }
-        end
-      end
     end
 
-    # Action to execute custom SQL queries
     def query
       @table_name = params[:id]
       @read_only_mode = true # Flag to indicate we're in read-only mode
@@ -59,7 +41,6 @@ module Dbviewer
       render :query
     end
 
-    # Action to export table data to CSV
     def export_csv
       table_name = params[:id]
       limit = (params[:limit] || 10000).to_i

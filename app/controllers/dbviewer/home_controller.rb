@@ -1,9 +1,7 @@
 module Dbviewer
   class HomeController < ApplicationController
-    include Dbviewer::DatabaseOperations
-    include Dbviewer::ErrorHandling
+    skip_before_action :set_tables
 
-    # Action to show the homepage dashboard
     def index
       @tables = fetch_tables_with_stats(include_record_counts: true)
       @analytics = fetch_database_analytics
