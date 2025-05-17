@@ -1,6 +1,6 @@
 module Dbviewer
-  # QueryLogger captures and analyzes SQL queries for debugging and performance monitoring
-  class QueryLogger
+  # Logger captures and analyzes SQL queries for debugging and performance monitoring
+  class Logger
     include Singleton
 
     attr_reader :storage
@@ -53,9 +53,9 @@ module Dbviewer
 
       @storage = case mode
       when :file
-        FileStorage.new
+        Storage::FileStorage.new
       else # :memory or any other value as fallback
-        InMemoryStorage.new
+        Storage::InMemoryStorage.new
       end
 
       Rails.logger.info("[DBViewer] Query Logger initialized with #{mode} storage mode")

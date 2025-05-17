@@ -102,7 +102,7 @@ module Dbviewer
 
     # Action to display SQL query logs
     def logs
-      require_dependency "dbviewer/query_logger"
+      require_dependency "dbviewer/logger"
 
       # Get filter parameters
       @table_filter = params[:table_filter]
@@ -113,13 +113,13 @@ module Dbviewer
 
       # Clear logs if requested
       if params[:clear_logs] == "true"
-        Dbviewer::QueryLogger.instance.clear
+        Dbviewer::Logger.instance.clear
         flash[:success] = "Query logs cleared successfully"
         redirect_to logs_databases_path and return
       end
 
       # Get query logs with optional filtering
-      @queries = Dbviewer::QueryLogger.instance.recent_queries(
+      @queries = Dbviewer::Logger.instance.recent_queries(
         limit: @limit,
         table_filter: @table_filter,
         request_id: @request_id,
@@ -128,10 +128,10 @@ module Dbviewer
 
       # Get query stats - if filtering is applied, only use stats from the filtered queries
       if @request_id.present? || @table_filter.present? || @min_duration.present?
-        @stats = Dbviewer::QueryLogger.instance.stats_for_queries(@queries)
+        @stats = Dbviewer::Logger.instance.stats_for_queries(@queries)
         @filtered_stats = true
       else
-        @stats = Dbviewer::QueryLogger.instance.stats
+        @stats = Dbviewer::Logger.instance.stats
         @filtered_stats = false
       end
 

@@ -140,8 +140,8 @@
         </div>
         <div class="card-body p-0">
           <% begin %>
-            <% require_dependency "dbviewer/query_logger" %>
-            <% queries = Dbviewer::QueryLogger.instance.recent_queries(limit: 5) %>
+            <% require_dependency "dbviewer/logger" %>
+            <% queries = Dbviewer::Logger.instance.recent_queries(limit: 5) %>
             
             <% if queries.any? %>
               <div class="table-responsive">
