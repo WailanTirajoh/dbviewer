@@ -4,20 +4,20 @@ module Dbviewer
   # This helps prevent potentially destructive SQL operations.
   class SqlValidator
     # List of SQL keywords that could modify data or schema
-    FORBIDDEN_KEYWORDS = %w(
+    FORBIDDEN_KEYWORDS = %w[
       UPDATE INSERT DELETE DROP ALTER CREATE TRUNCATE REPLACE
       RENAME GRANT REVOKE LOCK UNLOCK COMMIT ROLLBACK
       SAVEPOINT INTO CALL EXECUTE EXEC
-    )
+    ]
 
     # List of SQL keywords that should only be allowed in specific contexts
     CONDITIONAL_KEYWORDS = {
       # JOIN is allowed, but we should check for suspicious patterns
-      'JOIN' => /\bJOIN\b/i,
+      "JOIN" => /\bJOIN\b/i,
       # UNION is allowed, but potential for injection
-      'UNION' => /\bUNION\b/i,
+      "UNION" => /\bUNION\b/i,
       # WITH is allowed for CTEs, but need to ensure it's not a data modification
-      'WITH' => /\bWITH\b/i
+      "WITH" => /\bWITH\b/i
     }
 
     # Maximum allowed query length
@@ -48,7 +48,7 @@ module Dbviewer
       return false if has_suspicious_patterns?(normalized_sql)
 
       # Check for multiple statements (;) which could allow executing multiple commands
-      statements = normalized_sql.split(';').reject(&:blank?)
+      statements = normalized_sql.split(";").reject(&:blank?)
       return false if statements.size > 1
 
       # Additional specific checks for common SQL injection patterns
@@ -102,13 +102,13 @@ module Dbviewer
 
       begin
         # Remove SQL comments (both -- and /* */ styles)
-        normalized = sql.gsub(/--.*$/, '')             # Remove -- style comments
-                .gsub(/\/\*.*?\*\//m, '')       # Remove /* */ style comments
-                .gsub(/\s+/, ' ')               # Normalize whitespace
+        normalized = sql.gsub(/--.*$/, "")             # Remove -- style comments
+                .gsub(/\/\*.*?\*\//m, "")       # Remove /* */ style comments
+                .gsub(/\s+/, " ")               # Normalize whitespace
                 .strip                          # Remove leading/trailing whitespace
 
         # Replace multiple spaces with a single space
-        normalized.gsub(/\s{2,}/, ' ')
+        normalized.gsub(/\s{2,}/, " ")
       rescue => e
         Rails.logger.error("[DBViewer] SQL normalization error: #{e.message}")
         ""
@@ -119,7 +119,8 @@ module Dbviewer
     # @param sql [String] The SQL query to validate
     # @raise [SecurityError] if the query is unsafe
     # @return [String] The normalized SQL query if it's safe
-    def self.validate!(sql)      if sql.blank?
+    def self.validate!(sql)
+      if sql.blank?
         raise SecurityError, "Empty query is not allowed"
       end
 
@@ -146,7 +147,7 @@ module Dbviewer
       end
 
       # Check for multiple statements
-      statements = normalized_sql.split(';').reject(&:blank?)
+      statements = normalized_sql.split(";").reject(&:blank?)
       if statements.size > 1
         raise SecurityError, "Multiple SQL statements are not allowed"
       end
@@ -169,7 +170,7 @@ module Dbviewer
         normalized =~ /\b(INNER|LEFT|RIGHT|FULL|CROSS)?\s*JOIN\b/i
       when :subquery
         # Check if there are parentheses that likely contain a subquery
-        normalized.count('(') > normalized.count(')')
+        normalized.count("(") > normalized.count(")")
       when :order_by
         normalized =~ /\bORDER\s+BY\b/i
       when :group_by
