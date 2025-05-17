@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tooltip on hover shows the full database name
   - Responsive design for all screen sizes
 
+### Changed
+
+- **Refactored QueryLogger** for better maintainability and performance
+  - Split into separate classes with single responsibilities
+  - Improved test coverage and documentation
+  - Better organization and cleaner code structure
+
 ## [0.3.0] - 2025-05-14
 
 - **Database Analytics Dashboard** with visual insights into database structure
