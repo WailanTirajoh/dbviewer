@@ -1,5 +1,5 @@
 module Dbviewer
-  class DatabasesController < ApplicationController
+  class TablesController < ApplicationController
     # Include concerns for modular functionality
     include Dbviewer::DatabaseOperations
     include Dbviewer::PaginationConcern

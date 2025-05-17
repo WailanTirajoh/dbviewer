@@ -11,7 +11,7 @@
   <% if @tables.any? %>
     <div class="list-group list-group-flush" id="tablesList">
       <% @tables.each do |table| %>
-        <%= link_to database_path(table[:name]), title: table[:name],
+        <%= link_to table_path(table[:name]), title: table[:name],
                     class: "list-group-item list-group-item-action d-flex align-items-center #{'active' if current_table?(table[:name])}", 
                     tabindex: "0", 
                     data: { table_name: table[:name] },

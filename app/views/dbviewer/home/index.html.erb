@@ -72,7 +72,7 @@
                   <% @analytics[:largest_tables].each do |table| %>
                     <tr>
                       <td>
-                        <a href="<%= dbviewer.database_path(table[:name]) %>">
+                        <a href="<%= dbviewer.table_path(table[:name]) %>">
                           <%= table[:name] %>
                         </a>
                       </td>
@@ -112,7 +112,7 @@
                   <% @analytics[:widest_tables].each do |table| %>
                     <tr>
                       <td>
-                        <a href="<%= dbviewer.database_path(table[:name]) %>">
+                        <a href="<%= dbviewer.table_path(table[:name]) %>">
                           <%= table[:name] %>
                         </a>
                       </td>

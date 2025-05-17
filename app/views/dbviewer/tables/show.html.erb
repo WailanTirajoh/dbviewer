@@ -67,7 +67,7 @@
       <div class="me-3">
         <label for="per-page-select" class="me-2">Per page:</label>
         <select id="per-page-select" class="form-select form-select-sm" onchange="window.location.href='<%= table_path(@table_name) %>?per_page=' + this.value + '&page=1&order_by=<%= @order_by %>&order_direction=<%= @order_direction %>'">
-          <% Dbviewer::DatabasesController.per_page_options.each do |option| %>
+          <% Dbviewer::TablesController.per_page_options.each do |option| %>
             <option value="<%= option %>" <%= 'selected' if @per_page == option %>><%= option %></option>
           <% end %>
         </select>

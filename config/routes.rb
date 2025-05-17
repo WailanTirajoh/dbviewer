@@ -1,5 +1,5 @@
 Dbviewer::Engine.routes.draw do
-  resources :databases, only: [ :index, :show ] do
+  resources :tables, only: [ :index, :show ] do
     member do
       get "query"
       post "query"
@@ -8,7 +8,7 @@ Dbviewer::Engine.routes.draw do
   end
 
   # ERD preview route
-  get "erd", to: "databases#erd", as: :erd
+  get "erd", to: "tables#erd", as: :erd
   resources :logs, only: [ :index ] do
     collection do
       delete :destroy_all
