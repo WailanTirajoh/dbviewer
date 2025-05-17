@@ -7,7 +7,6 @@ module Dbviewer
 
     # Action to list all tables
     def index
-      # No longer fetch analytics, focus only on tables
       @tables = fetch_tables_with_stats
     end
 
