@@ -110,13 +110,16 @@ module Dbviewer
         result = database_manager.execute_query(query).first
         result ? result["size"].to_i : nil
       when /sqlite/
-        # For SQLite, we can use the page count and page size
-        query = "PRAGMA page_count"
-        page_count = database_manager.execute_query(query).first.values.first.to_i
+        # For SQLite, we need to use the special PRAGMA method without LIMIT
+        # Get page count
+        page_count_result = database_manager.execute_sqlite_pragma("page_count")
+        page_count = page_count_result.first.values.first.to_i
 
-        query = "PRAGMA page_size"
-        page_size = database_manager.execute_query(query).first.values.first.to_i
+        # Get page size
+        page_size_result = database_manager.execute_sqlite_pragma("page_size")
+        page_size = page_size_result.first.values.first.to_i
 
+        # Calculate total size
         page_count * page_size
       else
         nil # Unsupported database type for size calculation

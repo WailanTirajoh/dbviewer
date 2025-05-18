@@ -132,6 +132,11 @@ module Dbviewer
 
       normalized_sql = normalize(sql)
 
+      # Special case for SQLite PRAGMA statements which are safe read-only commands
+      if normalized_sql =~ /\A\s*PRAGMA\s+[a-z0-9_]+\s*\z/i
+        return normalized_sql
+      end
+
       unless normalized_sql =~ /\A\s*SELECT\s+/i
         raise SecurityError, "Query must begin with SELECT for security reasons"
       end

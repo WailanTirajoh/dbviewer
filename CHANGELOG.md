@@ -40,6 +40,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated all related routes and path helpers
   - View templates moved to tables/ directory
 
+### Fixed
+
+- Fixed SQLite schema size calculation with proper handling of PRAGMA commands
+  - Added specialized execution method for SQLite PRAGMA statements
+  - Prevented LIMIT clause from being added to PRAGMA commands
+  - Enhanced SQL validator to recognize safe PRAGMA statements
+
 ## [0.3.1] - 2025-05-17
 
 ### Added

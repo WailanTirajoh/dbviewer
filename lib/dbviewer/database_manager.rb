@@ -226,6 +226,23 @@ module Dbviewer
       end
     end
 
+    # Execute a SQLite PRAGMA command without adding a LIMIT clause
+    # @param pragma [String] PRAGMA command to execute (without the "PRAGMA" keyword)
+    # @return [ActiveRecord::Result] Result set with the PRAGMA value
+    # @raise [StandardError] If the query is invalid or cannot be executed
+    def execute_sqlite_pragma(pragma)
+      begin
+        sql = "PRAGMA #{pragma}"
+        Rails.logger.debug("[DBViewer] Executing SQLite pragma: #{sql}")
+        result = connection.exec_query(sql)
+        Rails.logger.debug("[DBViewer] Pragma completed, returned #{result.rows.size} rows")
+        result
+      rescue => error
+        Rails.logger.error("[DBViewer] SQLite pragma error: #{error.message} for pragma: #{pragma}")
+        raise error
+      end
+    end
+
     # Query a table with more granular control using ActiveRecord
     # @param table_name [String] Name of the table
     # @param select [String, Array] Columns to select
