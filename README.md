@@ -114,10 +114,12 @@ This is necessary because API-only Rails applications don't include the Flash mi
 
 ### Available Pages
 
-- **Table Index** (`/dbviewer`): Shows all tables in your database with their record count and column count
-- **Table Details** (`/dbviewer/databases/:table_name`): Shows table structure and records with pagination
-- **SQL Query** (`/dbviewer/databases/:table_name/query`): Allows running custom SQL queries
-- **ERD View** (`/dbviewer/erd`): Interactive Entity Relationship Diagram of your database
+- **Dashboard** (`/dbviewer`): Comprehensive overview with database statistics and analytics
+- **Tables Index** (`/dbviewer/tables`): Shows all tables in your database with column counts and quick access
+- **Table Details** (`/dbviewer/tables/:table_name`): Shows table structure and records with pagination
+- **SQL Query** (`/dbviewer/tables/:table_name/query`): Allows running custom SQL queries
+- **ERD View** (`/dbviewer/entity_relationship_diagrams`): Interactive Entity Relationship Diagram of your database
+- **SQL Query Logs** (`/dbviewer/logs`): View and analyze logged SQL queries with performance metrics
 
 ## 🤝🏻 Extending DBViewer
 
