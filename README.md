@@ -1,4 +1,4 @@
-# DBViewer
+# 👁️ DBViewer
 
 DBViewer is a powerful Rails engine that provides a comprehensive interface to view and explore database tables, records, and schema.
 It's designed for development, debugging, and database analysis, offering a clean and intuitive way to interact with your application's database.
@@ -6,7 +6,7 @@ It's designed for development, debugging, and database analysis, offering a clea
 <img width="1470" alt="image" src="https://github.com/user-attachments/assets/c946a286-e80a-4cca-afa0-654052e4ef2c" />
 
 
-## Features
+## ✨ Features
 
 - **Dashboard**: View a comprehensive dashboard with database analytics, largest tables, most complex tables, and recent SQL queries
 - **Table Overview**: View a list of all tables with record count, column count, and quick access links
@@ -65,7 +65,7 @@ It's designed for development, debugging, and database analysis, offering a clea
   
 </details>
 
-## Installation
+## 📥 Installation
 
 Add this line to your application's Gemfile:
 
@@ -79,7 +79,7 @@ And then execute:
 $ bundle
 ```
 
-## Usage
+## 🔧 Usage
 
 Mount the engine in your application's `config/routes.rb` file:
 
@@ -103,25 +103,7 @@ Then, visit `/dbviewer` in your browser to access the database viewer.
 - **SQL Query** (`/dbviewer/databases/:table_name/query`): Allows running custom SQL queries
 - **ERD View** (`/dbviewer/erd`): Interactive Entity Relationship Diagram of your database
 
-## Extending DBViewer
-
-### Adding Custom Styles
-
-You can add custom styles by creating an initializer:
-
-```ruby
-# config/initializers/dbviewer.rb
-Rails.application.config.to_prepare do
-  Dbviewer::ApplicationController.class_eval do
-    helper_method :custom_dbviewer_stylesheets
-
-    def custom_dbviewer_stylesheets
-      # Return an array of stylesheet paths to include
-      %w[your_custom_stylesheet]
-    end
-  end
-end
-```
+## 🤝🏻 Extending DBViewer
 
 ### Adding Custom Functionality
 
@@ -152,7 +134,7 @@ Rails.application.config.to_prepare do
 end
 ```
 
-## Configuration Options
+## ⚙️ Configuration Options
 
 You can configure DBViewer by creating an initializer in your application:
 
@@ -176,7 +158,7 @@ end
 
 The configuration is accessed through `Dbviewer.configuration` throughout the codebase. You can also access it via `Dbviewer.config` which is an alias for backward compatibility.
 
-## Query Logging
+## 🪵 Query Logging
 
 DBViewer includes a powerful SQL query logging system that captures and analyzes database queries. You can access this log through the `/dbviewer/logs` endpoint. The logging system offers two storage backends:
 
@@ -200,7 +182,7 @@ config.query_log_path = "log/dbviewer.log" # Path where query log file will be s
 
 The file format uses one JSON entry per line, making it easy to analyze with standard tools.
 
-## Security Features
+## 🔒 Security Features
 
 DBViewer includes several security features to protect your database:
 
@@ -210,7 +192,7 @@ DBViewer includes several security features to protect your database:
 - **Pattern Detection**: Detection of SQL injection patterns and suspicious constructs
 - **Error Handling**: Informative error messages without exposing sensitive information
 
-## Production Access (Not Recommended)
+## 🌱 Production Access (Not Recommended)
 
 By default, DBViewer only runs in development or test environments for security reasons. If you need to access it in production (not recommended):
 
@@ -237,11 +219,11 @@ By default, DBViewer only runs in development or test environments for security 
    https://yourdomain.com/dbviewer?override_env_check=your_secure_random_key
    ```
 
-## Security Note
+## 📝 Security Note
 
 ⚠️ **Warning**: This engine is designed for development purposes. It's not recommended to use it in production as it provides direct access to your database contents. If you must use it in production, ensure it's protected behind authentication and use the production access key mechanism with a strong random key.
 
-## UI Enhancements
+## 👨‍💻 UI Enhancements
 
 DBViewer includes several UI enhancements for a smoother user experience:
 
@@ -282,10 +264,10 @@ The ERD visualization provides several interactive features:
 - Better spacing and layout for mobile devices
 - Optimized element sizing for touch interactions
 
-## Contributing
+## 🤌🏻 Contributing
 
 Bug reports and pull requests are welcome.
 
-## License
+## 📄 License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
