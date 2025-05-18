@@ -5,6 +5,10 @@ require 'rails_helper'
 RSpec.describe Dbviewer::Logger do
   let(:logger) { Class.new(described_class).instance }
 
+  before(:each) do
+    logger.clear
+  end
+
   describe "#stats" do
     context 'when mode is :file' do
       it "show list of stats" do
@@ -29,7 +33,6 @@ RSpec.describe Dbviewer::Logger do
       before do
         allow(Dbviewer.configuration).to receive(:query_logging_mode).and_return(:memory)
         allow(logger).to receive(:setup_storage)
-        allow(logger).to receive(:subscribe_to_sql_notifications)
       end
 
       it "show list of stats" do
