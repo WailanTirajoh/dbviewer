@@ -241,47 +241,6 @@ By default, DBViewer only runs in development or test environments for security 
 
 ⚠️ **Warning**: This engine is designed for development purposes. It's not recommended to use it in production as it provides direct access to your database contents. If you must use it in production, ensure it's protected behind authentication and use the production access key mechanism with a strong random key.
 
-## 👨‍💻 UI Enhancements
-
-DBViewer includes several UI enhancements for a smoother user experience:
-
-### Dynamic Database Name Display
-
-The sidebar header automatically displays the current database name, making it easier to identify which database you are working with. For databases with long names, the display is automatically truncated with an ellipsis (...), but hovering over the name reveals the full database name in a tooltip.
-
-### Fixed Navigation Header
-
-The top navigation bar remains fixed while scrolling, providing constant access to navigation controls.
-
-### Enhanced Table Filtering
-
-- Real-time filtering of tables in the sidebar
-- Keyboard navigation support for accessibility
-- Clear indication of filtered results count
-
-### Improved Table Display
-
-- Fixed table headers that remain visible when scrolling through records
-- Maximum height for table containers with smooth scrolling
-- Single-line cell display with ellipsis for content that exceeds 400px width
-- Hover tooltips that display the full content of truncated cells
-
-### Entity Relationship Diagram
-
-The ERD visualization provides several interactive features:
-
-- **Zoom Controls**: Easily zoom in/out with buttons or mouse wheel
-- **Panning**: Navigate large diagrams by dragging
-- **Reset View**: Quickly return to the default view
-- **Dynamic Loading**: Tables and their columns are loaded dynamically for better performance
-- **Relationship Lines**: Visual representation of foreign key relationships between tables
-
-### Responsiveness
-
-- Improved sidebar behavior on different screen sizes
-- Better spacing and layout for mobile devices
-- Optimized element sizing for touch interactions
-
 ## 🤌🏻 Contributing
 
 Bug reports and pull requests are welcome.
