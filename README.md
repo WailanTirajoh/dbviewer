@@ -3,6 +3,9 @@
 DBViewer is a powerful Rails engine that provides a comprehensive interface to view and explore database tables, records, and schema.
 It's designed for development, debugging, and database analysis, offering a clean and intuitive way to interact with your application's database.
 
+<img width="1470" alt="image" src="https://github.com/user-attachments/assets/c946a286-e80a-4cca-afa0-654052e4ef2c" />
+
+
 ## Features
 
 - **Dashboard**: View a comprehensive dashboard with database analytics, largest tables, most complex tables, and recent SQL queries
@@ -35,6 +38,32 @@ It's designed for development, debugging, and database analysis, offering a clea
   - Advanced table filtering with keyboard navigation support
   - Proper formatting for various data types (dates, JSON, arrays, etc.)
   - Enhanced data presentation with appropriate styling
+
+
+## 📸 Screenshots
+
+<details>
+  <summary>Click to see more screenshots</summary>
+  
+  #### Dashboard Overview
+  <img width="1470" alt="image" src="https://github.com/user-attachments/assets/4e803d51-9a5b-4c80-bb4c-a761dba15a40" />
+
+
+  
+  #### Table Details
+  <img width="1470" alt="image" src="https://github.com/user-attachments/assets/fe425ab4-5b22-4839-87bc-050b80ad4cf0" />
+
+  
+  #### Query Editor
+  <img width="1470" alt="image" src="https://github.com/user-attachments/assets/392c73c7-0724-4a39-8ffa-8ff5115c5d5f" />
+
+  #### Query Logs
+  <img width="1470" alt="image" src="https://github.com/user-attachments/assets/7fcf3355-be3c-4d6a-9ab0-811333be5bbc" />
+
+  #### ERD
+  <img width="1470" alt="image" src="https://github.com/user-attachments/assets/0a2f838f-4ca6-4592-b939-7c7f8ac40f48" />
+  
+</details>
 
 ## Installation
 
