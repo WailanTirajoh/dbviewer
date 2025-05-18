@@ -1,6 +1,11 @@
 require "dbviewer/version"
 require "dbviewer/configuration"
 require "dbviewer/engine"
+require "dbviewer/error_handler"
+require "dbviewer/cache_manager"
+require "dbviewer/table_metadata_manager"
+require "dbviewer/dynamic_model_factory"
+require "dbviewer/query_executor"
 require "dbviewer/database_manager"
 require "dbviewer/sql_validator"
 
@@ -42,13 +47,6 @@ module Dbviewer
 
     # Initialize engine with default values or user-provided configuration
     def init
-      Dbviewer::DatabaseManager.singleton_class.class_eval do
-        define_method(:configuration) { Dbviewer.configuration }
-        define_method(:default_per_page) { Dbviewer.configuration.default_per_page }
-        define_method(:max_records) { Dbviewer.configuration.max_records }
-        define_method(:cache_expiry) { Dbviewer.configuration.cache_expiry }
-      end
-
       # Define class methods to access configuration
       Dbviewer::SqlValidator.singleton_class.class_eval do
         define_method(:configuration) { Dbviewer.configuration }
