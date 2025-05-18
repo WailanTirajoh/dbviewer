@@ -2,6 +2,10 @@
   Query: <%= @table_name %>
 <% end %>
 
+<% content_for :head do %>
+  <link href="https://cdn.jsdelivr.net/npm/vscode-codicons@0.0.17/dist/codicon.min.css" rel="stylesheet">
+<% end %>
+
 <% content_for :sidebar_active do %>active<% end %>
 
 <% content_for :sidebar do %>
@@ -25,6 +29,9 @@
   <% end %>
   
   <div class="card mb-4">
+
+    <div class="monaco" style="min-height: 100px"></div>
+    
     <div class="card-header">
       <h5>SQL Query (Read-Only)</h5>
     </div>
@@ -135,3 +142,9 @@
     </div>
   <% end %>
 </div>
+
+<script type="module">
+  import * as monaco from 'https://cdn.jsdelivr.net/npm/monaco-editor@0.39.0/+esm';
+
+  monaco.editor.create(document.querySelector('.monaco'));
+</script>
