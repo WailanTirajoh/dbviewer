@@ -6,10 +6,6 @@ module Dbviewer
     # Maximum number of queries to keep in memory
     MAX_QUERIES = 1000
 
-    def initialize
-      super
-    end
-
     # Get recent queries, optionally filtered
     def filter(limit: 100, table_filter: nil, request_id: nil, min_duration: nil)
       result = all

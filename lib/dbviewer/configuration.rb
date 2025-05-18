@@ -48,32 +48,4 @@ module Dbviewer
       @admin_credentials = nil
     end
   end
-
-  # Class accessor for configuration
-  class << self
-    attr_accessor :configuration
-  end
-
-  # Configure the engine with a block
-  #
-  # @example
-  #   Dbviewer.configure do |config|
-  #     config.per_page_options = [10, 25, 50]
-  #     config.default_per_page = 25
-  #   end
-  def self.configure
-    self.configuration ||= Configuration.new
-    yield(configuration) if block_given?
-  end
-
-  # Reset configuration to defaults
-  def self.reset_configuration
-    self.configuration = Configuration.new
-  end
-
-  # Get the current configuration
-  # Creates a default configuration if none exists
-  def self.configuration
-    @configuration ||= Configuration.new
-  end
 end

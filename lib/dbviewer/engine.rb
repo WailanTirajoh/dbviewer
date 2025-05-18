@@ -15,15 +15,8 @@ module Dbviewer
     initializer "dbviewer.notifications" do
       ActiveSupport::Notifications.subscribe("sql.active_record") do |*args|
         event = ActiveSupport::Notifications::Event.new(*args)
-
-        next if QueryParser.should_skip_query?(event)
         Logger.instance.add(event)
       end
-    end
-
-    # Handle database connections at the appropriate time
-    config.to_prepare do
-      ActiveRecord::Base.connection if Rails.application.initialized?
     end
   end
 end

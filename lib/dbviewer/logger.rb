@@ -4,27 +4,25 @@ module Dbviewer
     include Singleton
 
     def initialize
-      @mutex = Mutex.new
-
       set_storage
       Rails.logger.info("[DBViewer] Query Logger initialized with #{mode} storage mode")
     end
 
     # Add a new SQL event query to the logger
     def add(event)
-      @mutex.synchronize do
-        current_time = Time.now
-        @storage.add({
-          sql: event.payload[:sql],
-          name: event.payload[:name],
-          timestamp: current_time,
-          duration_ms: event.duration.round(2),
-          binds: QueryParser.format_binds(event.payload[:binds]),
-          request_id: event.transaction_id || current_time.to_i,
-          thread_id: Thread.current.object_id.to_s,
-          caller: event.payload[:caller]
-        })
-      end
+      return if QueryParser.should_skip_query?(event)
+
+      current_time = Time.now
+      @storage.add({
+        sql: event.payload[:sql],
+        name: event.payload[:name],
+        timestamp: current_time,
+        duration_ms: event.duration.round(2),
+        binds: QueryParser.format_binds(event.payload[:binds]),
+        request_id: event.transaction_id || current_time.to_i,
+        thread_id: Thread.current.object_id.to_s,
+        caller: event.payload[:caller]
+      })
     end
 
     # Clear all stored queries
@@ -54,6 +52,8 @@ module Dbviewer
 
     class << self
       extend Forwardable
+
+      # Delegate add method to the singleton instance so that it can be called directly on sql events
       def_delegators :instance, :add
     end
 

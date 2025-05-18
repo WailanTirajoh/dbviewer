@@ -1,7 +1,6 @@
 require "dbviewer/version"
 require "dbviewer/configuration"
 require "dbviewer/engine"
-require "dbviewer/initializer"
 require "dbviewer/database_manager"
 require "dbviewer/sql_validator"
 
@@ -17,11 +16,6 @@ module Dbviewer
       @configuration ||= Configuration.new
     end
 
-    # Alias for backward compatibility
-    def config
-      configuration
-    end
-
     # Configure the engine with a block
     #
     # @example
@@ -30,7 +24,7 @@ module Dbviewer
     #     config.default_per_page = 25
     #   end
     def configure
-      yield(config) if block_given?
+      yield(configuration) if block_given?
     end
 
     # Reset configuration to defaults
@@ -40,7 +34,10 @@ module Dbviewer
 
     # This class method will be called by the engine when it's appropriate
     def setup
-      Dbviewer::Initializer.setup
+      ActiveRecord::Base.connection
+      Rails.logger.info "DBViewer successfully connected to database"
+    rescue => e
+      Rails.logger.error "DBViewer could not connect to database: #{e.message}"
     end
 
     # Initialize engine with default values or user-provided configuration
