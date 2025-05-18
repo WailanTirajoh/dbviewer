@@ -3,7 +3,7 @@ module Dbviewer
     before_action :set_filters, only: [ :index ]
 
     def index
-      @queries = logger.recent_queries(
+      @queries = dbviewer_logger.recent_queries(
         limit: @limit,
         table_filter: @table_filter,
         request_id: @request_id,
@@ -11,16 +11,16 @@ module Dbviewer
       )
 
       if @request_id.present? || @table_filter.present? || @min_duration.present?
-        @stats = logger.stats_for_queries(@queries)
+        @stats = dbviewer_logger.stats_for_queries(@queries)
         @filtered_stats = true
       else
-        @stats = logger.stats
+        @stats = dbviewer_logger.stats
         @filtered_stats = false
       end
     end
 
     def destroy_all
-      logger.clear
+      dbviewer_logger.clear
       flash[:success] = "Query logs cleared successfully"
 
       redirect_to logs_path
@@ -36,8 +36,8 @@ module Dbviewer
       @limit = 1000 if @limit > 1000
     end
 
-    def logger
-      @logger ||= Dbviewer::Logger.instance
+    def dbviewer_logger
+      @dbviewer_logger ||= Dbviewer::Logger.instance
     end
   end
 end
