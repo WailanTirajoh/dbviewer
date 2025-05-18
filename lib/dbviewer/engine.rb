@@ -17,7 +17,7 @@ module Dbviewer
         event = ActiveSupport::Notifications::Event.new(*args)
 
         next if QueryParser.should_skip_query?(event)
-        Logger.instance.log_sql_event(event)
+        Logger.instance.add(event)
       end
     end
 

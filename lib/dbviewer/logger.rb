@@ -6,7 +6,25 @@ module Dbviewer
     def initialize
       @mutex = Mutex.new
 
-      setup_storage
+      set_storage
+      Rails.logger.info("[DBViewer] Query Logger initialized with #{mode} storage mode")
+    end
+
+    # Add a new SQL event query to the logger
+    def add(event)
+      @mutex.synchronize do
+        current_time = Time.now
+        @storage.add({
+          sql: event.payload[:sql],
+          name: event.payload[:name],
+          timestamp: current_time,
+          duration_ms: event.duration.round(2),
+          binds: QueryParser.format_binds(event.payload[:binds]),
+          request_id: event.transaction_id || current_time.to_i,
+          thread_id: Thread.current.object_id.to_s,
+          caller: event.payload[:caller]
+        })
+      end
     end
 
     # Clear all stored queries
@@ -34,26 +52,9 @@ module Dbviewer
       QueryAnalyzer.generate_stats(queries)
     end
 
-    def log_sql_event(event)
-      @mutex.synchronize do
-        current_time = Time.now
-        @storage.add({
-          sql: event.payload[:sql],
-          name: event.payload[:name],
-          timestamp: current_time,
-          duration_ms: event.duration.round(2),
-          binds: QueryParser.format_binds(event.payload[:binds]),
-          request_id: event.transaction_id || current_time.to_i,
-          thread_id: Thread.current.object_id.to_s,
-          caller: event.payload[:caller]
-        })
-      end
-    end
-
-
     class << self
       extend Forwardable
-      def_delegators :instance, :log_sql_event
+      def_delegators :instance, :add
     end
 
     private
@@ -62,16 +63,13 @@ module Dbviewer
       @mode ||= Dbviewer.configuration.query_logging_mode || :memory
     end
 
-    # TODO: pass storage class as a parameter to the constructor
-    def setup_storage
+    def set_storage
       @storage ||= case mode
       when :file
         Storage::FileStorage.new
       else
         Storage::InMemoryStorage.new
       end
-
-      Rails.logger.info("[DBViewer] Query Logger initialized with #{mode} storage mode")
     end
   end
 end
