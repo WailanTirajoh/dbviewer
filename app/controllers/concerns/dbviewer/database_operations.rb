@@ -201,7 +201,8 @@ module Dbviewer
       quoted_table = safe_quote_table_name(@table_name)
       default_query = "SELECT * FROM #{quoted_table} LIMIT 100"
 
-      @query = params[:query].presence || default_query
+      # Use the raw query parameter, or fall back to default
+      @query = params[:query].present? ? params[:query].to_s : default_query
 
       # Validate query for security
       unless ::Dbviewer::SqlValidator.safe_query?(@query)

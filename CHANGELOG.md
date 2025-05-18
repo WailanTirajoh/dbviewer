@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.1] - 2025-05-18
 
+### Added
+
+- **Enhanced SQL editor** in the query interface
+  - Integrated Monaco Editor with SQL syntax highlighting
+  - Smart SQL auto-completion with table and column names
+  - Interactive example queries based on table structure
+  - Keyboard shortcuts for common SQL operations
+  - Status bar with position and table information
+  - Proper handling of quoted text in SQL queries
+  - Collapsible table structure reference for cleaner interface
+
 ### Changed
 
 - Renamed `DatabasesController` to `TablesController` for better semantic clarity

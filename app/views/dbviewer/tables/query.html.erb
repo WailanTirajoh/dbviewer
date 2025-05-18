@@ -4,6 +4,77 @@
 
 <% content_for :head do %>
   <link href="https://cdn.jsdelivr.net/npm/vscode-codicons@0.0.17/dist/codicon.min.css" rel="stylesheet">
+  <style>
+    /* Monaco Editor styling */
+    #monaco-editor {
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    .example-queries {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 8px;
+    }
+    .example-query {
+      display: inline-block;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    .example-query:hover {
+      background-color: #0d6efd;
+      color: white;
+    }
+    /* Keyboard shortcut helper */
+    .keyboard-hint {
+      font-size: 0.8rem;
+      margin-left: 8px;
+      opacity: 0.7;
+    }
+    
+    /* Monaco status bar */
+    .monaco-status-bar {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 8px;
+      font-size: 0.75rem;
+      background-color: #f8f9fa;
+      border: 1px solid #ced4da;
+      border-top: none;
+      border-bottom-left-radius: 4px;
+      border-bottom-right-radius: 4px;
+      color: #6c757d;
+    }
+    
+    .monaco-status-bar .column-info {
+      font-weight: 500;
+    }
+    
+    /* Table structure styles */
+    #tableStructureHeader .btn-link {
+      color: #212529;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      text-align: left;
+    }
+    
+    #tableStructureHeader .btn-link:hover,
+    #tableStructureHeader .btn-link:focus {
+      text-decoration: none;
+      color: #0d6efd;
+    }
+    
+    #tableStructureHeader .btn-link i {
+      transition: transform 0.2s ease-in-out;
+    }
+  </style>
 <% end %>
 
 <% content_for :sidebar_active do %>active<% end %>
@@ -29,69 +100,87 @@
   <% end %>
   
   <div class="card mb-4">
-
-    <div class="monaco" style="min-height: 100px"></div>
-    
     <div class="card-header">
       <h5>SQL Query (Read-Only)</h5>
     </div>
     <div class="card-body">
-      <div class="alert alert-info mb-3">
-        <i class="bi bi-info-circle me-2"></i>
-        <strong>Read-Only Mode:</strong> For security reasons, only SELECT queries are allowed. Any other SQL operations (INSERT, UPDATE, DELETE, ALTER, etc.) will be rejected.
-      </div>
-      
-      <div class="card mb-3">
-        <div class="card-header">
-          <h6>Table Structure Reference</h6>
-        </div>
-        <div class="card-body p-2">
-          <% if @columns.present? %>
-            <div class="table-responsive">
-              <table class="table table-sm table-bordered mb-0">
-                <thead>
-                  <tr>
-                    <th>Column</th>
-                    <th>Type</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% @columns.each do |column| %>
-                    <tr>
-                      <td><code><%= column[:name] %><%= " (PK)" if column[:primary] %></code></td>
-                      <td><span class="badge bg-secondary"><%= column[:type] %></span></td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
-            </div>
-          <% else %>
-            <p class="mb-0">No column information available.</p>
-          <% end %>
-        </div>
-      </div>
-      
-      <%= form_with url: query_table_path(@table_name), method: :post, local: true do |form| %>
+      <%= form_with url: query_table_path(@table_name), method: :post, local: true, id: "sql-query-form" do |form| %>
         <div class="mb-3">
-          <%= form.text_area :query, value: @query, class: 'form-control', rows: 7, 
-                placeholder: "Enter your SELECT query here...", 
-                style: 'font-family: monospace; font-size: 14px;' %>
+          <div id="monaco-editor" style="min-height: 200px; border: 1px solid #ced4da; border-radius: 4px; margin-bottom: 0rem;" 
+               data-initial-query="<%= CGI.escapeHTML(@query.to_s) %>"></div>
+          <%= form.hidden_field :query, id: "query-input", value: @query.to_s %>
         </div>
         
         <div class="d-flex justify-content-between align-items-start">
           <div class="form-text text-muted">
             <strong>Examples:</strong><br>
-            <code>SELECT * FROM <%= @table_name %> LIMIT 100</code><br>
-            <code>SELECT column1, column2 FROM <%= @table_name %> WHERE column3 = 'value'</code><br>
-            <code>SELECT COUNT(*) FROM <%= @table_name %> GROUP BY category</code>
+            <div class="example-queries">
+              <code class="example-query btn btn-sm btn-outline-secondary mb-1">SELECT * FROM <%= @table_name %> LIMIT 100</code>
+              <code class="example-query btn btn-sm btn-outline-secondary mb-1">SELECT 
+              <% 
+                # Display first 3 columns or all if less than 3
+                display_cols = @columns.present? ? @columns.first(3).map { |c| c[:name] }.join(", ") : "column1, column2"
+                # Get first non-ID column for WHERE example if available
+                where_col = @columns.present? ? (@columns.find { |c| !c[:name].to_s.downcase.include?("id") } || @columns.first)[:name] : "column_name"
+                # Get a numeric column for aggregation if available
+                num_col = @columns.present? ? (@columns.find { |c| c[:type].to_s.downcase.include?("int") || c[:type].to_s.downcase.include?("num") } || @columns.first)[:name] : "id"
+              %>
+              <%= display_cols %> FROM <%= @table_name %> WHERE <%= where_col %> = 'value'</code>
+              <code class="example-query btn btn-sm btn-outline-secondary mb-1">SELECT COUNT(*) FROM <%= @table_name %> GROUP BY <%= num_col %></code>
+            </div>
           </div>
           <div>
             <%= form.submit "Run Query", class: "btn btn-primary" %>
+            <span class="keyboard-hint d-none d-md-inline">(or press Cmd+Enter / Ctrl+Enter)</span>
+            <div class="small text-muted mt-2 d-none d-md-block">
+              <strong>Shortcuts:</strong> 
+              <span class="me-2">Cmd+Alt+T: Toggle table structure</span>
+              <span class="me-2">Cmd+Alt+S: Insert SELECT</span>
+              <span>Cmd+Alt+W: Insert WHERE</span>
+            </div>
           </div>
         </div>
       <% end %>
     </div>
   </div>
+  <div class="card mb-3">
+    <div class="card-header" id="tableStructureHeader">
+      <h6 class="mb-0">
+        <button class="btn btn-link btn-sm text-decoration-none p-0 collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tableStructureContent" aria-expanded="false" aria-controls="tableStructureContent">
+          <i class="bi bi-chevron-down me-1"></i>
+          Table Structure Reference
+          <small class="text-muted ms-2">(<%= @columns.present? ? @columns.size : 0 %> columns)</small>
+        </button>
+      </h6>
+    </div>
+    <div id="tableStructureContent" class="collapse" aria-labelledby="tableStructureHeader">
+      <div class="card-body p-2">
+        <% if @columns.present? %>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-0">
+              <thead>
+                <tr>
+                  <th>Column</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @columns.each do |column| %>
+                  <tr>
+                    <td><code><%= column[:name] %><%= " (PK)" if column[:primary] %></code></td>
+                    <td><span class="badge bg-secondary"><%= column[:type] %></span></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <p class="mb-0">No column information available.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+      
   
   <% if @error.present? %>
     <div class="alert alert-danger" role="alert">
@@ -146,5 +235,211 @@
 <script type="module">
   import * as monaco from 'https://cdn.jsdelivr.net/npm/monaco-editor@0.39.0/+esm';
 
-  monaco.editor.create(document.querySelector('.monaco'));
+  // Helper function to decode HTML entities
+  function decodeHTMLEntities(text) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+  }
+
+  // Get initial query value from a data attribute to avoid string escaping issues
+  const initialQueryEncoded = document.getElementById('monaco-editor').getAttribute('data-initial-query');
+  const initialQuery = decodeHTMLEntities(initialQueryEncoded);
+  
+  // Initialize Monaco Editor with SQL syntax highlighting
+  const editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+    value: initialQuery || '',
+    language: 'sql',
+    theme: 'vs', // Use 'vs-dark' for dark theme
+    automaticLayout: true, // Resize automatically
+    minimap: { enabled: true },
+    scrollBeyondLastLine: false,
+    lineNumbers: 'on',
+    renderLineHighlight: 'all',
+    tabSize: 2,
+    wordWrap: 'on',
+    formatOnPaste: true,
+    formatOnType: true,
+    autoIndent: 'full',
+    folding: true,
+    glyphMargin: false,
+    suggestOnTriggerCharacters: true,
+    fixedOverflowWidgets: true,
+    quickSuggestions: {
+      other: true,
+      comments: true,
+      strings: true
+    },
+    suggest: {
+      showKeywords: true,
+      showSnippets: true,
+      preview: true,
+      showIcons: true,
+      maxVisibleSuggestions: 12
+    }
+  });
+
+  // Set up SQL intellisense with table/column completions
+  const tableName = "<%= @table_name %>";
+  const columns = [
+    <% if @columns.present? %>
+      <% @columns.each do |column| %>
+        { name: "<%= column[:name] %>", type: "<%= column[:type] %>" },
+      <% end %>
+    <% end %>
+  ];
+
+  // Register SQL completion providers
+  monaco.languages.registerCompletionItemProvider('sql', {
+    provideCompletionItems: function(model, position) {
+      const textUntilPosition = model.getValueInRange({
+        startLineNumber: position.lineNumber,
+        startColumn: 1,
+        endLineNumber: position.lineNumber,
+        endColumn: position.column
+      });
+      
+      const suggestions = [];
+      
+      // Add table name suggestion
+      suggestions.push({
+        label: tableName,
+        kind: monaco.languages.CompletionItemKind.Class,
+        insertText: tableName,
+        detail: 'Table name'
+      });
+
+      // Add column name suggestions
+      columns.forEach(col => {
+        suggestions.push({
+          label: col.name,
+          kind: monaco.languages.CompletionItemKind.Field,
+          insertText: col.name,
+          detail: `Column (${col.type})`
+        });
+      });
+
+      // Add common SQL keywords
+      const keywords = [
+        { label: 'SELECT', insertText: 'SELECT ' },
+        { label: 'FROM', insertText: 'FROM ' },
+        { label: 'WHERE', insertText: 'WHERE ' },
+        { label: 'ORDER BY', insertText: 'ORDER BY ' },
+        { label: 'GROUP BY', insertText: 'GROUP BY ' },
+        { label: 'HAVING', insertText: 'HAVING ' },
+        { label: 'LIMIT', insertText: 'LIMIT ' },
+        { label: 'JOIN', insertText: 'JOIN ' },
+        { label: 'LEFT JOIN', insertText: 'LEFT JOIN ' },
+        { label: 'INNER JOIN', insertText: 'INNER JOIN ' }
+      ];
+      
+      keywords.forEach(kw => {
+        suggestions.push({
+          label: kw.label,
+          kind: monaco.languages.CompletionItemKind.Keyword,
+          insertText: kw.insertText
+        });
+      });
+      
+      return { suggestions };
+    }
+  });
+
+  // Handle form submission - transfer content to hidden input before submitting
+  document.getElementById('sql-query-form').addEventListener('submit', function(event) {
+    // Stop the form from submitting immediately
+    event.preventDefault();
+    
+    // Get the query value from the editor and set it to the hidden input
+    const queryValue = editor.getValue();
+    document.getElementById('query-input').value = queryValue;
+    
+    // Log for debugging
+    console.log('Submitting query:', queryValue);
+    
+    // Now manually submit the form
+    this.submit();
+  });
+
+  // Make example queries clickable
+  document.querySelectorAll('.example-query').forEach(example => {
+    example.style.cursor = 'pointer';
+    example.addEventListener('click', () => {
+      const query = decodeHTMLEntities(example.textContent);
+      editor.setValue(query);
+      editor.focus();
+    });
+  });
+
+  // Setup editor keybindings
+  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, function() {
+    // Get the query value from the editor and set it to the hidden input
+    const queryValue = editor.getValue();
+    document.getElementById('query-input').value = queryValue;
+    
+    // Log for debugging
+    console.log('Submitting query via keyboard shortcut:', queryValue);
+    
+    // Submit the form
+    document.getElementById('sql-query-form').submit();
+  });
+  
+  // Add keyboard shortcuts for common SQL statements
+  editor.addAction({
+    id: 'insert-select-all',
+    label: 'Insert SELECT * FROM statement',
+    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KeyS],
+    run: function() {
+      editor.trigger('keyboard', 'type', { text: `SELECT * FROM ${tableName} LIMIT 100` });
+      return null;
+    }
+  });
+  
+  editor.addAction({
+    id: 'insert-where',
+    label: 'Insert WHERE clause',
+    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KeyW],
+    run: function() {
+      editor.trigger('keyboard', 'type', { text: ' WHERE ' });
+      return null;
+    }
+  });
+  
+  editor.addAction({
+    id: 'toggle-table-structure',
+    label: 'Toggle Table Structure Reference',
+    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KeyT],
+    run: function() {
+      // Use Bootstrap's collapse API to toggle
+      bootstrap.Collapse.getOrCreateInstance(document.getElementById('tableStructureContent')).toggle();
+      return null;
+    }
+  });
+  
+  // Create a status bar showing cursor position and columns info
+  const statusBarDiv = document.createElement('div');
+  statusBarDiv.className = 'monaco-status-bar';
+  statusBarDiv.innerHTML = `<div class="status-info">Ready</div>
+                          <div class="column-info">Table: ${tableName} (${columns.length} columns)</div>`;
+  document.getElementById('monaco-editor').after(statusBarDiv);
+  
+  // Update status bar with cursor position
+  editor.onDidChangeCursorPosition(e => {
+    const position = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+    statusBarDiv.querySelector('.status-info').textContent = position;
+  });
+  
+  // Focus the editor when page loads
+  window.addEventListener('load', () => {
+    editor.focus();
+  });
+  
+  // Toggle icon when table structure collapses or expands
+  document.getElementById('tableStructureContent').addEventListener('show.bs.collapse', function() {
+    document.querySelector('#tableStructureHeader button i').classList.replace('bi-chevron-down', 'bi-chevron-up');
+  });
+  
+  document.getElementById('tableStructureContent').addEventListener('hide.bs.collapse', function() {
+    document.querySelector('#tableStructureHeader button i').classList.replace('bi-chevron-up', 'bi-chevron-down');
+  });
 </script>
