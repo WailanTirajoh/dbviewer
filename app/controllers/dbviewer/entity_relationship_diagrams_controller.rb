@@ -1,8 +1,6 @@
 module Dbviewer
   class EntityRelationshipDiagramsController < ApplicationController
     def index
-      @tables = fetch_tables_with_stats
-
       if @tables.present?
         @table_relationships = fetch_table_relationships
       else
@@ -11,7 +9,7 @@ module Dbviewer
       end
 
       respond_to do |format|
-        format.html # Default to HTML view
+        format.html
         format.json do
           render json: {
             tables: @tables,
