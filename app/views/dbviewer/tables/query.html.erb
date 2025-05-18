@@ -10,12 +10,27 @@
       margin-bottom: 1rem;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
+    
+    .monaco-editor-container {
+      border: 1px solid #ced4da;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    [data-bs-theme="dark"] .monaco-editor-container {
+      border: 1px solid #495057;
+    }
+    
+    [data-bs-theme="dark"] #monaco-editor {
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    }
+    
     .example-queries {
       display: flex;
       flex-wrap: wrap;
       gap: 5px;
       margin-top: 8px;
     }
+    
     .example-query {
       display: inline-block;
       transition: all 0.2s ease;
@@ -26,15 +41,44 @@
       text-overflow: ellipsis;
       max-width: 100%;
     }
+    
+    [data-bs-theme="light"] .example-query {
+      border-color: #ced4da;
+    }
+    
+    [data-bs-theme="dark"] .example-query {
+      border-color: #495057;
+      color: #f8f9fa;
+    }
+    
+    /* Result table styling */
+    .results-table {
+      border-collapse: collapse;
+    }
+    
+    [data-bs-theme="dark"] .results-table {
+      border-color: #495057;
+    }
+    
     .example-query:hover {
       background-color: #0d6efd;
       color: white;
+      border-color: #0d6efd;
     }
+    
     /* Keyboard shortcut helper */
     .keyboard-hint {
       font-size: 0.8rem;
       margin-left: 8px;
       opacity: 0.7;
+    }
+    
+    [data-bs-theme="light"] .shortcut-hints {
+      color: #6c757d;
+    }
+    
+    [data-bs-theme="dark"] .shortcut-hints {
+      color: #adb5bd;
     }
     
     /* Monaco status bar */
@@ -43,12 +87,21 @@
       justify-content: space-between;
       padding: 3px 8px;
       font-size: 0.75rem;
-      background-color: #f8f9fa;
-      border: 1px solid #ced4da;
       border-top: none;
       border-bottom-left-radius: 4px;
       border-bottom-right-radius: 4px;
+    }
+    
+    [data-bs-theme="light"] .monaco-status-bar {
+      background-color: #f8f9fa;
+      border: 1px solid #ced4da;
       color: #6c757d;
+    }
+    
+    [data-bs-theme="dark"] .monaco-status-bar {
+      background-color: #343a40;
+      border: 1px solid #495057;
+      color: #adb5bd;
     }
     
     .monaco-status-bar .column-info {
@@ -57,12 +110,27 @@
     
     /* Table structure styles */
     #tableStructureHeader .btn-link {
-      color: #212529;
       font-weight: 500;
       display: flex;
       align-items: center;
       width: 100%;
       text-align: left;
+    }
+    
+    [data-bs-theme="light"] #tableStructureHeader .btn-link {
+      color: #212529;
+    }
+    
+    [data-bs-theme="dark"] #tableStructureHeader .btn-link {
+      color: #f8f9fa;
+    }
+    
+    [data-bs-theme="light"] .table-columns-count {
+      color: #6c757d;
+    }
+    
+    [data-bs-theme="dark"] .table-columns-count {
+      color: #adb5bd;
     }
     
     #tableStructureHeader .btn-link:hover,
@@ -73,6 +141,40 @@
     
     #tableStructureHeader .btn-link i {
       transition: transform 0.2s ease-in-out;
+    }
+    
+    /* Table style overrides for query page */
+    [data-bs-theme="dark"] .table-sm th,
+    [data-bs-theme="dark"] .table-sm td {
+      border-color: #495057;
+    }
+    
+    /* Results card styling */
+    [data-bs-theme="dark"] .card-header h5 {
+      color: #f8f9fa;
+    }
+    
+    /* Alert styling for dark mode */
+    [data-bs-theme="dark"] .alert-warning {
+      background-color: rgba(255, 193, 7, 0.15);
+      border-color: rgba(255, 193, 7, 0.4);
+      color: #ffc107;
+    }
+    
+    [data-bs-theme="dark"] .alert-danger {
+      background-color: rgba(220, 53, 69, 0.15);
+      border-color: rgba(220, 53, 69, 0.4);
+      color: #f8d7da;
+    }
+    
+    /* Make headings stand out in dark mode */
+    [data-bs-theme="dark"] h1, 
+    [data-bs-theme="dark"] h2, 
+    [data-bs-theme="dark"] h3, 
+    [data-bs-theme="dark"] h4, 
+    [data-bs-theme="dark"] h5, 
+    [data-bs-theme="dark"] h6 {
+      color: #f8f9fa;
     }
   </style>
 <% end %>
@@ -86,7 +188,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1>Query: <%= @table_name %></h1>
   <div>
-    <%= link_to table_path(@table_name), class: "btn btn-outline-secondary" do %>
+    <%= link_to table_path(@table_name), class: "btn btn-outline-primary" do %>
       <i class="bi bi-arrow-left me-1"></i> Back to Table
     <% end %>
   </div>
@@ -106,13 +208,13 @@
     <div class="card-body">
       <%= form_with url: query_table_path(@table_name), method: :post, local: true, id: "sql-query-form" do |form| %>
         <div class="mb-3">
-          <div id="monaco-editor" style="min-height: 200px; border: 1px solid #ced4da; border-radius: 4px; margin-bottom: 0rem;" 
+          <div id="monaco-editor" class="monaco-editor-container" style="min-height: 200px; border-radius: 4px; margin-bottom: 0rem;" 
                data-initial-query="<%= CGI.escapeHTML(@query.to_s) %>"></div>
           <%= form.hidden_field :query, id: "query-input", value: @query.to_s %>
         </div>
         
         <div class="d-flex justify-content-between align-items-start">
-          <div class="form-text text-muted">
+          <div class="form-text">
             <strong>Examples:</strong><br>
             <div class="example-queries">
               <code class="example-query btn btn-sm btn-outline-secondary mb-1">SELECT * FROM <%= @table_name %> LIMIT 100</code>
@@ -132,7 +234,7 @@
           <div>
             <%= form.submit "Run Query", class: "btn btn-primary" %>
             <span class="keyboard-hint d-none d-md-inline">(or press Cmd+Enter / Ctrl+Enter)</span>
-            <div class="small text-muted mt-2 d-none d-md-block">
+            <div class="small mt-2 d-none d-md-block shortcut-hints">
               <strong>Shortcuts:</strong> 
               <span class="me-2">Cmd+Alt+T: Toggle table structure</span>
               <span class="me-2">Cmd+Alt+S: Insert SELECT</span>
@@ -149,7 +251,7 @@
         <button class="btn btn-link btn-sm text-decoration-none p-0 collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tableStructureContent" aria-expanded="false" aria-controls="tableStructureContent">
           <i class="bi bi-chevron-down me-1"></i>
           Table Structure Reference
-          <small class="text-muted ms-2">(<%= @columns.present? ? @columns.size : 0 %> columns)</small>
+          <small class="table-columns-count ms-2">(<%= @columns.present? ? @columns.size : 0 %> columns)</small>
         </button>
       </h6>
     </div>
@@ -192,7 +294,7 @@
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5>Results</h5>
-        <span class="badge bg-secondary">Rows: <%= @records.rows.count %></span>
+        <span class="badge bg-info">Rows: <%= @records.rows.count %></span>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -246,11 +348,14 @@
   const initialQueryEncoded = document.getElementById('monaco-editor').getAttribute('data-initial-query');
   const initialQuery = decodeHTMLEntities(initialQueryEncoded);
   
+  // Determine initial theme based on document theme
+  const initialTheme = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'vs-dark' : 'vs';
+  
   // Initialize Monaco Editor with SQL syntax highlighting
   const editor = monaco.editor.create(document.getElementById('monaco-editor'), {
     value: initialQuery || '',
     language: 'sql',
-    theme: 'vs', // Use 'vs-dark' for dark theme
+    theme: initialTheme,
     automaticLayout: true, // Resize automatically
     minimap: { enabled: true },
     scrollBeyondLastLine: false,
@@ -278,6 +383,52 @@
       maxVisibleSuggestions: 12
     }
   });
+
+  // Theme change listener
+  document.addEventListener('dbviewerThemeChanged', (event) => {
+    const newTheme = event.detail.theme === 'dark' ? 'vs-dark' : 'vs';
+    monaco.editor.setTheme(newTheme);
+    
+    // Update editor container border color
+    const editorContainer = document.querySelector('.monaco-editor-container');
+    if (editorContainer) {
+      editorContainer.style.borderColor = event.detail.theme === 'dark' ? '#495057' : '#ced4da';
+    }
+    
+    // Update status bar styling based on theme
+    updateStatusBarTheme(event.detail.theme);
+    
+    // Update example query buttons
+    const exampleQueries = document.querySelectorAll('.example-query');
+    exampleQueries.forEach(query => {
+      if (event.detail.theme === 'dark') {
+        query.style.borderColor = '#495057';
+        if (!query.classList.contains('btn-primary')) {
+          query.style.color = '#f8f9fa';
+        }
+      } else {
+        query.style.borderColor = '#ced4da';
+        if (!query.classList.contains('btn-primary')) {
+          query.style.color = '';
+        }
+      }
+    });
+  });
+  
+  function updateStatusBarTheme(theme) {
+    const statusBar = document.querySelector('.monaco-status-bar');
+    if (!statusBar) return;
+    
+    if (theme === 'dark') {
+      statusBar.style.backgroundColor = '#343a40';
+      statusBar.style.borderColor = '#495057';
+      statusBar.style.color = '#adb5bd';
+    } else {
+      statusBar.style.backgroundColor = '#f8f9fa';
+      statusBar.style.borderColor = '#ced4da';
+      statusBar.style.color = '#6c757d';
+    }
+  }
 
   // Set up SQL intellisense with table/column completions
   const tableName = "<%= @table_name %>";
@@ -422,6 +573,10 @@
   statusBarDiv.innerHTML = `<div class="status-info">Ready</div>
                           <div class="column-info">Table: ${tableName} (${columns.length} columns)</div>`;
   document.getElementById('monaco-editor').after(statusBarDiv);
+  
+  // Apply initial theme to status bar
+  const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+  updateStatusBarTheme(currentTheme);
   
   // Update status bar with cursor position
   editor.onDidChangeCursorPosition(e => {

@@ -7,44 +7,44 @@
   <div class="row mb-3">
     <div class="col">
       <h1 class="h3 mb-2">Database Overview</h1>
-      <p class="text-muted">
-        Connected to database: <strong><%= get_database_name %></strong>
+      <p class="database-connection-info">
+        Connected to database: <span class="badge rounded-pill database-name-badge"><%= get_database_name %></span>
       </p>
     </div>
   </div>
 
   <div class="row g-3 mb-4">
     <div class="col-md-3">
-      <div class="card h-100 text-center border-0 bg-light">
+      <div class="card h-100 text-center border-0 <%= stat_card_bg_class %>">
         <div class="card-body">
-          <h5 class="text-muted mb-1">Tables</h5>
+          <h5 class="mb-1">Tables</h5>
           <h2 class="mb-0"><%= @analytics[:total_tables] %></h2>
         </div>
       </div>
     </div>
     
     <div class="col-md-3">
-      <div class="card h-100 text-center border-0 bg-light">
+      <div class="card h-100 text-center border-0 <%= stat_card_bg_class %>">
         <div class="card-body">
-          <h5 class="text-muted mb-1">Records</h5>
+          <h5 class="mb-1">Records</h5>
           <h2 class="mb-0"><%= number_with_delimiter(@analytics[:total_records]) %></h2>
         </div>
       </div>
     </div>
     
     <div class="col-md-3">
-      <div class="card h-100 text-center border-0 bg-light">
+      <div class="card h-100 text-center border-0 <%= stat_card_bg_class %>">
         <div class="card-body">
-          <h5 class="text-muted mb-1">Columns</h5>
+          <h5 class="mb-1">Columns</h5>
           <h2 class="mb-0"><%= @analytics[:total_columns] %></h2>
         </div>
       </div>
     </div>
     
     <div class="col-md-3">
-      <div class="card h-100 text-center border-0 bg-light">
+      <div class="card h-100 text-center border-0 <%= stat_card_bg_class %>">
         <div class="card-body">
-          <h5 class="text-muted mb-1">Database Size</h5>
+          <h5 class="mb-1">Database Size</h5>
           <h2 class="mb-0"><%= number_to_human_size(@analytics[:schema_size]) %></h2>
         </div>
       </div>
@@ -54,7 +54,7 @@
   <div class="row g-3">
     <div class="col-md-6 mb-4">
       <div class="card h-100 shadow-sm">
-        <div class="card-header bg-white">
+        <div class="card-header">
           <h5 class="card-title mb-0">Largest Tables</h5>
         </div>
         <div class="card-body">
@@ -84,7 +84,7 @@
               </table>
             </div>
           <% else %>
-            <div class="text-center my-4 text-muted">
+            <div class="text-center my-4 empty-data-message">
               <p>No table data available</p>
             </div>
           <% end %>
@@ -94,7 +94,7 @@
 
     <div class="col-md-6 mb-4">
       <div class="card h-100 shadow-sm">
-        <div class="card-header bg-white">
+        <div class="card-header">
           <h5 class="card-title mb-0">Tables with Most Columns</h5>
         </div>
         <div class="card-body">
@@ -124,7 +124,7 @@
               </table>
             </div>
           <% else %>
-            <div class="text-center my-4 text-muted">
+            <div class="text-center my-4 empty-data-message">
               <p>No table data available</p>
             </div>
           <% end %>
@@ -134,9 +134,9 @@
 
     <div class="col-12 mb-4">
       <div class="card shadow-sm">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="card-title mb-0">Recent SQL Queries</h5>
-          <a href="<%= dbviewer.logs_path %>" class="btn btn-sm btn-outline-primary">View All Logs</a>
+          <a href="<%= dbviewer.logs_path %>" class="btn btn-sm btn-primary">View All Logs</a>
         </div>
         <div class="card-body p-0">
           <% begin %>
@@ -146,39 +146,40 @@
             <% if queries.any? %>
               <div class="table-responsive">
                 <table class="table table-sm table-hover mb-0">
-                  <thead>
+
+                <thead>
+                  <tr>
+                    <th>Query</th>
+                    <th class="text-end" style="width: 120px">Duration</th>
+                    <th class="text-end" style="width: 180px">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% queries.each do |query| %>
                     <tr>
-                      <th>Query</th>
-                      <th class="text-end" style="width: 120px">Duration</th>
-                      <th class="text-end" style="width: 180px">Time</th>
+                      <td class="text-truncate" style="max-width: 500px;">
+                        <code class="sql-query-code"><%= query[:sql] %></code>
+                      </td>
+                      <td class="text-end">
+                        <span class="<%= query[:duration_ms] > 100 ? 'query-duration-slow' : 'query-duration' %>">
+                          <%= query[:duration_ms] %> ms
+                        </span>
+                      </td>
+                      <td class="text-end query-timestamp">
+                        <small><%= query[:timestamp].strftime("%H:%M:%S") %></small>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    <% queries.each do |query| %>
-                      <tr>
-                        <td class="text-truncate" style="max-width: 500px;">
-                          <code><%= query[:sql] %></code>
-                        </td>
-                        <td class="text-end">
-                          <span class="<%= query[:duration_ms] > 100 ? 'text-danger' : '' %>">
-                            <%= query[:duration_ms] %> ms
-                          </span>
-                        </td>
-                        <td class="text-end text-muted">
-                          <small><%= query[:timestamp].strftime("%H:%M:%S") %></small>
-                        </td>
-                      </tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
             <% else %>
-              <div class="text-center my-4 text-muted">
+              <div class="text-center my-4 empty-data-message">
                 <p>No queries recorded yet</p>
               </div>
             <% end %>
           <% rescue => e %>
-            <div class="text-center my-4 text-muted">
+            <div class="text-center my-4 empty-data-message">
               <p>Error loading query logs: <%= e.message %></p>
             </div>
           <% end %>
@@ -192,7 +193,7 @@
   document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('tableSearch');
     const tablesList = document.getElementById('tablesList');
-    const tables = tablesList.querySelectorAll('.list-group-item');
+    const tables = tablesList ? tablesList.querySelectorAll('.list-group-item') : [];
 
     if (searchInput) {
       searchInput.addEventListener('keyup', function() {
@@ -208,5 +209,29 @@
         });
       });
     }
+    
+    // Update code blocks for the current theme
+    function updateCodeBlockTheme() {
+      const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+      const codeBlocks = document.querySelectorAll('code.sql-query-code');
+      
+      codeBlocks.forEach(codeBlock => {
+        if (isDarkMode) {
+          codeBlock.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+          codeBlock.style.color = '#65cdff';
+        } else {
+          codeBlock.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+          codeBlock.style.color = '';
+        }
+      });
+    }
+    
+    // Initial theme check
+    updateCodeBlockTheme();
+    
+    // Listen for theme changes
+    document.addEventListener('dbviewerThemeChanged', function(event) {
+      updateCodeBlockTheme();
+    });
   });
 </script>

@@ -17,6 +17,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Status bar with position and table information
   - Proper handling of quoted text in SQL queries
   - Collapsible table structure reference for cleaner interface
+- **Dark mode support** for improved readability and reduced eye strain
+  - Toggle button in the navigation bar with smooth transition animation
+  - Remembers user preference with localStorage
+  - Automatic detection of system preference
+  - Monaco editor theme changes dynamically
+  - Optimized UI elements for both light and dark modes
+  - Smooth theme transitions and improved color contrast
+  - Dark-optimized tables, forms, and code displays
+  - Enhanced database overview dashboard with theme-aware stats cards
+  - Improved SQL query highlighting for dark theme
+  - Better visual hierarchy and readability in all views
+  - Theme-adaptive tables with proper styling in both light and dark modes
+  - Dynamic chart colors that respond to theme changes
+  - Enhanced code blocks in the logs view for dark theme consistency
+  - Consistent styling for list groups and modal dialogs
+  - Improved link colors for better visibility in dark mode
 
 ### Changed
 
@@ -122,3 +138,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pagination for record viewing
 - Column sorting capabilities
 - Basic documentation
+
+## Unreleased
+
+### Added
+
+- Dark mode support throughout the application
+  - Toggle feature in the navbar with localStorage persistence
+  - System preference detection via `prefers-color-scheme`
+  - Monaco editor theme switching for SQL queries
+  - Theme-adaptive styling for all UI components including tables, forms, cards
+  - Dark mode compatible SQL log display and charts
+  - Improved chart visualization with dark/light theme detection

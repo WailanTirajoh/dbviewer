@@ -27,6 +27,28 @@ module Dbviewer
       end
     end
 
+    # Dark mode helper methods
+
+    # Returns the theme toggle icon based on the current theme
+    def theme_toggle_icon
+      '<i class="bi bi-moon"></i><i class="bi bi-sun"></i>'.html_safe
+    end
+
+    # Returns the aria label for the theme toggle button
+    def theme_toggle_label
+      "Toggle dark mode"
+    end
+
+    # Returns the appropriate background class for stat cards that adapts to dark mode
+    def stat_card_bg_class
+      "stat-card-bg"
+    end
+
+    # Helper method for code blocks background that adapts to dark mode
+    def code_block_bg_class
+      "sql-code-block"
+    end
+
     # Determine if the current table should be active in the sidebar
     def current_table?(table_name)
       @table_name.present? && @table_name == table_name

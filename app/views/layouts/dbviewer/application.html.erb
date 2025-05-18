@@ -1,9 +1,21 @@
 <!DOCTYPE html>
-<html>
+<html data-bs-theme="light">
 <head>
   <title><%= content_for?(:title) ? yield(:title) + " - DB Viewer" : "DB Viewer" %></title>
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
+
+  <!-- Prevent theme flash during page load -->
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('dbviewerTheme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
+      }
+    })();
+  </script>
 
   <%= yield :head %>
   
@@ -21,11 +33,27 @@
     .dbviewer-navbar-spacer { height: 56px; } /* Creates space for the fixed navbar */
     .dbviewer-content { display: flex; flex: 1; min-height: calc(100vh - 56px); padding-top: 0; }
     
+    /* Smooth theme transitions */
+    html {
+      transition: background-color 0.2s ease;
+    }
+    
+    body {
+      transition: color 0.2s ease, background-color 0.2s ease;
+    }
+
+    /* Smooth theme transitions */
+    html {
+      transition: background-color 0.2s ease;
+    }
+    
+    body {
+      transition: color 0.2s ease, background-color 0.2s ease;
+    }
+    
     /* Sidebar styles */
     .dbviewer-sidebar {
       width: 260px;
-      background: #f8f9fa;
-      border-right: 1px solid #dee2e6;
       height: calc(100vh - 56px);
       position: fixed;
       top: 56px; /* Positioned right below the fixed navbar */
@@ -33,18 +61,37 @@
       z-index: 1000;
       display: flex;
       flex-direction: column;
-      transition: transform 0.3s ease;
+      transition: transform 0.3s ease, background-color 0.2s ease, border-color 0.2s ease;
       overflow: hidden; /* Changed from overflow-y: auto */
+    }
+
+    /* Dark mode overrides */
+    [data-bs-theme="light"] .dbviewer-sidebar {
+      background: #f8f9fa;
+      border-right: 1px solid #dee2e6;
+    }
+    
+    [data-bs-theme="dark"] .dbviewer-sidebar {
+      background: #212529;
+      border-right: 1px solid #495057;
     }
     
     .dbviewer-sidebar-header {
       padding: 1rem 1.25rem;
-      border-bottom: 1px solid #dee2e6;
-      background: #f1f3f5;
       font-weight: 500;
       align-items: center;
       justify-content: space-between;
       flex-shrink: 0;
+    }
+    
+    [data-bs-theme="light"] .dbviewer-sidebar-header {
+      border-bottom: 1px solid #dee2e6;
+      background: #f1f3f5;
+    }
+    
+    [data-bs-theme="dark"] .dbviewer-sidebar-header {
+      border-bottom: 1px solid #495057;
+      background: #343a40;
     }
     
     .dbviewer-sidebar-header h5 {
@@ -75,10 +122,18 @@
     }
     
     .dbviewer-sidebar-top {
-      background: #f8f9fa;
-      border-bottom: 1px solid #eaeaea;
       flex-shrink: 0;
       padding-bottom: 0.25rem;
+    }
+    
+    [data-bs-theme="light"] .dbviewer-sidebar-top {
+      background: #f8f9fa;
+      border-bottom: 1px solid #eaeaea;
+    }
+    
+    [data-bs-theme="dark"] .dbviewer-sidebar-top {
+      background: #212529;
+      border-bottom: 1px solid #495057;
     }
     
     .dbviewer-sidebar-content {
@@ -115,6 +170,14 @@
         visibility: hidden;
         transition: opacity 0.3s, visibility 0.3s;
       }
+
+      [data-bs-theme="light"] .dbviewer-sidebar-overlay {
+        background: rgba(0,0,0,0.5);
+      }
+
+      [data-bs-theme="dark"] .dbviewer-sidebar-overlay {
+        background: rgba(0,0,0,0.7);
+      }
       
       .dbviewer-sidebar-overlay.active {
         opacity: 1;
@@ -138,9 +201,51 @@
     .dbviewer-table-filter { border-radius: 20px; padding-left: 2.5rem; margin-bottom: 1rem; }
     
     /* Table structure and visualization components */
-    .dbviewer-card { box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); border: 1px solid #eaeaea; }
+    .dbviewer-card { box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+    
+    [data-bs-theme="light"] .dbviewer-card {
+      border: 1px solid #eaeaea;
+    }
+    
+    [data-bs-theme="dark"] .dbviewer-card {
+      border: 1px solid #495057;
+    }
+    
     .dbviewer-scrollable { max-height: 500px; overflow-y: auto; }
-    .dbviewer-table-header { position: sticky; top: 0; background: #f8f9fa; z-index: 1; }
+    
+    /* Badge styling for dark mode */
+    [data-bs-theme="dark"] .bg-secondary-subtle {
+      background-color: rgba(255, 255, 255, 0.15) !important;
+      color: #e9ecef !important;
+    }
+    
+    [data-bs-theme="light"] .bg-secondary-subtle {
+      background-color: #e9ecef !important;
+      color: #212529 !important;
+    }
+    
+    /* Table header styling */
+    .dbviewer-table-header {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    [data-bs-theme="dark"] .dbviewer-table-header {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    /* List group styling for dark mode */
+    [data-bs-theme="dark"] .list-group-item {
+      background-color: var(--bs-dark);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: var(--bs-light);
+    }
+    
+    [data-bs-theme="dark"] .dbviewer-table-header {
+      position: sticky;
+      top: 0;
+      background: #212529;
+      z-index: 1;
+    }
     
     /* Equal height for timeline and structure cards */
     .two-column-layout .card { height: 100%; display: flex; flex-direction: column; }
@@ -150,7 +255,293 @@
     .two-column-layout .tab-content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
     .two-column-layout .tab-pane { flex: 1; overflow: hidden; }
     .two-column-layout .table-responsive { overflow-x: auto; }
-    .two-column-layout .sticky-top { top: 0; z-index: 999; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    
+    [data-bs-theme="light"] .two-column-layout .sticky-top {
+      top: 0;
+      z-index: 999;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    [data-bs-theme="dark"] .two-column-layout .sticky-top {
+      top: 0;
+      z-index: 999;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    
+    /* Dark mode toggle */
+    .theme-toggle {
+      background: transparent;
+      border: none;
+      padding: 0.25rem 0.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      color: white;
+      opacity: 0.8;
+      transition: opacity 0.2s ease, transform 0.3s ease;
+    }
+    
+    .theme-toggle:hover {
+      opacity: 1;
+      transform: rotate(12deg);
+    }
+    
+    .theme-toggle:active {
+      transform: rotate(24deg);
+    }
+    
+    .theme-toggle .bi-sun,
+    [data-bs-theme="dark"] .theme-toggle .bi-moon {
+      display: none;
+    }
+    
+    [data-bs-theme="dark"] .theme-toggle .bi-sun {
+      display: inline-block;
+    }
+    
+    .theme-toggle .bi-moon {
+      display: inline-block;
+    }
+    
+    .theme-toggle i {
+      font-size: 1.2rem;
+    }
+    
+    /* Header styles for dark mode */
+    .navbar {
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    
+    [data-bs-theme="light"] .navbar.bg-primary {
+      background-color: #0d6efd !important;
+    }
+    
+    [data-bs-theme="dark"] .navbar.bg-primary {
+      background-color: #212529 !important;
+      border-bottom: 1px solid #495057;
+    }
+    
+    /* Sidebar list group styling for dark mode */
+    [data-bs-theme="dark"] .list-group-item {
+      background-color: #212529;
+      border-color: #495057;
+      color: #e9ecef;
+    }
+    
+    [data-bs-theme="dark"] .list-group-item.active {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+    }
+    
+    [data-bs-theme="dark"] .list-group-item-action:hover,
+    [data-bs-theme="dark"] .list-group-item-action:focus {
+      background-color: #343a40;
+      color: #f8f9fa;
+    }
+    
+    [data-bs-theme="dark"] .list-group-item.text-muted {
+      color: #adb5bd !important;
+    }
+    
+    /* Make card headers in dark mode look better */
+    [data-bs-theme="dark"] .card-header {
+      background-color: #2c3034;
+      border-bottom: 1px solid #495057;
+    }
+    
+    /* Empty data messages */
+    [data-bs-theme="light"] .empty-data-message {
+      color: #6c757d;
+    }
+    
+    [data-bs-theme="dark"] .empty-data-message {
+      color: #adb5bd;
+    }
+    
+    /* Query timestamp */
+    [data-bs-theme="light"] .query-timestamp {
+      color: #6c757d;
+    }
+    
+    [data-bs-theme="dark"] .query-timestamp {
+      color: #adb5bd;
+    }
+    
+    /* Code blocks in tables */
+    [data-bs-theme="dark"] table code {
+      color: #e685b5;
+      background-color: rgba(230, 133, 181, 0.1);
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+    
+    /* Table links */
+    [data-bs-theme="dark"] .table a {
+      color: #6ea8fe;
+      text-decoration: none;
+    }
+    
+    [data-bs-theme="dark"] .table a:hover {
+      color: #8bb9fe;
+      text-decoration: underline;
+    }
+    
+    /* SQL query code in tables */
+    code.sql-query-code {
+      display: inline-block;
+      white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+    
+    [data-bs-theme="light"] code.sql-query-code {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    [data-bs-theme="dark"] code.sql-query-code {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #65cdff;
+    }
+    
+    /* Query duration styling */
+    .query-duration {
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.875rem;
+    }
+    
+    [data-bs-theme="light"] .query-duration-slow {
+      color: #dc3545;
+      font-weight: 500;
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.875rem;
+    }
+    
+    [data-bs-theme="dark"] .query-duration-slow {
+      color: #ff6b6b;
+      font-weight: 500;
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.875rem;
+    }
+    
+    /* Database name badge */
+    .database-name-badge {
+      font-size: 0.95rem;
+      font-weight: 500;
+      text-transform: lowercase;
+      letter-spacing: 0.02em;
+    }
+    
+    [data-bs-theme="light"] .database-name-badge {
+      background-color: #0d6efd;
+      color: #ffffff;
+    }
+    
+    [data-bs-theme="dark"] .database-name-badge {
+      background-color: #0d6efd;
+      color: #ffffff;
+    }
+    
+    /* Table headings */
+    [data-bs-theme="dark"] .table thead th {
+      color: #e9ecef;
+      border-color: #495057;
+      border-bottom: 2px solid #495057;
+    }
+    
+    /* Card title colors */
+    [data-bs-theme="dark"] .card-title {
+      color: #f8f9fa;
+    }
+    
+    /* SQL logs specific styling */
+    [data-bs-theme="dark"] pre.sql-query {
+      background-color: #2c3034;
+      border-color: #495057;
+    }
+    
+    [data-bs-theme="dark"] pre.sql-query code {
+      color: #ff8bd0;
+    }
+    
+    /* Badge text colors for better contrast in dark mode */
+    [data-bs-theme="dark"] .badge.bg-info {
+      color: #000 !important;
+    }
+    
+    /* Alert styling in dark mode */
+    [data-bs-theme="dark"] .alert-info {
+      background-color: rgba(13, 202, 240, 0.2);
+      border-color: rgba(13, 202, 240, 0.3);
+      color: #9eeaf9;
+    }
+    
+    /* Background colors for card headers in dark mode */
+    [data-bs-theme="dark"] .bg-danger-subtle {
+      background-color: rgba(220, 53, 69, 0.2) !important;
+    }
+    
+    [data-bs-theme="dark"] .bg-info-subtle {
+      background-color: rgba(13, 202, 240, 0.2) !important;
+    }
+    
+    /* Text colors for card headers in dark mode */
+    [data-bs-theme="dark"] .text-info {
+      color: #0dcaf0 !important;
+    }
+    
+    [data-bs-theme="dark"] .text-danger {
+      color: #ff6b6b !important;
+    }
+    
+    /* Styling for form controls in SQL logs page */
+    [data-bs-theme="dark"] .list-group-item {
+      background-color: #212529;
+      border-color: #495057;
+    }
+    
+    /* Code block styling for SQL logs */
+    [data-bs-theme="light"] .code-block {
+      background-color: #f8f9fa;
+    }
+    
+    [data-bs-theme="dark"] .code-block {
+      background-color: #2c3034;
+    }
+    
+    /* Pattern code styling */
+    [data-bs-theme="dark"] .pattern-code {
+      color: #f783ac;
+    }
+    
+    /* Query binds styling */
+    [data-bs-theme="light"] .query-binds-summary {
+      color: #6c757d;
+    }
+    
+    [data-bs-theme="dark"] .query-binds-summary {
+      color: #adb5bd;
+    }
+    
+    [data-bs-theme="dark"] .query-binds {
+      color: #20c997;
+    }
+    
+    /* Enhanced code syntax highlighting */
+    [data-bs-theme="dark"] code.syntax-highlighted {
+      color: #ff8bd0;
+    }
+    
+    /* Request ID styling */
+    [data-bs-theme="light"] .request-id {
+      color: #6c757d;
+    }
+    
+    [data-bs-theme="dark"] .request-id {
+      color: #adb5bd;
+    }
   </style>
 </head>
 <body>
@@ -158,7 +549,7 @@
     <!-- Top Navigation Bar (Fixed) -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary dbviewer-navbar fixed-top">
       <div class="container-fluid">
-        <a class="navbar-brand" href="<%= dbviewer.root_path %>">DB Viewer</a>
+        <a class="navbar-brand" href="<%= dbviewer.root_path %>"><i class="bi bi-database-fill me-1"></i>DB Viewer</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -175,9 +566,18 @@
               <%= link_to raw('<i class="bi bi-journal-code"></i> SQL Logs'), dbviewer.logs_path, class: "nav-link #{logs_nav_class}" %>
             </li>
           </ul>
-          <span class="navbar-text ms-auto text-light">
-            <small><i class="bi bi-database"></i> <%= Rails.env %> environment</small>
-          </span>
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <button type="button" class="theme-toggle nav-link" aria-label="<%= theme_toggle_label %>">
+                <%= theme_toggle_icon %>
+              </button>
+            </li>
+            <li class="nav-item">
+              <span class="navbar-text ms-2 text-light">
+                <small><i class="bi bi-database"></i> <%= Rails.env %> environment</small>
+              </span>
+            </li>
+          </ul>
         </div>
       </div>
     </nav>
@@ -209,9 +609,44 @@
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   
-  <!-- Check if styles are loaded properly -->
+  <!-- Dark Mode Toggle Script -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      // Theme toggle functionality
+      const themeToggleBtn = document.querySelector('.theme-toggle');
+      const htmlElement = document.documentElement;
+      
+      // Check for saved theme preference or respect OS preference
+      const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const savedTheme = localStorage.getItem('dbviewerTheme');
+      
+      // Set initial theme
+      if (savedTheme) {
+        htmlElement.setAttribute('data-bs-theme', savedTheme);
+      } else if (prefersDarkMode) {
+        htmlElement.setAttribute('data-bs-theme', 'dark');
+        localStorage.setItem('dbviewerTheme', 'dark');
+      }
+      
+      // Toggle theme when button is clicked
+      if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', function() {
+          const currentTheme = htmlElement.getAttribute('data-bs-theme');
+          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+          
+          // Update theme
+          htmlElement.setAttribute('data-bs-theme', newTheme);
+          localStorage.setItem('dbviewerTheme', newTheme);
+          
+          // Dispatch event for other components to respond to theme change (Monaco editor)
+          const themeChangeEvent = new CustomEvent('dbviewerThemeChanged', { 
+            detail: { theme: newTheme } 
+          });
+          document.dispatchEvent(themeChangeEvent);
+        });
+      }
+      
+      // Check if styles are loaded properly
       const styleCheck = getComputedStyle(document.documentElement).getPropertyValue('--dbviewer-styles-loaded');
       if (!styleCheck) {
         console.log('DBViewer: Using fallback inline styles (asset pipeline may not be available)');

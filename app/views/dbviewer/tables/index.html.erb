@@ -26,7 +26,7 @@
 
 <!-- Table Listing -->
 <div class="card shadow-sm mb-4">
-  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+  <div class="card-header d-flex justify-content-between align-items-center">
     <h5 class="mb-0">All Tables</h5>
     <span class="badge bg-secondary"><%= @tables.size %> tables</span>
   </div>
@@ -47,7 +47,7 @@
                 <%= link_to table[:name], table_path(table[:name]), class: "text-decoration-none" %>
               </td>
               <td class="text-center">
-                <span class="badge bg-light text-dark"><%= table[:columns_count] %></span>
+                <span class="badge bg-secondary-subtle"><%= table[:columns_count] %></span>
               </td>
               <td>
                 <%= link_to raw('<i class="bi bi-eye"></i>'), table_path(table[:name]), class: "btn btn-sm btn-outline-primary", title: "View" %>
@@ -81,7 +81,48 @@
         });
       });
     }
+    
+    // Update table styling when theme changes
+    function updateTableStyling() {
+      const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+      const tables = document.querySelectorAll('.table');
+      
+      tables.forEach(table => {
+        if (isDarkMode) {
+          table.classList.add('table-dark');
+        } else {
+          table.classList.remove('table-dark');
+        }
+      });
+    }
+    
+    // Initial styling
+    updateTableStyling();
+    
+    // Listen for theme changes
+    document.addEventListener('dbviewerThemeChanged', function(event) {
+      updateTableStyling();
+    });
   });
 </script>
+
+<style>
+  /* Dark mode table styles */
+  [data-bs-theme="dark"] .table {
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.075);
+  }
+  
+  /* Fix badge styling for dark mode */
+  [data-bs-theme="dark"] .bg-secondary-subtle {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: #e9ecef !important;
+  }
+  
+  [data-bs-theme="light"] .bg-secondary-subtle {
+    background-color: #e9ecef !important;
+    color: #212529 !important;
+  }
+</style>
 
 
