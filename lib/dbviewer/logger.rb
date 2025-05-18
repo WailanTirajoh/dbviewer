@@ -4,13 +4,9 @@ module Dbviewer
     include Singleton
 
     def initialize
-      @request_counter = 0
-      @current_request_id = nil
-      @last_query_time = nil
       @mutex = Mutex.new
 
       setup_storage
-      subscribe_to_sql_notifications
     end
 
     # Clear all stored queries
@@ -38,6 +34,28 @@ module Dbviewer
       QueryAnalyzer.generate_stats(queries)
     end
 
+    def log_sql_event(event)
+      @mutex.synchronize do
+        current_time = Time.now
+        @storage.add({
+          sql: event.payload[:sql],
+          name: event.payload[:name],
+          timestamp: current_time,
+          duration_ms: event.duration.round(2),
+          binds: QueryParser.format_binds(event.payload[:binds]),
+          request_id: event.transaction_id || current_time.to_i,
+          thread_id: Thread.current.object_id.to_s,
+          caller: event.payload[:caller]
+        })
+      end
+    end
+
+
+    class << self
+      extend Forwardable
+      def_delegators :instance, :log_sql_event
+    end
+
     private
 
     def mode
@@ -54,49 +72,6 @@ module Dbviewer
       end
 
       Rails.logger.info("[DBViewer] Query Logger initialized with #{mode} storage mode")
-    end
-
-    def subscribe_to_sql_notifications
-      ActiveSupport::Notifications.subscribe("sql.active_record") do |*args|
-        event = ActiveSupport::Notifications::Event.new(*args)
-
-        # Skip internal queries and schema queries
-        next if QueryParser.should_skip_query?(event)
-
-        # Record the query details
-        process_sql_event(event)
-      end
-    end
-
-    def process_sql_event(event)
-      @mutex.synchronize do
-        current_time = Time.now
-        update_request_id(current_time)
-        @last_query_time = current_time
-
-        # Create and store the query
-        @storage.add({
-          sql: event.payload[:sql],
-          name: event.payload[:name],
-          timestamp: current_time,
-          duration_ms: event.duration.round(2),
-          binds: QueryParser.format_binds(event.payload[:binds]),
-          request_id: @current_request_id,
-          thread_id: Thread.current.object_id.to_s,
-          caller: event.payload[:caller]
-        })
-      end
-    end
-
-    # Generate a request ID if:
-    # 1. This is the first query, or
-    # 2. More than 1 second has passed since the last query
-    #
-    # TODO: explore rails request ID and implement it here, otherwise fallback to current approach
-    def update_request_id(current_time)
-      if @current_request_id.nil? || @last_query_time.nil? || (current_time - @last_query_time) > 1.0
-        @current_request_id = "req-#{Time.now.to_i}-#{@request_counter += 1}"
-      end
     end
   end
 end
