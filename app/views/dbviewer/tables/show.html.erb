@@ -73,27 +73,49 @@
         </select>
       </div>
       <span class="badge bg-secondary">Total: <%= @total_count %> records</span>
+      <% active_filters = 0 %>
+      <% if active_filters > 0 %>
+        <span class="badge bg-info ms-2" title="Active filters"><i class="bi bi-funnel-fill me-1"></i><%= active_filters %></span>
+      <% end %>
     </div>
   </div>
     <div class="card-body p-0">
       <div class="table-responsive dbviewer-scrollable">
-        <table class="table table-bordered table-striped rounded-none">
-          <% if @records.present? && @records.columns.any? %>
-            <thead class="dbviewer-table-header">
-              <tr>
-                <% @records.columns.each do |column_name| %>
-                  <th>
-                    <%= column_name %>
-                  </th>
-                <% end %>
-              </tr>
-            </thead>
-            <tbody>
-              <% @records.rows.each do |row| %>
+        <%= form_with(url: table_path(@table_name), method: :get, local: true, id: "column-filters-form", class: "mb-0") do |form| %>
+          <% # Hidden fields to preserve current parameters %>
+          <%= form.hidden_field :per_page, value: @per_page %>
+          <%= form.hidden_field :order_by, value: @order_by %>
+          <%= form.hidden_field :order_direction, value: @order_direction %>
+          <%= form.hidden_field :page, value: 1 %> <!-- Reset to first page on filter -->
+          
+          <table class="table table-bordered table-striped rounded-none">
+            <% if @records.present? && @records.columns.any? %>
+              <thead class="dbviewer-table-header">
                 <tr>
-                  <% row.each do |cell| %>
-                    <% cell_value = format_cell_value(cell) %>
-                    <td title="<%= cell_value %>"><%= cell_value %></td>
+                  <% @records.columns.each do |column_name| %>
+                    <th>
+                      <%= column_name %>
+                    </th>
+                  <% end %>
+                </tr>
+                <tr class="column-filters">
+                  <% @records.columns.each do |column_name| %>
+                    <td class="p-0">
+                      <%= form.text_field "column_filters[#{column_name}]", 
+                          value: @column_filters[column_name], 
+                          placeholder: "Filter #{column_name}...",
+                          class: "form-control form-control-sm column-filter rounded-0",
+                          data: { column: column_name } %>
+                    </td>
+                  <% end %>
+                </tr>
+              </thead>
+              <tbody>
+                <% @records.rows.each do |row| %>
+                  <tr>
+                    <% row.each do |cell| %>
+                      <% cell_value = format_cell_value(cell) %>
+                      <td title="<%= cell_value %>"><%= cell_value %></td>
                   <% end %>
                 </tr>
               <% end %>
@@ -104,13 +126,14 @@
             </tr>
           <% end %>
         </table>
+        <% end %> <!-- End of form_with -->
       </div>
       
       <% if @total_pages > 1 %>
         <nav aria-label="Page navigation">
           <ul class="pagination justify-content-center">
             <li class="page-item <%= 'disabled' if @current_page == 1 %>">
-              <%= link_to '«', table_path(@table_name, page: [@current_page - 1, 1].max, order_by: @order_by, order_direction: @order_direction, per_page: @per_page), class: 'page-link' %>
+              <%= link_to '«', table_path(@table_name, page: [@current_page - 1, 1].max, order_by: @order_by, order_direction: @order_direction, per_page: @per_page, column_filters: @column_filters), class: 'page-link' %>
             </li>
             
             <% start_page = [1, @current_page - 2].max %>
@@ -119,12 +142,12 @@
             
             <% (start_page..end_page).each do |page_num| %>
               <li class="page-item <%= 'active' if page_num == @current_page %>">
-                <%= link_to page_num, table_path(@table_name, page: page_num, order_by: @order_by, order_direction: @order_direction, per_page: @per_page), class: 'page-link' %>
+                <%= link_to page_num, table_path(@table_name, page: page_num, order_by: @order_by, order_direction: @order_direction, per_page: @per_page, column_filters: @column_filters), class: 'page-link' %>
               </li>
             <% end %>
             
             <li class="page-item <%= 'disabled' if @current_page == @total_pages %>">
-              <%= link_to '»', table_path(@table_name, page: [@current_page + 1, @total_pages].min, order_by: @order_by, order_direction: @order_direction, per_page: @per_page), class: 'page-link' %>
+              <%= link_to '»', table_path(@table_name, page: [@current_page + 1, @total_pages].min, order_by: @order_by, order_direction: @order_direction, per_page: @per_page, column_filters: @column_filters), class: 'page-link' %>
             </li>
           </ul>
         </nav>
@@ -189,6 +212,85 @@
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Column filter functionality
+    const columnFilters = document.querySelectorAll('.column-filter');
+    const filterForm = document.getElementById('column-filters-form');
+    
+    // Add debounce function to reduce form submissions
+    function debounce(func, wait) {
+      let timeout;
+      return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(function() {
+          func.apply(context, args);
+        }, wait);
+      };
+    }
+    
+    // Function to submit the form
+    const submitForm = debounce(function() {
+      filterForm.submit();
+    }, 500);
+    
+    // Add event listeners to all filter inputs
+    columnFilters.forEach(function(filter) {
+      filter.addEventListener('input', submitForm);
+    });
+    
+    // Add clear button functionality if there are any filters applied
+    const hasActiveFilters = Array.from(columnFilters).some(input => input.value);
+    
+    if (hasActiveFilters) {
+      // Add a clear filters button
+      const paginationContainer = document.querySelector('nav[aria-label="Page navigation"]') || 
+                                   document.querySelector('.table-responsive');
+      
+      if (paginationContainer) {
+        const clearButton = document.createElement('div');
+        clearButton.className = 'text-center mt-3';
+        clearButton.innerHTML = '<button type="button" class="btn btn-sm btn-outline-secondary" id="clear-filters">' +
+                               '<i class="bi bi-x-circle me-1"></i>Clear All Filters</button>';
+        
+        paginationContainer.insertAdjacentHTML('afterend', clearButton.outerHTML);
+        
+        document.getElementById('clear-filters').addEventListener('click', function() {
+          columnFilters.forEach(filter => filter.value = '');
+          submitForm();
+        });
+      }
+    }
+  });
+</script>
+
+<style>
+  /* Column filter styling */
+  .column-filters td {
+    padding: 0.5rem;
+    background-color: var(--bs-tertiary-bg, #f8f9fa);
+  }
+  
+  .column-filter {
+    width: 100%;
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 0.3rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  
+  [data-bs-theme="dark"] .column-filters td {
+    background-color: rgba(255,255,255,0.05);
+  }
+  
+  [data-bs-theme="dark"] .column-filter {
+    background-color: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.9);
+    border-color: rgba(255,255,255,0.15);
+  }
+</style>
 
 <% if @timestamp_data.present? %>
 <script>

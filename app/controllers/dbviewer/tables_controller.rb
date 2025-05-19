@@ -15,7 +15,15 @@ module Dbviewer
       set_pagination_params
       set_sorting_params
 
-      @total_count = fetch_table_record_count(@table_name)
+      # Extract column filters from params
+      @column_filters = params[:column_filters].presence ? params[:column_filters].to_enum.to_h : {}
+
+      if @column_filters.present? && @column_filters.values.any?(&:present?)
+        @total_count = fetch_filtered_record_count(@table_name, @column_filters)
+      else
+        @total_count = fetch_table_record_count(@table_name)
+      end
+
       @total_pages = calculate_total_pages(@total_count, @per_page)
       @records = fetch_table_records(@table_name)
 

@@ -139,13 +139,23 @@ module Dbviewer
 
     # Fetch records for a table with pagination and sorting
     def fetch_table_records(table_name)
+      column_filters = params[:column_filters] || {}
+      # Clean up blank filters
+      column_filters.reject! { |_, v| v.blank? }
+
       database_manager.table_records(
         table_name,
         @current_page,
         @order_by,
         @order_direction,
-        @per_page
+        @per_page,
+        column_filters || {}
       )
+    end
+
+    # Get filtered record count for a table
+    def fetch_filtered_record_count(table_name, column_filters)
+      database_manager.filtered_record_count(table_name, column_filters)
     end
 
     # Safely quote a table name, with fallback

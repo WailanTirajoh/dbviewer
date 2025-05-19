@@ -75,9 +75,10 @@ module Dbviewer
     # @param direction [String] Sort direction ('ASC' or 'DESC')
     # @param per_page [Integer] Number of records per page
     # @return [ActiveRecord::Result] Result set with columns and rows
-    def table_records(table_name, page = 1, order_by = nil, direction = "ASC", per_page = nil)
+    def table_records(table_name, page = 1, order_by = nil, direction = "ASC", per_page = nil, column_filters = nil)
       page = [ 1, page.to_i ].max
       default_per_page = self.class.default_per_page
+      column_filters ||= {}
       max_records = self.class.max_records
       per_page = (per_page || default_per_page).to_i
 
@@ -86,6 +87,32 @@ module Dbviewer
 
       model = get_model_for(table_name)
       query = model.all
+
+      # Apply column filters if provided
+      if column_filters.present?
+        column_filters.each do |column, value|
+          next if value.blank?
+          next unless column_exists?(table_name, column)
+
+          # Use LIKE for string-based searches, = for exact matches on other types
+          column_info = table_columns(table_name).find { |c| c[:name] == column }
+          if column_info
+            column_type = column_info[:type].to_s
+
+            if column_type =~ /char|text|string|uuid|enum/i
+              query = query.where("#{connection.quote_column_name(column)} LIKE ?", "%#{value}%")
+            else
+              # For numeric types, try exact match if value looks like a number
+              if value =~ /\A[+-]?\d+(\.\d+)?\z/
+                query = query.where(column => value)
+              else
+                # Otherwise, try string comparison for non-string fields
+                query = query.where("CAST(#{connection.quote_column_name(column)} AS CHAR) LIKE ?", "%#{value}%")
+              end
+            end
+          end
+        end
+      end
 
       # Apply sorting if provided
       if order_by.present? && column_exists?(table_name, order_by)
@@ -108,6 +135,43 @@ module Dbviewer
     # @return [Integer] Number of records
     def record_count(table_name)
       table_count(table_name)
+    end
+
+    # Get the number of records in a table with filters applied
+    # @param table_name [String] Name of the table
+    # @param column_filters [Hash] Hash of column_name => filter_value for filtering
+    # @return [Integer] Number of filtered records
+    def filtered_record_count(table_name, column_filters = {})
+      model = get_model_for(table_name)
+      query = model.all
+
+      # Apply column filters if provided
+      if column_filters.present?
+        column_filters.each do |column, value|
+          next if value.blank?
+          next unless column_exists?(table_name, column)
+
+          # Use LIKE for string-based searches, = for exact matches on other types
+          column_info = table_columns(table_name).find { |c| c[:name] == column }
+          if column_info
+            column_type = column_info[:type].to_s
+
+            if column_type =~ /char|text|string|uuid|enum/i
+              query = query.where("#{connection.quote_column_name(column)} LIKE ?", "%#{value}%")
+            else
+              # For numeric types, try exact match if value looks like a number
+              if value =~ /\A[+-]?\d+(\.\d+)?\z/
+                query = query.where(column => value)
+              else
+                # Otherwise, try string comparison for non-string fields
+                query = query.where("CAST(#{connection.quote_column_name(column)} AS CHAR) LIKE ?", "%#{value}%")
+              end
+            end
+          end
+        end
+      end
+
+      query.count
     end
 
     # Get the number of columns in a table
