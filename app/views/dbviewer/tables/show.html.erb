@@ -66,14 +66,14 @@
     <div class="d-flex align-items-center">
       <div class="me-3">
         <label for="per-page-select" class="me-2">Per page:</label>
-        <select id="per-page-select" class="form-select form-select-sm" onchange="window.location.href='<%= table_path(@table_name) %>?per_page=' + this.value + '&page=1&order_by=<%= @order_by %>&order_direction=<%= @order_direction %>'">
+        <select id="per-page-select" class="form-select form-select-sm" onchange="window.location.href='<%= table_path(@table_name) %>?per_page=' + this.value + '&page=1&order_by=<%= @order_by %>&order_direction=<%= @order_direction %><%= @column_filters.reject { |_, v| v.blank? }.any? ? "&" + @column_filters.reject { |_, v| v.blank? }.map { |k, v| "column_filters[#{k}]=#{CGI.escape(v.to_s)}" }.join("&") : "" %>'">
           <% Dbviewer::TablesController.per_page_options.each do |option| %>
             <option value="<%= option %>" <%= 'selected' if @per_page == option %>><%= option %></option>
           <% end %>
         </select>
       </div>
       <span class="badge bg-secondary">Total: <%= @total_count %> records</span>
-      <% active_filters = 0 %>
+      <% active_filters = @column_filters.reject { |_, v| v.blank? }.size %>
       <% if active_filters > 0 %>
         <span class="badge bg-info ms-2" title="Active filters"><i class="bi bi-funnel-fill me-1"></i><%= active_filters %></span>
       <% end %>
@@ -89,42 +89,41 @@
           <%= form.hidden_field :page, value: 1 %> <!-- Reset to first page on filter -->
           
           <table class="table table-bordered table-striped rounded-none">
-            <% if @records.present? && @records.columns.any? %>
               <thead class="dbviewer-table-header">
                 <tr>
                   <% @records.columns.each do |column_name| %>
-                    <th>
+                    <th class="pe-4">
                       <%= column_name %>
                     </th>
                   <% end %>
                 </tr>
                 <tr class="column-filters">
                   <% @records.columns.each do |column_name| %>
-                    <td class="p-0">
+                    <th class="p-0">
                       <%= form.text_field "column_filters[#{column_name}]", 
                           value: @column_filters[column_name], 
-                          placeholder: "Filter #{column_name}...",
+                          placeholder: "",
                           class: "form-control form-control-sm column-filter rounded-0",
                           data: { column: column_name } %>
-                    </td>
+                    </th>
                   <% end %>
                 </tr>
               </thead>
               <tbody>
+                <% if @records.empty? %>
+                  <tr>
+                    <td colspan="100%" class="text-center">No records found or table is empty.</td>
+                  </tr>
+                <% end %>
                 <% @records.rows.each do |row| %>
                   <tr>
-                    <% row.each do |cell| %>
-                      <% cell_value = format_cell_value(cell) %>
-                      <td title="<%= cell_value %>"><%= cell_value %></td>
-                  <% end %>
-                </tr>
-              <% end %>
+                      <% row.each do |cell| %>
+                        <% cell_value = format_cell_value(cell) %>
+                        <td title="<%= cell_value %>"><%= cell_value %></td>
+                    <% end %>
+                  </tr>
+                <% end %>
             </tbody>
-          <% else %>
-            <tr>
-              <td colspan="100%">No records found or table is empty.</td>
-            </tr>
-          <% end %>
         </table>
         <% end %> <!-- End of form_with -->
       </div>
