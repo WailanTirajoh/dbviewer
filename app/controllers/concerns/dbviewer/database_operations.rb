@@ -41,8 +41,8 @@ module Dbviewer
     def fetch_tables_with_stats(include_record_counts = false)
       database_manager.tables.map do |table_name|
         table_stats = {
-          name: table_name,
-          columns_count: database_manager.column_count(table_name)
+          name: table_name
+          # columns_count: database_manager.column_count(table_name)
         }
 
         # Only fetch record counts if explicitly requested
@@ -61,9 +61,7 @@ module Dbviewer
       analytics = {
         total_tables: tables.size,
         total_records: tables.sum { |t| t[:record_count] },
-        total_columns: tables.sum { |t| t[:columns_count] },
-        largest_tables: tables.sort_by { |t| -t[:record_count] }.first(5),
-        widest_tables: tables.sort_by { |t| -t[:columns_count] }.first(5),
+        largest_tables: tables.sort_by { |t| -t[:record_count] }.first(10),
         empty_tables: tables.select { |t| t[:record_count] == 0 }
       }
 

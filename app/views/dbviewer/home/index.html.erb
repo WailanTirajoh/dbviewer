@@ -65,7 +65,6 @@
                   <tr>
                     <th>Table Name</th>
                     <th class="text-end">Records</th>
-                    <th class="text-end">Columns</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -77,7 +76,6 @@
                         </a>
                       </td>
                       <td class="text-end"><%= number_with_delimiter(table[:record_count]) %></td>
-                      <td class="text-end"><%= table[:columns_count] %></td>
                     </tr>
                   <% end %>
                 </tbody>
@@ -92,47 +90,7 @@
       </div>
     </div>
 
-    <div class="col-md-6 mb-4">
-      <div class="card h-100 shadow-sm">
-        <div class="card-header">
-          <h5 class="card-title mb-0">Tables with Most Columns</h5>
-        </div>
-        <div class="card-body">
-          <% if @analytics[:widest_tables].any? %>
-            <div class="table-responsive">
-              <table class="table table-sm table-hover">
-                <thead>
-                  <tr>
-                    <th>Table Name</th>
-                    <th class="text-end">Columns</th>
-                    <th class="text-end">Records</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% @analytics[:widest_tables].each do |table| %>
-                    <tr>
-                      <td>
-                        <a href="<%= dbviewer.table_path(table[:name]) %>">
-                          <%= table[:name] %>
-                        </a>
-                      </td>
-                      <td class="text-end"><%= table[:columns_count] %></td>
-                      <td class="text-end"><%= number_with_delimiter(table[:record_count]) %></td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
-            </div>
-          <% else %>
-            <div class="text-center my-4 empty-data-message">
-              <p>No table data available</p>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 mb-4">
+    <div class="col-6 mb-4">
       <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="card-title mb-0">Recent SQL Queries</h5>
@@ -141,7 +99,7 @@
         <div class="card-body p-0">
           <% begin %>
             <% require_dependency "dbviewer/logger" %>
-            <% queries = Dbviewer::Logger.instance.recent_queries(limit: 5) %>
+            <% queries = Dbviewer::Logger.instance.recent_queries(limit: 10) %>
             
             <% if queries.any? %>
               <div class="table-responsive">

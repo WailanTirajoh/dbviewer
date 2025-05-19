@@ -36,7 +36,7 @@
         <thead>
           <tr>
             <th>Table Name</th>
-            <th class="text-center">Columns</th>
+            <th class="text-end">Records</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -46,8 +46,8 @@
               <td class="fw-medium">
                 <%= link_to table[:name], table_path(table[:name]), class: "text-decoration-none" %>
               </td>
-              <td class="text-center">
-                <span class="badge bg-secondary-subtle"><%= table[:columns_count] %></span>
+              <td class="text-end">
+                <span class="badge bg-secondary-subtle"><%= table[:record_count] %></span>
               </td>
               <td>
                 <%= link_to raw('<i class="bi bi-eye"></i>'), table_path(table[:name]), class: "btn btn-sm btn-outline-primary", title: "View" %>

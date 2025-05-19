@@ -3,7 +3,7 @@ module Dbviewer
     include Dbviewer::PaginationConcern
 
     def index
-      @tables = fetch_tables_with_stats
+      @tables = fetch_tables_with_stats(include_record_counts: true)
     end
 
     def show
