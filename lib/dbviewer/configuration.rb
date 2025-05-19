@@ -31,7 +31,8 @@ module Dbviewer
     # Maximum number of queries to keep in memory
     attr_accessor :max_memory_queries
 
-    # Admin access credentials (username, password)
+    # Admin access credentials hash with :username and :password keys
+    # @example { username: 'admin', password: 'secret' }
     attr_accessor :admin_credentials
 
     def initialize

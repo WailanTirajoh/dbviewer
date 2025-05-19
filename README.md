@@ -87,13 +87,24 @@ Rails.application.routes.draw do
   # Your application routes...
 
   # Mount the DBViewer engine
-  if Rails.env.development?
-    mount Dbviewer::Engine, at: "/dbviewer"
-  end
+  mount Dbviewer::Engine, at: "/dbviewer"
+  # The engine can be mounted in any environment when using Basic Authentication
 end
 ```
 
-Then, visit `/dbviewer` in your browser to access the database viewer.
+Configure Basic Authentication in an initializer to secure access (strongly recommended):
+
+```ruby
+# config/initializers/dbviewer.rb
+Dbviewer.configure do |config|
+  config.admin_credentials = {
+    username: "your_username",
+    password: "your_secure_password"
+  }
+end
+```
+
+Then, visit `/dbviewer` in your browser to access the database viewer. You'll be prompted for your username and password.
 
 ### Rails API-only Applications
 
@@ -171,6 +182,9 @@ Dbviewer.configure do |config|
   config.query_logging_mode = :memory                # Storage mode for SQL queries (:memory or :file)
   config.query_log_path = "log/dbviewer.log"         # Path for query log file when in :file mode
   config.max_memory_queries = 1000                   # Maximum number of queries to store in memory
+
+  # Authentication options
+  config.admin_credentials = { username: "admin", password: "your_secure_password" } # Basic HTTP auth credentials
 end
 ```
 
@@ -209,37 +223,60 @@ DBViewer includes several security features to protect your database:
 - **Query Limits**: Automatic LIMIT clause added to prevent excessive data retrieval
 - **Pattern Detection**: Detection of SQL injection patterns and suspicious constructs
 - **Error Handling**: Informative error messages without exposing sensitive information
+- **HTTP Basic Authentication**: Protect access with username and password authentication
 
-## 🌱 Production Access (Not Recommended)
+### Basic Authentication
 
-By default, DBViewer only runs in development or test environments for security reasons. If you need to access it in production (not recommended):
+You can enable HTTP Basic Authentication to secure access to DBViewer:
 
-1. Set an environment variable with a secure random key:
+```ruby
+Dbviewer.configure do |config|
+  config.admin_credentials = {
+    username: "your_username",
+    password: "your_secure_password"
+  }
+end
+```
 
-   ```
-   DBVIEWER_PRODUCTION_ACCESS_KEY=your_secure_random_key
-   ```
+When credentials are provided, all DBViewer routes will be protected by HTTP Basic Authentication.
+Without valid credentials, users will be prompted for a username and password before they can access any DBViewer page.
 
-2. Add an additional constraint in your routes:
+## 🌱 Production Access
+
+With the addition of Basic Authentication, DBViewer can now be used in any environment including production. We recommend the following for production deployments:
+
+1. **Always** enable HTTP Basic Authentication with strong credentials:
 
    ```ruby
-   if Rails.env.production?
-     constraints ->(req) { req.params[:access_key] == ENV["DBVIEWER_PRODUCTION_ACCESS_KEY"] } do
-       mount Dbviewer::Engine, at: "/dbviewer"
-     end
-   else
-     mount Dbviewer::Engine, at: "/dbviewer"
+   Dbviewer.configure do |config|
+     config.admin_credentials = {
+       username: "unique_username",
+       password: SecureRandom.hex(16)  # Generate a strong random password
+     }
    end
    ```
 
-3. Access the tool with the override parameter:
+2. Mount the engine in your routes file:
+
+   ```ruby
+   # In any environment, with Basic Auth protection
+   mount Dbviewer::Engine, at: "/dbviewer"
+   ```
+
+3. Access the tool through your regular application URL:
    ```
    https://yourdomain.com/dbviewer?override_env_check=your_secure_random_key
    ```
 
 ## 📝 Security Note
 
-⚠️ **Warning**: This engine is designed for development purposes. It's not recommended to use it in production as it provides direct access to your database contents. If you must use it in production, ensure it's protected behind authentication and use the production access key mechanism with a strong random key.
+⚠️ **Warning**: This engine provides direct access to your database contents, which contains sensitive information. Always protect it with HTTP Basic Authentication by configuring strong credentials as shown above.
+
+When used in production, ensure:
+
+- You use long, randomly generated passwords (e.g., with `SecureRandom.hex(16)`)
+- You access DBViewer over HTTPS connections only
+- Access is limited to trusted administrators only
 
 ## 🤌🏻 Contributing
 

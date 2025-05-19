@@ -3,14 +3,18 @@ module Dbviewer
     include Dbviewer::DatabaseOperations
     include Dbviewer::ErrorHandling
 
-    before_action :ensure_development_environment
+    before_action :authenticate_with_basic_auth
     before_action :set_tables
 
     private
 
-    def ensure_development_environment
-      unless Rails.env.development? || Rails.env.test? || params[:override_env_check] == ENV["DBVIEWER_PRODUCTION_ACCESS_KEY"]
-        render plain: "DBViewer is only available in development and test environments for security reasons.", status: :forbidden
+    def authenticate_with_basic_auth
+      return unless Dbviewer.configuration.admin_credentials.present?
+
+      credentials = Dbviewer.configuration.admin_credentials
+      authenticate_or_request_with_http_basic("DBViewer Authentication") do |username, password|
+        ActiveSupport::SecurityUtils.secure_compare(username, credentials[:username]) &
+        ActiveSupport::SecurityUtils.secure_compare(password, credentials[:password])
       end
     end
 
