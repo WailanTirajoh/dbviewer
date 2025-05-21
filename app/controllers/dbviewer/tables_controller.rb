@@ -62,6 +62,12 @@ module Dbviewer
     end
 
     def export_csv
+      unless Dbviewer.configuration.enable_data_export
+        flash[:alert] = "Data export is disabled in the configuration"
+        redirect_to table_path(params[:id])
+        return
+      end
+
       table_name = params[:id]
       limit = (params[:limit] || 10000).to_i
       include_headers = params[:include_headers] != "0"

@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - User-friendly UI messages when query logging is disabled
   - Intelligent redirection when attempting to access logs with logging disabled
   - Comprehensive documentation in README for the new setting
+- **Data Export Configuration** enforced throughout the application
+  - Improved handling of the `enable_data_export` configuration option
+  - Export UI elements now conditionally rendered based on configuration
+  - Server-side validation to prevent unauthorized data exports
+  - Updated documentation in README for data export capabilities
 
 ## [0.3.5] - 2025-05-20
 

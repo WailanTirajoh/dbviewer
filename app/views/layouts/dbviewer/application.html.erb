@@ -605,6 +605,17 @@
       <!-- Main Content Area -->
       <div class="dbviewer-main">
         <div class="dbviewer-main-content">
+          <!-- Flash Messages -->
+          <% if flash.any? %>
+            <% flash.each do |type, message| %>
+              <% alert_class = type.to_s == 'notice' ? 'alert-info' : 'alert-danger' %>
+              <div class="alert <%= alert_class %> alert-dismissible fade show mb-3" role="alert">
+                <%= message %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            <% end %>
+          <% end %>
+          
           <div class="d-flex d-lg-none align-items-center mb-3">
             <button class="btn btn-sm btn-outline-primary dbviewer-sidebar-toggle" type="button">
               <i class="bi bi-list me-1"></i> Tables

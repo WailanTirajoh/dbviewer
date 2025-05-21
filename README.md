@@ -24,6 +24,7 @@ It's designed for development, debugging, and database analysis, offering a clea
   - Navigate through large datasets with an intuitive pagination interface
   - Scrollable table with fixed headers for improved navigation
   - Single-line cell display with ellipsis for wide content (tooltips on hover)
+  - Export table data to CSV format (configurable via `enable_data_export` option)
 - **SQL Queries**:
   - Run custom SELECT queries against your database in a secure, read-only environment
   - View table structure reference while writing queries
