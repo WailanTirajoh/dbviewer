@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.6] - 2025-05-22
+
+### Added
+
+- **Optional Query Logging** feature for improved control
+  - New `enable_query_logging` configuration option to completely disable SQL query logging
+  - Skip query capture at the source for better performance when logging is disabled
+  - User-friendly UI messages when query logging is disabled
+  - Intelligent redirection when attempting to access logs with logging disabled
+  - Comprehensive documentation in README for the new setting
+
 ## [0.3.5] - 2025-05-20
 
 ### Added

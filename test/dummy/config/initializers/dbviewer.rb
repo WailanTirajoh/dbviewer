@@ -10,4 +10,5 @@ Dbviewer.configure do |config|
   config.query_logging_mode = :file                  # Storage mode for SQL queries (:memory or :file)
   config.query_log_path = "log/dbviewer.log"         # Path for query log file when in :file mode
   config.max_memory_queries = 1000                   # Maximum number of queries to store in memory
+  config.enable_query_logging = false                 # Enable or disable query logging (default: true)
 end

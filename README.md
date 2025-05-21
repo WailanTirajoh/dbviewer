@@ -179,6 +179,7 @@ Dbviewer.configure do |config|
   config.query_timeout = 30                          # SQL query timeout in seconds
 
   # Query logging options
+  config.enable_query_logging = true                 # Enable or disable query logging completely (default: true)
   config.query_logging_mode = :memory                # Storage mode for SQL queries (:memory or :file)
   config.query_log_path = "log/dbviewer.log"         # Path for query log file when in :file mode
   config.max_memory_queries = 1000                   # Maximum number of queries to store in memory
@@ -193,6 +194,14 @@ The configuration is accessed through `Dbviewer.configuration` throughout the co
 ## 🪵 Query Logging
 
 DBViewer includes a powerful SQL query logging system that captures and analyzes database queries. You can access this log through the `/dbviewer/logs` endpoint. The logging system offers two storage backends:
+
+### Disabling Query Logging
+
+You can completely disable query logging if you don't need this feature:
+
+```ruby
+config.enable_query_logging = false       # Disable query logging completely
+```
 
 ### In-Memory Storage (Default)
 

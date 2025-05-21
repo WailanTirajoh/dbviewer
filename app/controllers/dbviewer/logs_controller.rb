@@ -1,6 +1,7 @@
 module Dbviewer
   class LogsController < ApplicationController
     before_action :set_filters, only: [ :index ]
+    before_action :check_logging_enabled
 
     def index
       @queries = dbviewer_logger.recent_queries(
@@ -27,6 +28,13 @@ module Dbviewer
     end
 
     private
+
+    def check_logging_enabled
+      unless Dbviewer.configuration.enable_query_logging
+        flash[:warning] = "Query logging is disabled. Enable it in the configuration to use this feature."
+        redirect_to root_path
+      end
+    end
 
     def set_filters
       @table_filter = params[:table_filter]

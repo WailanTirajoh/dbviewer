@@ -31,6 +31,9 @@ module Dbviewer
     # Maximum number of queries to keep in memory
     attr_accessor :max_memory_queries
 
+    # Enable or disable query logging completely
+    attr_accessor :enable_query_logging
+
     # Admin access credentials hash with :username and :password keys
     # @example { username: 'admin', password: 'secret' }
     attr_accessor :admin_credentials
@@ -46,6 +49,7 @@ module Dbviewer
       @query_logging_mode = :memory
       @query_log_path = "log/dbviewer.log"
       @max_memory_queries = 1000
+      @enable_query_logging = true
       @admin_credentials = nil
     end
   end

@@ -571,9 +571,11 @@
             <li class="nav-item">
               <%= link_to raw('<i class="bi bi-diagram-3"></i> ERD'), dbviewer.entity_relationship_diagrams_path, class: "nav-link #{erd_nav_class}" %>
             </li>
-            <li class="nav-item">
-              <%= link_to raw('<i class="bi bi-journal-code"></i> SQL Logs'), dbviewer.logs_path, class: "nav-link #{logs_nav_class}" %>
-            </li>
+            <% if Dbviewer.configuration.enable_query_logging %>
+              <li class="nav-item">
+                <%= link_to raw('<i class="bi bi-journal-code"></i> SQL Logs'), dbviewer.logs_path, class: "nav-link #{logs_nav_class}" %>
+              </li>
+            <% end %>
           </ul>
           <ul class="navbar-nav ms-auto">
             <li class="nav-item">

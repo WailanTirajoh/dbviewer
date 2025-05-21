@@ -94,46 +94,55 @@
       <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="card-title mb-0">Recent SQL Queries</h5>
-          <a href="<%= dbviewer.logs_path %>" class="btn btn-sm btn-primary">View All Logs</a>
+          <% if Dbviewer.configuration.enable_query_logging %>
+            <a href="<%= dbviewer.logs_path %>" class="btn btn-sm btn-primary">View All Logs</a>
+          <% end %>
         </div>
         <div class="card-body p-0">
           <% begin %>
             <% require_dependency "dbviewer/logger" %>
-            <% queries = Dbviewer::Logger.instance.recent_queries(limit: 10) %>
-            
-            <% if queries.any? %>
-              <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0">
+            <% if Dbviewer.configuration.enable_query_logging %>
+              <% queries = Dbviewer::Logger.instance.recent_queries(limit: 10) %>
+              
+              <% if queries.any? %>
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover mb-0">
 
-                <thead>
-                  <tr>
-                    <th>Query</th>
-                    <th class="text-end" style="width: 120px">Duration</th>
-                    <th class="text-end" style="width: 180px">Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% queries.each do |query| %>
+                  <thead>
                     <tr>
-                      <td class="text-truncate" style="max-width: 500px;">
-                        <code class="sql-query-code"><%= query[:sql] %></code>
-                      </td>
-                      <td class="text-end">
-                        <span class="<%= query[:duration_ms] > 100 ? 'query-duration-slow' : 'query-duration' %>">
-                          <%= query[:duration_ms] %> ms
-                        </span>
-                      </td>
-                      <td class="text-end query-timestamp">
-                        <small><%= query[:timestamp].strftime("%H:%M:%S") %></small>
-                      </td>
+                      <th>Query</th>
+                      <th class="text-end" style="width: 120px">Duration</th>
+                      <th class="text-end" style="width: 180px">Time</th>
                     </tr>
-                  <% end %>
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    <% queries.each do |query| %>
+                      <tr>
+                        <td class="text-truncate" style="max-width: 500px;">
+                          <code class="sql-query-code"><%= query[:sql] %></code>
+                        </td>
+                        <td class="text-end">
+                          <span class="<%= query[:duration_ms] > 100 ? 'query-duration-slow' : 'query-duration' %>">
+                            <%= query[:duration_ms] %> ms
+                          </span>
+                        </td>
+                        <td class="text-end query-timestamp">
+                          <small><%= query[:timestamp].strftime("%H:%M:%S") %></small>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+              <% else %>
+                <div class="text-center my-4 empty-data-message">
+                  <p>No queries recorded yet</p>
+                </div>
+              <% end %>
             <% else %>
               <div class="text-center my-4 empty-data-message">
-                <p>No queries recorded yet</p>
+                <p>Query logging is disabled</p>
+                <small class="text-muted">Enable it in the configuration to see SQL queries here</small>
               </div>
             <% end %>
           <% rescue => e %>
