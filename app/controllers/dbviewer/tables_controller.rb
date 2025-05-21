@@ -27,6 +27,12 @@ module Dbviewer
       @total_pages = calculate_total_pages(@total_count, @per_page)
       @records = fetch_table_records(@table_name)
 
+      # Ensure @records is never nil to prevent template errors
+      if @records.nil?
+        column_names = fetch_table_columns(@table_name).map { |c| c[:name] }
+        @records = ActiveRecord::Result.new(column_names, [])
+      end
+
       # Fetch timestamp visualization data if the table has a created_at column
       if has_timestamp_column?(@table_name)
         @time_grouping = params[:time_group] || "daily"

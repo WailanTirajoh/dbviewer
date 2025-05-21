@@ -95,44 +95,72 @@
           <table class="table table-bordered table-striped rounded-none">
               <thead class="dbviewer-table-header">
                 <tr>
-                  <% @records.columns.each do |column_name| %>
-                    <th class="pe-4">
-                      <%= column_name %>
-                    </th>
+                  <% if @records && @records.columns %>
+                    <% @records.columns.each do |column_name| %>
+                      <th class="pe-4">
+                        <%= column_name %>
+                      </th>
+                    <% end %>
+                  <% else %>
+                    <th>No columns available</th>
                   <% end %>
                 </tr>
                 <tr class="column-filters">
-                  <% @records.columns.each do |column_name| %>
-                    <th class="p-0">
-                      <%= form.text_field "column_filters[#{column_name}]", 
-                          value: @column_filters[column_name], 
-                          placeholder: "",
-                          class: "form-control form-control-sm column-filter rounded-0",
-                          data: { column: column_name } %>
-                    </th>
+                  <% if @records && @records.columns %>
+                    <% @records.columns.each do |column_name| %>
+                      <th class="p-0">
+                        <%= form.text_field "column_filters[#{column_name}]", 
+                            value: @column_filters[column_name], 
+                            placeholder: "",
+                            class: "form-control form-control-sm column-filter rounded-0",
+                            data: { column: column_name } %>
+                      </th>
+                    <% end %>
+                  <% else %>
+                    <th></th>
                   <% end %>
                 </tr>
               </thead>
               <tbody>
-                <% if @records.empty? %>
+                <% if @records.nil? || @records.rows.nil? || @records.empty? %>
                   <tr>
                     <td colspan="100%" class="text-center">No records found or table is empty.</td>
                   </tr>
                 <% end %>
-                <% @records.rows.each do |row| %>
-                  <tr>
-                      <% row.each do |cell| %>
-                        <% cell_value = format_cell_value(cell) %>
-                        <td title="<%= cell_value %>"><%= cell_value %></td>
-                    <% end %>
-                  </tr>
+                <% if @records && @records.rows %>
+                  <% @records.rows.each do |row| %>
+                    <tr>
+                        <% row.each_with_index do |cell, cell_index| %>
+                          <% 
+                            column_name = @records.columns[cell_index]
+                            cell_value = format_cell_value(cell)
+                            
+                            # Check if this column is a foreign key
+                            foreign_key = @metadata && @metadata[:foreign_keys] ? 
+                                          @metadata[:foreign_keys].find { |fk| fk[:column] == column_name } : 
+                                          nil
+                          %>
+                          <% if foreign_key && !cell.nil? %>
+                            <td title="<%= cell_value %> (Click to view referenced record)">
+                              <%= link_to cell_value, 
+                                  table_path(foreign_key[:to_table], 
+                                  column_filters: { foreign_key[:primary_key] => cell }), 
+                                  class: "text-decoration-none foreign-key-link" %>
+                              <i class="bi bi-link-45deg text-muted small"></i>
+                            </td>
+                          <% else %>
+                            <td title="<%= cell_value %>"><%= cell_value %></td>
+                          <% end %>
+                      <% end %>
+                    </tr>
+                  <% end %>
                 <% end %>
             </tbody>
         </table>
         <% end %> <!-- End of form_with -->
       </div>
       
-      <% if @total_pages > 1 %>
+      <% if @total_pages && @total_pages > 1 %>
         <nav aria-label="Page navigation">
           <ul class="pagination justify-content-center">
             <li class="page-item <%= 'disabled' if @current_page == 1 %>">
@@ -292,6 +320,23 @@
     background-color: rgba(255,255,255,0.1);
     color: rgba(255,255,255,0.9);
     border-color: rgba(255,255,255,0.15);
+  }
+  
+  /* Foreign key link styling */
+  .foreign-key-link {
+    color: var(--bs-primary);
+    position: relative;
+  }
+  
+  .foreign-key-link:hover {
+    text-decoration: underline !important;
+  }
+  
+  .foreign-key-link + .bi-link-45deg {
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+    position: relative;
+    top: -1px;
   }
 </style>
 

@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.10] - 2025-05-22
+
+### Added
+
+- Added icons to metric cards on the homepage for improved visual experience
+- Enhanced UI with visual indicators for different database metrics
+- Improved card layout with icons on the left and content on the right for better readability
+- Added subtle shadows to metric cards for visual hierarchy and depth
+
+## [0.3.9] - 2025-05-22
+
+### Changed
+
+- Replaced "Columns" card on dashboard with "Relationships" card showing foreign key connections
+- Added relationship counting to database analytics
+- Improved dashboard visualization of database relationships
+
+## [0.3.8] - 2025-05-22
+
+### Fixed
+
+- Fixed "undefined method 'columns' for nil:NilClass" error when filters return no records
+- Improved error handling in tables view to gracefully handle edge cases
+- Added defensive programming checks to prevent nil errors in table display
+
+## [0.3.7] - 2025-05-22
+
+### Added
+
+- **Foreign Key Navigation** in table records view
+  - Clickable foreign key cells to navigate directly to referenced records
+  - Visual indication of foreign key relationships with link icon
+  - Automatic filtering of target table to show only the referenced record
+
 ## [0.3.6] - 2025-05-22
 
 ### Added

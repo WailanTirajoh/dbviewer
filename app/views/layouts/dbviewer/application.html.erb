@@ -551,6 +551,25 @@
     .stat-card-bg {
       background-color: var(--bs-light);
     }
+    
+    /* Metric icon styling */
+    .metric-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      min-width: 60px;
+      text-align: center;
+      background-color: rgba(var(--bs-primary-rgb), 0.1);
+      color: var(--bs-primary);
+    }
+    
+    [data-bs-theme="dark"] .metric-icon {
+      background-color: rgba(13, 110, 253, 0.2);
+      color: #6ea8fe;
+    }
   </style>
 </head>
 <body>

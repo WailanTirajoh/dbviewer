@@ -65,6 +65,19 @@ module Dbviewer
         empty_tables: tables.select { |t| t[:record_count] == 0 }
       }
 
+      # Calculate total foreign key relationships
+      begin
+        total_relationships = 0
+        tables.each do |table|
+          metadata = fetch_table_metadata(table[:name])
+          total_relationships += metadata[:foreign_keys].size if metadata && metadata[:foreign_keys]
+        end
+        analytics[:total_relationships] = total_relationships
+      rescue => e
+        Rails.logger.error("Error calculating relationship count: #{e.message}")
+        analytics[:total_relationships] = 0
+      end
+
       # Calculate schema size if possible
       begin
         analytics[:schema_size] = calculate_schema_size
