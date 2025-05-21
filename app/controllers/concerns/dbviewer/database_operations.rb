@@ -220,6 +220,130 @@ module Dbviewer
       relationships
     end
 
+    # Get mini ERD data for a specific table and its relationships
+    def fetch_mini_erd_for_table(table_name)
+      related_tables = []
+      relationships = []
+
+      # Validate the table exists
+      unless database_manager.tables.include?(table_name)
+        Rails.logger.error("[DBViewer] Table not found for mini ERD: #{table_name}")
+        return {
+          tables: [],
+          relationships: [],
+          error: "Table '#{table_name}' not found in the database"
+        }
+      end
+
+      # Add current table
+      related_tables << { name: table_name }
+
+      Rails.logger.info("[DBViewer] Generating mini ERD for table: #{table_name}")
+
+      # Get foreign keys from this table to others (outgoing relationships)
+      begin
+        metadata = fetch_table_metadata(table_name)
+        Rails.logger.debug("[DBViewer] Table metadata: #{metadata.inspect}")
+
+        if metadata && metadata[:foreign_keys].present?
+          metadata[:foreign_keys].each do |fk|
+            # Ensure all required fields are present
+            next unless fk[:to_table].present? && fk[:column].present?
+
+            # Sanitize table and column names for display
+            from_table = table_name.to_s
+            to_table = fk[:to_table].to_s
+            from_column = fk[:column].to_s
+            to_column = fk[:primary_key].to_s.presence || "id"
+            relationship_name = fk[:name].to_s.presence || "#{from_table}_to_#{to_table}"
+
+            relationship = {
+              from_table: from_table,
+              to_table: to_table,
+              from_column: from_column,
+              to_column: to_column,
+              name: relationship_name,
+              direction: "outgoing"
+            }
+
+            relationships << relationship
+            Rails.logger.debug("[DBViewer] Added outgoing relationship: #{relationship.inspect}")
+
+            # Add the related table if not already included
+            unless related_tables.any? { |t| t[:name] == to_table }
+              related_tables << { name: to_table }
+            end
+          end
+        end
+      rescue => e
+        Rails.logger.error("[DBViewer] Error fetching outgoing relationships for #{table_name}: #{e.message}")
+        Rails.logger.error(e.backtrace.join("\n"))
+      end
+
+      # Get foreign keys from other tables to this one (incoming relationships)
+      begin
+        database_manager.tables.each do |other_table_name|
+          next if other_table_name == table_name # Skip self
+
+          begin
+            other_metadata = fetch_table_metadata(other_table_name)
+            if other_metadata && other_metadata[:foreign_keys].present?
+              other_metadata[:foreign_keys].each do |fk|
+                if fk[:to_table] == table_name
+                  # Ensure all required fields are present
+                  next unless fk[:column].present?
+
+                  # Sanitize table and column names for display
+                  from_table = other_table_name.to_s
+                  to_table = table_name.to_s
+                  from_column = fk[:column].to_s
+                  to_column = fk[:primary_key].to_s.presence || "id"
+                  relationship_name = fk[:name].to_s.presence || "#{from_table}_to_#{to_table}"
+
+                  relationship = {
+                    from_table: from_table,
+                    to_table: to_table,
+                    from_column: from_column,
+                    to_column: to_column,
+                    name: relationship_name,
+                    direction: "incoming"
+                  }
+
+                  relationships << relationship
+                  Rails.logger.debug("[DBViewer] Added incoming relationship: #{relationship.inspect}")
+
+                  # Add the related table if not already included
+                  unless related_tables.any? { |t| t[:name] == from_table }
+                    related_tables << { name: from_table }
+                  end
+                end
+              end
+            end
+          rescue => e
+            Rails.logger.error("[DBViewer] Error processing relationships for table #{other_table_name}: #{e.message}")
+            # Continue to the next table
+          end
+        end
+      rescue => e
+        Rails.logger.error("[DBViewer] Error fetching incoming relationships for #{table_name}: #{e.message}")
+        Rails.logger.error(e.backtrace.join("\n"))
+      end
+
+      # If no relationships were found, make sure to still include at least the current table
+      if relationships.empty?
+        Rails.logger.info("[DBViewer] No relationships found for table: #{table_name}")
+      end
+
+      result = {
+        tables: related_tables,
+        relationships: relationships,
+        timestamp: Time.now.to_i
+      }
+
+      Rails.logger.info("[DBViewer] Mini ERD data generated: #{related_tables.length} tables, #{relationships.length} relationships")
+      result
+    end
+
     # Prepare the SQL query - either from params or default
     def prepare_query
       quoted_table = safe_quote_table_name(@table_name)

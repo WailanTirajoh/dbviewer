@@ -52,6 +52,34 @@ module Dbviewer
       end
     end
 
+    def mini_erd
+      @table_name = params[:id]
+
+      begin
+        @erd_data = fetch_mini_erd_for_table(@table_name)
+
+        if @erd_data[:error].present?
+          Rails.logger.error("Mini ERD error: #{@erd_data[:error]}")
+        end
+
+        respond_to do |format|
+          format.json { render json: @erd_data }
+          format.html { render layout: false }
+        end
+      rescue => e
+        Rails.logger.error("Error generating Mini ERD: #{e.message}")
+        Rails.logger.error(e.backtrace.join("\n"))
+
+        @error_message = e.message
+        @erd_data = { tables: [], relationships: [], error: @error_message }
+
+        respond_to do |format|
+          format.json { render json: { error: @error_message }, status: :internal_server_error }
+          format.html { render layout: false }
+        end
+      end
+    end
+
     def query
       @table_name = params[:id]
       @read_only_mode = true # Flag to indicate we're in read-only mode

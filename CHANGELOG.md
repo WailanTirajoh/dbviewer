@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.15] - 2025-05-22
+
+### Enhanced
+
+- Made Mini ERD diagram render at full width and height of the modal window
+- Added responsive resizing for better diagram viewing experience
+- Improved SVG-Pan-Zoom configuration with better zoom limits and controls
+- Added automatic resizing of the diagram when the modal is resized
+- Removed padding in modal body for maximum diagram space
+- Increased minimum height of diagram to 450px for better visibility
+- Added proper SVG viewBox configuration for better scaling
+- Changed modal dialog from modal-lg to modal-xl for more viewing space
+
+### Fixed
+
+- Modified Mini ERD to refresh data every time the modal is opened instead of using cached data
+- Added cache-busting to ensure fresh ERD data is fetched from the server
+- Cleared cached diagram data when the modal is closed
+
+## [0.3.14] - 2025-05-22
+
+### Fixed
+
+- Fixed issue where the Mini ERD displayed raw JSON data instead of rendering the diagram
+- Moved Mermaid.js rendering logic to the table show page instead of the AJAX-loaded template
+- Improved data handling by using JSON endpoint instead of HTML for relationship data
+- Enhanced caching of relationship data to avoid redundant API calls
+- Simplified Mini ERD template to strictly contain HTML without JavaScript
+
+## [0.3.13] - 2025-05-22
+
+### Fixed
+
+- Fixed critical issue where raw JSON was displayed instead of the rendered ERD diagram
+- Completely revised JavaScript rendering to ensure diagram appears properly
+- Added debug information for easier troubleshooting
+- Improved error handling for malformed relationship data
+
+## [0.3.12] - 2025-05-22
+
+### Fixed
+
+- Fixed issue where the Mini ERD diagram wasn't displaying after loading data
+- Enhanced error handling and reporting in Mini ERD functionality
+- Improved reliability of relationship detection and display
+- Added timeout handling and retry functionality for Mini ERD
+
+## [0.3.11] - 2025-05-22
+
+### Added
+
+- Added Mini ERD feature to table detail pages
+- New "View Relationships" button for quick access to table relationships
+- Interactive visualization of foreign key connections for the current table
+- Enhanced understanding of database structure with focused relationship diagrams
+
 ## [0.3.10] - 2025-05-22
 
 ### Added

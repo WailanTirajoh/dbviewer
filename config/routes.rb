@@ -4,6 +4,7 @@ Dbviewer::Engine.routes.draw do
       get "query"
       post "query"
       get "export_csv"
+      get "mini_erd"
     end
   end
 
