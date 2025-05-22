@@ -44,7 +44,8 @@ It's designed for development, debugging, and database analysis, offering a clea
 <details>
   <summary>Click to see more screenshots</summary>
   
-  #### Dashboard Overview
+#### Dashboard Overview
+
   <img width="1470" alt="image" src="https://github.com/user-attachments/assets/4e803d51-9a5b-4c80-bb4c-a761dba15a40" />
 
 #### Table Details
@@ -76,7 +77,7 @@ gem "dbviewer", group: :development
 And then execute:
 
 ```bash
-$ bundle
+bundle
 ```
 
 ## 🔧 Usage
@@ -274,6 +275,7 @@ With the addition of Basic Authentication, DBViewer can now be used in any envir
    ```
 
 3. Access the tool through your regular application URL:
+
    ```
    https://yourdomain.com/dbviewer?override_env_check=your_secure_random_key
    ```
@@ -287,6 +289,36 @@ When used in production, ensure:
 - You use long, randomly generated passwords (e.g., with `SecureRandom.hex(16)`)
 - You access DBViewer over HTTPS connections only
 - Access is limited to trusted administrators only
+
+## 🔄 Updating DBViewer
+
+To keep DBViewer up to date with the latest features, security patches, and bug fixes, follow these steps:
+
+### Using Bundler
+
+The simplest way to update is using Bundler:
+
+- Update your Gemfile with the desired version:
+
+   ```ruby
+   # For the latest version
+   gem "dbviewer", group: :development
+   
+   # Or specify a version
+   gem "dbviewer", "~> 0.3.2", group: :development
+   ```
+
+- Run bundle update:
+
+  ```ruby
+  bundle update dbviewer
+  ```
+
+- Restart your Rails server to apply the changes:
+
+  ```ruby
+  rails server
+  ```
 
 ## 🤌🏻 Contributing
 
