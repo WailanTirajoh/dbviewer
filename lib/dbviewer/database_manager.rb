@@ -90,11 +90,20 @@ module Dbviewer
 
       # Apply column filters if provided
       if column_filters.present?
+        # Debug log to see all filter parameters
+        Rails.logger.debug("[DBViewer] Column filters: #{column_filters.inspect}")
+
         column_filters.each do |column, value|
+          # Skip operator entries (they'll be handled with their corresponding value)
+          next if column.to_s.end_with?("_operator")
           next if value.blank?
           next unless column_exists?(table_name, column)
 
-          query = apply_column_filter(query, column, value, table_name)
+          # Get operator if available, otherwise use default
+          operator = column_filters["#{column}_operator"]
+          Rails.logger.debug("[DBViewer] Column: #{column}, Value: #{value}, Operator: #{operator || 'default'}")
+
+          query = apply_column_filter(query, column, value, table_name, operator)
         end
       end
 
@@ -132,10 +141,15 @@ module Dbviewer
       # Apply column filters if provided
       if column_filters.present?
         column_filters.each do |column, value|
+          # Skip operator entries (they'll be handled with their corresponding value)
+          next if column.to_s.end_with?("_operator")
           next if value.blank?
           next unless column_exists?(table_name, column)
 
-          query = apply_column_filter(query, column, value, table_name)
+          # Get operator if available, otherwise use default
+          operator = column_filters["#{column}_operator"]
+
+          query = apply_column_filter(query, column, value, table_name, operator)
         end
       end
 
@@ -263,62 +277,228 @@ module Dbviewer
     # @param column [String] The column name to filter on
     # @param value [String] The value to filter by
     # @param table_name [String] The name of the table being queried
+    # @param operator [String] The operator to use for filtering (eq, neq, lt, gt, etc.)
     # @return [ActiveRecord::Relation] The filtered query
-    def apply_column_filter(query, column, value, table_name)
+    def apply_column_filter(query, column, value, table_name, operator = nil)
       column_info = table_columns(table_name).find { |c| c[:name] == column }
       return query unless column_info
 
       column_type = column_info[:type].to_s
       quoted_column = connection.quote_column_name(column)
 
+      # Default to appropriate operator if none specified or "default" value is used
+      if operator.nil? || operator == "default"
+        operator = if column_type =~ /char|text|string|uuid|enum/i
+          "contains"
+        else
+          "eq"
+        end
+      end
+
+      Rails.logger.debug("[DBViewer] apply_column_filter - Column: #{column}, Type: #{column_type}, Operator: #{operator}, Value: #{value}")
+
+      # Check what type of column we're dealing with for debugging
+      is_numeric = !!(column_type =~ /int|float|decimal|double|number|numeric|real|money|bigint|smallint|tinyint|mediumint|bit/i)
+      is_string = !!(column_type =~ /char|text|string|uuid|enum/i)
+      is_date = !!(column_type =~ /^date$/)
+      is_datetime = !!(column_type =~ /datetime|timestamp/)
+      is_time = !!(column_type =~ /^time$/)
+
+      Rails.logger.debug("[DBViewer] Column type detection: numeric=#{is_numeric}, string=#{is_string}, date=#{is_date}, datetime=#{is_datetime}, time=#{is_time}")
+
       if column_type =~ /datetime|timestamp/
-        # For datetime columns, get records from that day
         begin
           parsed_date = Time.parse(value.to_s)
-          query = query.where("#{quoted_column} = ?", parsed_date)
+
+          case operator
+          when "eq"
+            query = query.where("#{quoted_column} = ?", parsed_date)
+          when "neq"
+            query = query.where("#{quoted_column} != ?", parsed_date)
+          when "lt"
+            query = query.where("#{quoted_column} < ?", parsed_date)
+          when "gt"
+            query = query.where("#{quoted_column} > ?", parsed_date)
+          when "lte"
+            query = query.where("#{quoted_column} <= ?", parsed_date)
+          when "gte"
+            query = query.where("#{quoted_column} >= ?", parsed_date)
+          else
+            # Default to equality
+            query = query.where("#{quoted_column} = ?", parsed_date)
+          end
         rescue => e
           Rails.logger.debug("[DBViewer] Failed to parse datetime: #{e.message}")
           # If parsing fails, fall back to string comparison
           query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
         end
       elsif column_type =~ /^date$/
-        # For date columns, get records from that day
         begin
           parsed_date = Date.parse(value.to_s)
-          query = query.where("#{quoted_column} = ?", parsed_date)
+
+          case operator
+          when "eq"
+            query = query.where("#{quoted_column} = ?", parsed_date)
+          when "neq"
+            query = query.where("#{quoted_column} != ?", parsed_date)
+          when "lt"
+            query = query.where("#{quoted_column} < ?", parsed_date)
+          when "gt"
+            query = query.where("#{quoted_column} > ?", parsed_date)
+          when "lte"
+            query = query.where("#{quoted_column} <= ?", parsed_date)
+          when "gte"
+            query = query.where("#{quoted_column} >= ?", parsed_date)
+          else
+            # Default to equality
+            query = query.where("#{quoted_column} = ?", parsed_date)
+          end
         rescue => e
           Rails.logger.debug("[DBViewer] Failed to parse date: #{e.message}")
           # If parsing fails, fall back to string comparison
           query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
         end
       elsif column_type =~ /^time$/
-        # For time columns, match the time portion
         begin
           parsed_time = Time.parse(value.to_s)
           formatted_time = parsed_time.strftime("%H:%M:%S")
-          # Different databases handle time extraction differently
-          if @adapter_name =~ /mysql/
-            query = query.where("TIME(#{quoted_column}) = ?", formatted_time)
+
+          # Prepare time comparison SQL based on database adapter
+          time_expr = if @adapter_name =~ /mysql/
+            "TIME(#{quoted_column})"
           elsif @adapter_name =~ /postgresql/
-            query = query.where("CAST(#{quoted_column} AS TIME) = ?", formatted_time)
+            "CAST(#{quoted_column} AS TIME)"
           else
-            # SQLite and others - try basic comparison
-            query = query.where("#{quoted_column} = ?", formatted_time)
+            # SQLite and others
+            quoted_column
+          end
+
+          case operator
+          when "eq"
+            query = query.where("#{time_expr} = ?", formatted_time)
+          when "neq"
+            query = query.where("#{time_expr} != ?", formatted_time)
+          when "lt"
+            query = query.where("#{time_expr} < ?", formatted_time)
+          when "gt"
+            query = query.where("#{time_expr} > ?", formatted_time)
+          when "lte"
+            query = query.where("#{time_expr} <= ?", formatted_time)
+          when "gte"
+            query = query.where("#{time_expr} >= ?", formatted_time)
+          else
+            # Default to equality
+            query = query.where("#{time_expr} = ?", formatted_time)
           end
         rescue => e
           Rails.logger.debug("[DBViewer] Failed to parse time: #{e.message}")
           # If parsing fails, fall back to string comparison
           query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
         end
-      elsif column_type =~ /char|text|string|uuid|enum/i
-        query = query.where("#{quoted_column} LIKE ?", "%#{value}%")
-      else
-        # For numeric types, try exact match if value looks like a number
+      elsif column_type =~ /int|float|decimal|double|number|numeric|real|money|bigint|smallint|tinyint|mediumint|bit/i
+        # Numeric column types
         if value =~ /\A[+-]?\d+(\.\d+)?\z/
-          query = query.where(column => value)
+          # Convert to proper numeric type for comparison
+          numeric_value = value.include?(".") ? value.to_f : value.to_i
+
+          # Log the numeric value conversion
+          Rails.logger.debug("[DBViewer] Converting value #{value} to numeric: #{numeric_value}")
+
+          # It's a numeric value, apply numeric operators
+          case operator
+          when "eq"
+            query = query.where("#{quoted_column} = ?", numeric_value)
+          when "neq"
+            query = query.where("#{quoted_column} != ?", numeric_value)
+          when "lt"
+            query = query.where("#{quoted_column} < ?", numeric_value)
+          when "gt"
+            query = query.where("#{quoted_column} > ?", numeric_value)
+          when "lte"
+            query = query.where("#{quoted_column} <= ?", numeric_value)
+          when "gte"
+            query = query.where("#{quoted_column} >= ?", numeric_value)
+          else
+            # Default to equality
+            query = query.where("#{quoted_column} = ?", value)
+          end
         else
-          # Otherwise, try string comparison for non-string fields
-          query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
+          # Non-numeric value for numeric column, try string comparison
+          case operator
+          when "contains", "starts_with", "ends_with"
+            query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
+          when "not_contains"
+            query = query.where("CAST(#{quoted_column} AS CHAR) NOT LIKE ?", "%#{value}%")
+          when "eq"
+            query = query.where("CAST(#{quoted_column} AS CHAR) = ?", value)
+          when "neq"
+            query = query.where("CAST(#{quoted_column} AS CHAR) != ?", value)
+          else
+            # Default to contains
+            query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
+          end
+        end
+      elsif column_type =~ /char|text|string|uuid|enum/i
+        # String type columns have specialized operators
+        case operator
+        when "contains"
+          query = query.where("#{quoted_column} LIKE ?", "%#{value}%")
+        when "not_contains"
+          query = query.where("#{quoted_column} NOT LIKE ?", "%#{value}%")
+        when "eq"
+          query = query.where("#{quoted_column} = ?", value)
+        when "neq"
+          query = query.where("#{quoted_column} != ?", value)
+        when "starts_with"
+          query = query.where("#{quoted_column} LIKE ?", "#{value}%")
+        when "ends_with"
+          query = query.where("#{quoted_column} LIKE ?", "%#{value}")
+        else
+          # Default to contains
+          query = query.where("#{quoted_column} LIKE ?", "%#{value}%")
+        end
+      else
+        # Other unrecognized types - fallback to basic filtering
+        if value =~ /\A[+-]?\d+(\.\d+)?\z/
+          # Convert to proper numeric type for comparison
+          numeric_value = value.include?(".") ? value.to_f : value.to_i
+
+          # Log unknown column type but numeric value
+          Rails.logger.debug("[DBViewer] Unknown column type #{column_type} with numeric value: #{numeric_value}")
+
+          # It's a numeric value, apply numeric operators
+          case operator
+          when "eq"
+            query = query.where("#{quoted_column} = ?", numeric_value)
+          when "neq"
+            query = query.where("#{quoted_column} != ?", numeric_value)
+          when "lt"
+            query = query.where("#{quoted_column} < ?", numeric_value)
+          when "gt"
+            query = query.where("#{quoted_column} > ?", numeric_value)
+          when "lte"
+            query = query.where("#{quoted_column} <= ?", numeric_value)
+          when "gte"
+            query = query.where("#{quoted_column} >= ?", numeric_value)
+          else
+            # Default to equality
+            query = query.where("#{quoted_column} = ?", value)
+          end
+        else
+          # Non-numeric value for numeric column, try string comparison
+          case operator
+          when "contains", "starts_with", "ends_with"
+            query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
+          when "not_contains"
+            query = query.where("CAST(#{quoted_column} AS CHAR) NOT LIKE ?", "%#{value}%")
+          when "eq"
+            query = query.where("CAST(#{quoted_column} AS CHAR) = ?", value)
+          when "neq"
+            query = query.where("CAST(#{quoted_column} AS CHAR) != ?", value)
+          else
+            # Default to contains
+            query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
+          end
         end
       end
 

@@ -168,28 +168,81 @@
                           column_type = column_info ? column_info[:type].to_s.downcase : nil
                         %>
 
-                        <% if column_type && column_type =~ /datetime/ %>
-                          <%= form.datetime_local_field "column_filters[#{column_name}]", 
-                              value: @column_filters[column_name], 
-                              class: "form-control form-control-sm column-filter rounded-0",
-                              data: { column: column_name } %>
-                        <% elsif column_type && column_type =~ /^date$/ %>
-                          <%= form.date_field "column_filters[#{column_name}]", 
-                              value: @column_filters[column_name], 
-                              class: "form-control form-control-sm column-filter rounded-0",
-                              data: { column: column_name } %>
-                        <% elsif column_type && column_type =~ /^time$/ %>
-                          <%= form.time_field "column_filters[#{column_name}]", 
-                              value: @column_filters[column_name], 
-                              class: "form-control form-control-sm column-filter rounded-0",
-                              data: { column: column_name } %>
-                        <% else %>
-                          <%= form.text_field "column_filters[#{column_name}]", 
-                              value: @column_filters[column_name], 
-                              placeholder: "",
-                              class: "form-control form-control-sm column-filter rounded-0",
-                              data: { column: column_name } %>
-                        <% end %>
+                        <div class="filter-input-group">
+                          <% 
+                            # Define the default operator and available operators based on column type
+                            default_operator = if column_type && column_type =~ /char|text|string|uuid|enum/i
+                              "contains"
+                            else
+                              "eq"
+                            end
+                            
+                            # Get previously selected operator or default
+                            selected_operator = @column_filters["#{column_name}_operator"]
+                            selected_operator = default_operator if selected_operator.nil? || selected_operator == "default"
+                            
+                            # Define operator options based on column type
+                            if column_type && (column_type =~ /datetime/ || column_type =~ /^date$/ || column_type =~ /^time$/)
+                              # Date/Time operators
+                              operator_options = [
+                                ["=", "eq"],
+                                ["≠", "neq"],
+                                ["<", "lt"],
+                                [">", "gt"],
+                                ["≤", "lte"],
+                                ["≥", "gte"]
+                              ]
+                            elsif column_type && column_type =~ /int|float|decimal|double|number|numeric|real|money|bigint|smallint|tinyint|mediumint|bit/i
+                              # Numeric operators
+                              operator_options = [
+                                ["=", "eq"],
+                                ["≠", "neq"],
+                                ["<", "lt"],
+                                [">", "gt"],
+                                ["≤", "lte"],
+                                ["≥", "gte"]
+                              ]
+                            else
+                              # Text operators
+                              operator_options = [
+                                ["contains", "contains"],
+                                ["not contains", "not_contains"],
+                                ["=", "eq"],
+                                ["≠", "neq"],
+                                ["starts with", "starts_with"],
+                                ["ends with", "ends_with"]
+                              ]
+                            end
+                          %>
+                          
+                          <%= form.select "column_filters[#{column_name}_operator]", 
+                              options_for_select(operator_options, selected_operator),
+                              { include_blank: false },
+                              { class: "form-select form-select-sm operator-select" } %>
+                          
+                          <% if column_type && column_type =~ /datetime/ %>
+                            <%= form.datetime_local_field "column_filters[#{column_name}]", 
+                                value: @column_filters[column_name], 
+                                class: "form-control form-control-sm column-filter rounded-0",
+                                data: { column: column_name } %>
+                          <% elsif column_type && column_type =~ /^date$/ %>
+                            <%= form.date_field "column_filters[#{column_name}]", 
+                                value: @column_filters[column_name], 
+                                class: "form-control form-control-sm column-filter rounded-0",
+                                data: { column: column_name } %>
+                          <% elsif column_type && column_type =~ /^time$/ %>
+                            <%= form.time_field "column_filters[#{column_name}]", 
+                                value: @column_filters[column_name], 
+                                class: "form-control form-control-sm column-filter rounded-0",
+                                data: { column: column_name } %>
+                          <% else %>
+                            <%= form.text_field "column_filters[#{column_name}]", 
+                                value: @column_filters[column_name], 
+                                placeholder: "",
+                                class: "form-control form-control-sm column-filter rounded-0",
+                                data: { column: column_name } %>
+                          <% end %>
+                        </div>
                       </th>
                     <% end %>
                   <% else %>
@@ -324,6 +377,7 @@
   document.addEventListener('DOMContentLoaded', function() {
     // Column filter functionality
     const columnFilters = document.querySelectorAll('.column-filter');
+    const operatorSelects = document.querySelectorAll('.operator-select');
     const filterForm = document.getElementById('column-filters-form');
     
     // Add debounce function to reduce form submissions
@@ -355,6 +409,11 @@
       }
     });
     
+    // Add event listeners to operator selects
+    operatorSelects.forEach(function(select) {
+      select.addEventListener('change', submitForm);
+    });
+    
     // Add clear button functionality if there are any filters applied
     const hasActiveFilters = Array.from(columnFilters).some(input => input.value);
     
@@ -372,7 +431,17 @@
         paginationContainer.insertAdjacentHTML('afterend', clearButton.outerHTML);
         
         document.getElementById('clear-filters').addEventListener('click', function() {
+          // Reset all input values
           columnFilters.forEach(filter => filter.value = '');
+          
+          // Reset operator selects to their default values
+          operatorSelects.forEach(select => {
+            // Find the first option of the select (usually the default)
+            if (select.options.length > 0) {
+              select.selectedIndex = 0;
+            }
+          });
+          
           submitForm();
         });
       }
@@ -812,6 +881,39 @@
     border: 1px solid rgba(0,0,0,0.1);
     padding: 0.3rem 0.5rem;
     font-size: 0.85rem;
+  }
+  
+  /* Filter input group styling */
+  .filter-input-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .filter-input-group .operator-select {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.5rem;
+    border-bottom: none;
+    border-radius: 0.2rem 0.2rem 0 0;
+    background-color: rgba(0,0,0,0.03);
+    font-weight: normal;
+    min-height: 22px; /* Ensure consistent height */
+  }
+  
+  .filter-input-group .operator-select option {
+    font-size: 0.8rem;
+    padding: 2px;
+  }
+  
+  [data-bs-theme="dark"] .filter-input-group .operator-select {
+    background-color: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.9);
+    border-color: rgba(255,255,255,0.15);
+  }
+  
+  .filter-input-group .column-filter {
+    border-radius: 0 0 0.2rem 0.2rem;
+    border-top: none;
   }
   
   /* Ensure consistent sizing for date/time inputs */
