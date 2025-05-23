@@ -363,22 +363,25 @@ module Dbviewer
     # @param operator [String] The operator
     # @return [ActiveRecord::Relation] The modified query
     def apply_string_operator(query, column, value, operator)
+      # Cast to text for UUID columns when using string operations like LIKE
+      column_expr = @adapter_name =~ /postgresql/ ? "CAST(#{column} AS TEXT)" : column
+
       case operator
       when "contains"
-        query.where("#{column} LIKE ?", "%#{value}%")
+        query.where("#{column_expr} LIKE ?", "%#{value}%")
       when "not_contains"
-        query.where("#{column} NOT LIKE ?", "%#{value}%")
+        query.where("#{column_expr} NOT LIKE ?", "%#{value}%")
       when "eq"
         query.where("#{column} = ?", value)
       when "neq"
         query.where("#{column} != ?", value)
       when "starts_with"
-        query.where("#{column} LIKE ?", "#{value}%")
+        query.where("#{column_expr} LIKE ?", "#{value}%")
       when "ends_with"
-        query.where("#{column} LIKE ?", "%#{value}")
+        query.where("#{column_expr} LIKE ?", "%#{value}")
       else
         # Default to contains
-        query.where("#{column} LIKE ?", "%#{value}%")
+        query.where("#{column_expr} LIKE ?", "%#{value}%")
       end
     end
 
