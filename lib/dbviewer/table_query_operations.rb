@@ -1,5 +1,6 @@
 require "dbviewer/error_handler"
 require "dbviewer/table_query_params"
+require "dbviewer/query_analyzer"
 
 module Dbviewer
   # TableQueryOperations handles CRUD operations and data querying for database tables
@@ -18,6 +19,7 @@ module Dbviewer
       @dynamic_model_factory = dynamic_model_factory
       @query_executor = query_executor
       @table_metadata_manager = table_metadata_manager
+      @query_analyzer = Dbviewer::QueryAnalyzer.new(connection)
     end
 
     # Get the number of columns in a table
@@ -198,6 +200,14 @@ module Dbviewer
       end
     end
 
+    # Analyze query performance for a table with given filters
+    # @param table_name [String] Name of the table
+    # @param params [TableQueryParams] Query parameters object
+    # @return [Hash] Performance analysis and recommendations
+    def analyze_query_performance(table_name, params)
+      @query_analyzer.analyze_query(table_name, params)
+    end
+
     private
 
     # Apply column filters to a query
@@ -208,14 +218,59 @@ module Dbviewer
     def apply_column_filters(query, table_name, column_filters)
       return query unless column_filters.present?
 
-      column_filters.each do |column, value|
+      # Create a copy of column_filters to modify without affecting the original
+      filters = column_filters.dup
+
+      # First check if we have a datetime range filter for created_at
+      if filters["created_at"].present? &&
+         filters["created_at_end"].present? &&
+         column_exists?(table_name, "created_at")
+
+        # Handle datetime range for created_at
+        begin
+          start_datetime = Time.parse(filters["created_at"].to_s)
+          end_datetime = Time.parse(filters["created_at_end"].to_s)
+
+          # Make sure end_datetime is at the end of the day/minute if it doesn't have time component
+          if end_datetime.to_s.match(/00:00:00/)
+            end_datetime = end_datetime.end_of_day
+          end
+
+          Rails.logger.info("[DBViewer] Applying date range filter on #{table_name}.created_at: #{start_datetime} to #{end_datetime}")
+
+          # Use qualified column name for tables with schema
+          column_name = "#{table_name}.created_at"
+
+          # Different databases may require different SQL for datetime comparison
+          adapter_name = connection.adapter_name.downcase
+          if adapter_name.include?("sqlite")
+            # SQLite needs special handling for datetimes
+            query = query.where("datetime(#{column_name}) BETWEEN datetime(?) AND datetime(?)",
+                               start_datetime.iso8601, end_datetime.iso8601)
+          else
+            # Standard SQL for most databases
+            query = query.where("#{column_name} BETWEEN ? AND ?", start_datetime, end_datetime)
+          end
+
+          # Remove these keys so they're not processed again
+          filters.delete("created_at")
+          filters.delete("created_at_end")
+          filters.delete("created_at_operator")
+        rescue => e
+          Rails.logger.error("[DBViewer] Failed to parse datetime range: #{e.message}")
+          Rails.logger.error(e.backtrace.join("\n"))
+        end
+      end
+
+      # Process remaining filters
+      filters.each do |column, value|
         # Skip operator entries (they'll be handled with their corresponding value)
-        next if column.to_s.end_with?("_operator")
+        next if column.to_s.end_with?("_operator") || column.to_s.end_with?("_end")
         next if value.blank?
         next unless column_exists?(table_name, column)
 
         # Get operator if available, otherwise use default
-        operator = column_filters["#{column}_operator"]
+        operator = filters["#{column}_operator"]
 
         query = apply_column_filter(query, column, value, table_name, operator)
       end
@@ -393,10 +448,65 @@ module Dbviewer
     # @return [ActiveRecord::Relation] The modified query
     def filter_datetime_column(query, quoted_column, value, operator)
       begin
-        parsed_date = Time.parse(value.to_s)
-        apply_comparison_operator(query, quoted_column, parsed_date, operator)
+        Rails.logger.info("[DBViewer] Filtering datetime column #{quoted_column} with value: #{value.inspect} and operator: #{operator.inspect}")
+
+        # Handle HTML datetime-local format (2023-05-10T14:30)
+        parsed_date = if value.to_s.include?("T")
+          Time.parse(value.to_s)
+        else
+          # Handle regular date/time string
+          Time.parse(value.to_s)
+        end
+
+        # Different databases handle datetime differently, so adapt the query based on the adapter
+        adapter = connection.adapter_name.downcase
+
+        # Apply the appropriate operator - special handling for 'eq' on dates to match full day
+        if operator == "eq"
+          # For equality, match the entire day (from midnight to 23:59:59)
+          start_of_day = parsed_date.beginning_of_day
+          end_of_day = parsed_date.end_of_day
+
+          if adapter.include?("sqlite")
+            query.where("datetime(#{quoted_column}) BETWEEN datetime(?) AND datetime(?)",
+                       start_of_day.iso8601, end_of_day.iso8601)
+          else
+            query.where("#{quoted_column} BETWEEN ? AND ?", start_of_day, end_of_day)
+          end
+        elsif operator == "gte"
+          if adapter.include?("sqlite")
+            query.where("datetime(#{quoted_column}) >= datetime(?)", parsed_date.iso8601)
+          else
+            query.where("#{quoted_column} >= ?", parsed_date)
+          end
+        elsif operator == "lte"
+          if adapter.include?("sqlite")
+            query.where("datetime(#{quoted_column}) <= datetime(?)", parsed_date.iso8601)
+          else
+            query.where("#{quoted_column} <= ?", parsed_date)
+          end
+        elsif operator == "gt"
+          if adapter.include?("sqlite")
+            query.where("datetime(#{quoted_column}) > datetime(?)", parsed_date.iso8601)
+          else
+            query.where("#{quoted_column} > ?", parsed_date)
+          end
+        elsif operator == "lt"
+          if adapter.include?("sqlite")
+            query.where("datetime(#{quoted_column}) < datetime(?)", parsed_date.iso8601)
+          else
+            query.where("#{quoted_column} < ?", parsed_date)
+          end
+        else
+          # Default to equality
+          apply_comparison_operator(query, quoted_column, parsed_date, operator || "eq")
+        end
+
+        Rails.logger.info("[DBViewer] Successfully applied datetime filter")
+        query
       rescue => e
-        Rails.logger.debug("[DBViewer] Failed to parse datetime: #{e.message}")
+        Rails.logger.error("[DBViewer] Failed to parse datetime: #{e.message}")
+        Rails.logger.error(e.backtrace.join("\n"))
         # Fallback to string comparison if parsing fails
         query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
       end

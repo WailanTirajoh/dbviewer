@@ -1,5 +1,19 @@
 module Dbviewer
   module ApplicationHelper
+    # Check if a table has a created_at column
+    def has_timestamp_column?(table_name)
+      return false unless table_name.present?
+
+      # Get the columns for the table directly using DatabaseManager
+      columns = get_database_manager.table_columns(table_name)
+      columns.any? { |col| col[:name] == "created_at" && [ :datetime, :timestamp ].include?(col[:type]) }
+    end
+
+    # Helper to access the database manager
+    def get_database_manager
+      @database_manager ||= ::Dbviewer::DatabaseManager.new
+    end
+
     def format_cell_value(value)
       return "NULL" if value.nil?
       return value.to_s.truncate(100) unless value.is_a?(String)
@@ -145,14 +159,25 @@ module Dbviewer
         "none"
       end
 
-      link_to table_path(
-          table_name,
-          order_by: column_name,
-          order_direction: sort_direction,
-          page: current_page,
-          per_page: per_page,
-          column_filters: column_filters
-        ),
+      # Build parameters for the sort link
+      sort_params = {
+        order_by: column_name,
+        order_direction: sort_direction,
+        page: current_page,
+        per_page: per_page,
+        column_filters: column_filters
+      }
+
+      # Add creation filter parameters if they're in the controller
+      if defined?(@creation_filter_start) && @creation_filter_start.present?
+        sort_params[:creation_filter_start] = @creation_filter_start
+      end
+
+      if defined?(@creation_filter_end) && @creation_filter_end.present?
+        sort_params[:creation_filter_end] = @creation_filter_end
+      end
+
+      link_to table_path(table_name, sort_params),
         class: "d-flex align-items-center text-decoration-none text-reset column-sort-link",
         title: "Sort by #{column_name} (#{sort_direction.downcase})",
         "aria-sort": aria_sort,

@@ -14,6 +14,51 @@ module Dbviewer
       }.merge(calculate_request_stats(queries))
     end
 
+    # Instance methods for query analysis
+    attr_reader :connection, :adapter_name
+
+    # Initialize the analyzer for instance methods
+    # @param connection [ActiveRecord::ConnectionAdapters::AbstractAdapter] Database connection
+    def initialize(connection)
+      @connection = connection
+      @adapter_name = connection.adapter_name.downcase
+    end
+
+    # Check if a table has an index on a column
+    # @param table_name [String] Name of the table
+    # @param column_name [String] Name of the column
+    # @return [Boolean] True if column has an index, false otherwise
+    def has_index_on?(table_name, column_name)
+      indexes = connection.indexes(table_name)
+      indexes.any? do |index|
+        index.columns.include?(column_name) ||
+        (index.columns.length == 1 && index.columns[0] == column_name)
+      end
+    end
+
+    # Analyze a query and provide performance statistics and recommendations
+    # @param table_name [String] Name of the table
+    # @param query_params [TableQueryParams] Query parameters with filters
+    # @return [Hash] Analysis results with statistics and recommendations
+    def analyze_query(table_name, query_params)
+      results = {
+        table: table_name,
+        filters: query_params.column_filters.keys,
+        analysis: [],
+        recommendations: []
+      }
+
+      # Check created_at filter performance
+      if query_params.column_filters["created_at"].present?
+        analyze_timestamp_query(table_name, "created_at", results)
+      end
+
+      # Add general performance recommendations based on database type
+      add_database_specific_recommendations(results)
+
+      results
+    end
+
     # Detect potential N+1 query patterns
     def self.detect_potential_n_plus_1(queries)
       potential_issues = []
@@ -48,6 +93,91 @@ module Dbviewer
     end
 
     private
+
+    # Analyze timestamp column query performance
+    def analyze_timestamp_query(table_name, column_name, results)
+      # Check if column exists
+      begin
+        unless connection.column_exists?(table_name, column_name)
+          results[:analysis] << "Column '#{column_name}' not found in table '#{table_name}'"
+          return
+        end
+
+        # Check if there's an index on the timestamp column
+        unless has_index_on?(table_name, column_name)
+          results[:recommendations] << {
+            type: "missing_index",
+            message: "Consider adding an index on '#{column_name}' for faster filtering",
+            sql: index_creation_sql(table_name, column_name)
+          }
+        end
+
+        # Estimate data distribution if possible
+        if adapter_supports_statistics?(adapter_name)
+          add_data_distribution_stats(table_name, column_name, results)
+        end
+      rescue => e
+        results[:analysis] << "Error analyzing timestamp query: #{e.message}"
+      end
+    end
+
+    # Check if adapter supports statistics gathering
+    def adapter_supports_statistics?(adapter_name)
+      adapter_name.include?("postgresql")
+    end
+
+    # Add data distribution statistics
+    def add_data_distribution_stats(table_name, column_name, results)
+      case adapter_name
+      when /postgresql/
+        begin
+          # Get approximate date range and distribution
+          range_query = "SELECT min(#{column_name}), max(#{column_name}) FROM #{table_name}"
+          range_result = connection.execute(range_query).first
+
+          if range_result["min"] && range_result["max"]
+            min_date = range_result["min"]
+            max_date = range_result["max"]
+
+            results[:analysis] << {
+              type: "date_range",
+              min_date: min_date,
+              max_date: max_date,
+              span_days: ((Time.parse(max_date) - Time.parse(min_date)) / 86400).round
+            }
+          end
+        rescue => e
+          results[:analysis] << "Error getting date distribution: #{e.message}"
+        end
+      end
+    end
+
+    # Generate SQL for index creation
+    def index_creation_sql(table_name, column_name)
+      index_name = "index_#{table_name.gsub('.', '_')}_on_#{column_name}"
+      "CREATE INDEX #{index_name} ON #{table_name} (#{column_name})"
+    end
+
+    # Add database-specific recommendations
+    def add_database_specific_recommendations(results)
+      case adapter_name
+      when /mysql/
+        results[:recommendations] << {
+          type: "performance",
+          message: "For MySQL, consider optimizing the query with appropriate indexes and use EXPLAIN to verify query plan"
+        }
+      when /postgresql/
+        results[:recommendations] << {
+          type: "performance",
+          message: "For PostgreSQL, consider using EXPLAIN ANALYZE to verify query execution plan"
+        }
+      when /sqlite/
+        results[:recommendations] << {
+          type: "performance",
+          message: "For SQLite, consider using EXPLAIN QUERY PLAN to verify query execution strategy"
+        }
+      end
+    end
 
     def self.calculate_average_duration(queries)
       queries.any? ? (queries.sum { |q| q[:duration_ms] } / queries.size.to_f).round(2) : 0

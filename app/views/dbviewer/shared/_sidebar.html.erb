@@ -5,13 +5,158 @@
            id="tableSearch" placeholder="Filter tables..." aria-label="Filter tables">
   </div>
   
+  <div class="p-2">
+    <div class="accordion accordion-flush" id="creationFilterAccordion">
+      <div class="accordion-item border-0">
+        <h2 class="accordion-header" id="creationFilterHeading">
+          <button class="accordion-button p-2 collapsed" type="button" data-bs-toggle="collapse" 
+                  data-bs-target="#creationFilterCollapse" aria-expanded="false" 
+                  aria-controls="creationFilterCollapse">
+            <i class="bi bi-calendar-range me-2"></i> Creation Filter
+            <% if @creation_filter_start.present? || @creation_filter_end.present? %>
+              <% if @table_name.present? && has_timestamp_column?(@table_name) %>
+                <span class="badge bg-success ms-2">Active</span>
+              <% else %>
+                <span class="badge bg-secondary ms-2">Set</span>
+              <% end %>
+            <% end %>
+          </button>
+        </h2>
+        <div id="creationFilterCollapse" class="accordion-collapse collapse" aria-labelledby="creationFilterHeading">
+          <div class="accordion-body p-2">
+            <form id="creationFilterForm" action="<%= request.path %>" method="get" class="mb-0">
+              <!-- Preserve existing query parameters -->
+              <input type="hidden" name="page" value="<%= @current_page %>">
+              <input type="hidden" name="per_page" value="<%= @per_page %>">
+              <input type="hidden" name="order_by" value="<%= @order_by %>">
+              <input type="hidden" name="order_direction" value="<%= @order_direction %>">
+              
+              <!-- Datetime range fields -->
+              <div class="mb-2">
+                <label for="creationFilterStart" class="form-label mb-1 small">Start Date/Time</label>
+                <input type="datetime-local" id="creationFilterStart" name="creation_filter_start" 
+                       class="form-control form-control-sm" value="<%= @creation_filter_start %>">
+              </div>
+              <div class="mb-2">
+                <label for="creationFilterEnd" class="form-label mb-1 small">End Date/Time</label>
+                <input type="datetime-local" id="creationFilterEnd" name="creation_filter_end" 
+                       class="form-control form-control-sm" value="<%= @creation_filter_end %>">
+              </div>
+              
+              <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+                <% if @creation_filter_start.present? || @creation_filter_end.present? %>
+                  <% 
+                    # Preserve other query params when clearing creation filter
+                    clear_params = {
+                      clear_creation_filter: true,
+                      page: @current_page,
+                      per_page: @per_page,
+                      order_by: @order_by,
+                      order_direction: @order_direction
+                    }
+                  %>
+                  <a href="<%= request.path %>?<%= clear_params.to_query %>" class="btn btn-outline-secondary btn-sm">Clear</a>
+                <% end %>
+              </div>
+              <div class="mt-2 small">
+                <% if @table_name.present? && has_timestamp_column?(@table_name) && (@creation_filter_start.present? || @creation_filter_end.present?) %>
+                  <div class="text-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Filter active on this table.
+                    <% if @current_page == 1 && @records && @records.rows && @records.rows.empty? %>
+                      <div class="alert alert-warning p-1 mt-2 small">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        No records match the filter criteria.
+                      </div>
+                    <% end %>
+                  </div>
+                <% elsif @table_name.present? && (@creation_filter_start.present? || @creation_filter_end.present?) %>
+                  <div class="text-warning">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    This table has no <code>created_at</code> column.
+                  </div>
+                <% elsif !@table_name.present? && (@creation_filter_start.present? || @creation_filter_end.present?) %>
+                  <div class="text-info">
+                    <i class="bi bi-info-circle-fill"></i>
+                    Filter will be applied on tables with <code>created_at</code> column.
+                  </div>
+                <% else %>
+                  <div class="text-muted">
+                    <i class="bi bi-info-circle-fill"></i>
+                    Filters apply to tables with a <code>created_at</code> column.
+                  </div>
+                <% end %>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Add custom styling for datetime inputs -->
+  <style>
+    /* Better datetime input styling */
+    input[type="datetime-local"] {
+      padding-right: 0.5rem;
+    }
+    
+    /* Dark mode support for datetime inputs */
+    [data-bs-theme="dark"] input[type="datetime-local"] {
+      background-color: rgba(255,255,255,0.1);
+      color: #fff;
+      border-color: rgba(255,255,255,0.15);
+    }
+    
+    [data-bs-theme="dark"] input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+    }
+  </style>
+  
+  <script>
+    // Set default values for datetime inputs when empty
+    document.addEventListener('DOMContentLoaded', function() {
+      const startInput = document.getElementById('creationFilterStart');
+      const endInput = document.getElementById('creationFilterEnd');
+      
+      // When applying filter with empty start date, default to beginning of current month
+      if (startInput) {
+        startInput.addEventListener('click', function() {
+          if (!this.value) {
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const formattedDate = firstDay.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:MM
+            this.value = formattedDate;
+          }
+        });
+      }
+      
+      // When applying filter with empty end date, default to current datetime
+      if (endInput) {
+        endInput.addEventListener('click', function() {
+          if (!this.value) {
+            const now = new Date();
+            const formattedDate = now.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:MM
+            this.value = formattedDate;
+          }
+        });
+      }
+    });
+  </script>
 </div>
 
 <div class="dbviewer-sidebar-content">
   <% if @tables.any? %>
     <div class="list-group list-group-flush" id="tablesList">
       <% @tables.each do |table| %>
-        <%= link_to table_path(table[:name]), title: table[:name],
+        <% 
+          # Build table URL with creation filter params if they exist
+          table_url_params = {}
+          table_url_params[:creation_filter_start] = @creation_filter_start if @creation_filter_start.present?
+          table_url_params[:creation_filter_end] = @creation_filter_end if @creation_filter_end.present?
+        %>
+        <%= link_to table_path(table[:name], table_url_params), title: table[:name],
                     class: "list-group-item list-group-item-action d-flex align-items-center #{'active' if current_table?(table[:name])}", 
                     tabindex: "0", 
                     data: { table_name: table[:name] },
