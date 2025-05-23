@@ -35,9 +35,9 @@ module Dbviewer
       @order_direction = "ASC" unless self.class::VALID_SORT_DIRECTIONS.include?(@order_direction)
     end
 
-    def fetch_total_count(table_name, column_filters)
-      if column_filters.present? && column_filters.values.any?(&:present?)
-        fetch_filtered_record_count(table_name, column_filters)
+    def fetch_total_count(table_name, query_params)
+      if query_params.column_filters.present? && query_params.column_filters.values.any?(&:present?)
+        fetch_filtered_record_count(table_name, query_params.column_filters)
       else
         fetch_table_record_count(table_name)
       end

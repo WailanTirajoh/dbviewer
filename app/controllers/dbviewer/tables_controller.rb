@@ -13,9 +13,16 @@ module Dbviewer
       set_sorting_params
 
       @column_filters = params[:column_filters].presence ? params[:column_filters].to_enum.to_h : {}
-      @total_count = fetch_total_count(@table_name, @column_filters)
+      query_params = Dbviewer::TableQueryParams.new(
+        page: @current_page,
+        per_page: @per_page,
+        order_by: @order_by,
+        direction: @order_direction,
+        column_filters: @column_filters.reject { |_, v| v.blank? }
+      )
+      @total_count = fetch_total_count(@table_name, query_params)
+      @records = fetch_table_records(@table_name, query_params)
       @total_pages = calculate_total_pages(@total_count, @per_page)
-      @records = fetch_table_records(@table_name, @column_filters)
       @columns = fetch_table_columns(@table_name)
       @metadata = fetch_table_metadata(@table_name)
 

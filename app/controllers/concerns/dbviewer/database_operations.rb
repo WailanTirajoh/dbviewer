@@ -157,15 +157,7 @@ module Dbviewer
     end
 
     # Fetch records for a table with pagination and sorting
-    def fetch_table_records(table_name, column_filters = {})
-      query_params = Dbviewer::TableQueryParams.new(
-        page: @current_page,
-        per_page: @per_page,
-        order_by: @order_by,
-        direction: @order_direction,
-        column_filters: column_filters.reject { |_, v| v.blank? }
-      )
-
+    def fetch_table_records(table_name, query_params)
       database_manager.table_records(table_name, query_params)
     end
 
