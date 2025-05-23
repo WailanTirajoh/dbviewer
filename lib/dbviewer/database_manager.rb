@@ -2,13 +2,14 @@ require "dbviewer/cache_manager"
 require "dbviewer/table_metadata_manager"
 require "dbviewer/dynamic_model_factory"
 require "dbviewer/query_executor"
+require "dbviewer/table_query_operations"
 require "dbviewer/error_handler"
 
 module Dbviewer
   # DatabaseManager handles all database interactions for the DBViewer engine
   # It provides methods to access database structure and data
   class DatabaseManager
-    attr_reader :connection, :adapter_name
+    attr_reader :connection, :adapter_name, :table_query_operations
 
     # Initialize the database manager
     def initialize
@@ -17,6 +18,12 @@ module Dbviewer
       @table_metadata_manager = TableMetadataManager.new(@connection, @cache_manager)
       @dynamic_model_factory = DynamicModelFactory.new(@connection, @cache_manager)
       @query_executor = QueryExecutor.new(@connection, self.class.configuration)
+      @table_query_operations = TableQueryOperations.new(
+        @connection,
+        @dynamic_model_factory,
+        @query_executor,
+        @table_metadata_manager
+      )
       reset_cache_if_needed
     end
 
@@ -64,77 +71,25 @@ module Dbviewer
     # @param table_name [String] Name of the table
     # @return [Integer] Number of records
     def table_count(table_name)
-      model = get_model_for(table_name)
-      model.count
+      @table_query_operations.table_count(table_name)
     end
 
     # Get records from a table with pagination and sorting
     # @param table_name [String] Name of the table
-    # @param page [Integer] Page number (1-based)
-    # @param order_by [String] Column to sort by
-    # @param direction [String] Sort direction ('ASC' or 'DESC')
-    # @param per_page [Integer] Number of records per page
+    # @param query_params [TableQueryParams] Query parameters for pagination and sorting
     # @return [ActiveRecord::Result] Result set with columns and rows
-    def table_records(table_name, page = 1, order_by = nil, direction = "ASC", per_page = nil, column_filters = nil)
-      page = [ 1, page.to_i ].max
-      default_per_page = self.class.default_per_page
-      column_filters ||= {}
-      max_records = self.class.max_records
-      per_page = (per_page || default_per_page).to_i
-
-      # Ensure we don't fetch too many records for performance/memory reasons
-      per_page = [ per_page, max_records ].min
-
-      model = get_model_for(table_name)
-      query = model.all
-
-      # Apply column filters if provided
-      if column_filters.present?
-        column_filters.each do |column, value|
-          next if value.blank?
-          next unless column_exists?(table_name, column)
-
-          # Use LIKE for string-based searches, = for exact matches on other types
-          column_info = table_columns(table_name).find { |c| c[:name] == column }
-          if column_info
-            column_type = column_info[:type].to_s
-
-            if column_type =~ /char|text|string|uuid|enum/i
-              query = query.where("#{connection.quote_column_name(column)} LIKE ?", "%#{value}%")
-            else
-              # For numeric types, try exact match if value looks like a number
-              if value =~ /\A[+-]?\d+(\.\d+)?\z/
-                query = query.where(column => value)
-              else
-                # Otherwise, try string comparison for non-string fields
-                query = query.where("CAST(#{connection.quote_column_name(column)} AS CHAR) LIKE ?", "%#{value}%")
-              end
-            end
-          end
-        end
-      end
-
-      # Apply sorting if provided
-      if order_by.present? && column_exists?(table_name, order_by)
-        direction = %w[ASC DESC].include?(direction.to_s.upcase) ? direction.to_s.upcase : "ASC"
-        query = query.order("#{connection.quote_column_name(order_by)} #{direction}")
-      end
-
-      # Apply pagination
-      records = query.limit(per_page).offset((page - 1) * per_page)
-
-      # Get column names for consistent ordering
-      column_names = table_columns(table_name).map { |c| c[:name] }
-
-      # Format results
-      @query_executor.to_result_set(records, column_names)
+    def table_records(table_name, query_params)
+      @table_query_operations.table_records(
+        table_name,
+        query_params
+      )
     end
 
     # Get the number of records in a table (alias for table_count)
     # @param table_name [String] Name of the table
     # @return [Integer] Number of records
     def record_count(table_name)
-      table_count(table_name)
+      @table_query_operations.record_count(table_name)
     end
 
     # Get the number of records in a table with filters applied
@@ -142,36 +97,7 @@ module Dbviewer
     # @param column_filters [Hash] Hash of column_name => filter_value for filtering
     # @return [Integer] Number of filtered records
     def filtered_record_count(table_name, column_filters = {})
-      model = get_model_for(table_name)
-      query = model.all
-
-      # Apply column filters if provided
-      if column_filters.present?
-        column_filters.each do |column, value|
-          next if value.blank?
-          next unless column_exists?(table_name, column)
-
-          # Use LIKE for string-based searches, = for exact matches on other types
-          column_info = table_columns(table_name).find { |c| c[:name] == column }
-          if column_info
-            column_type = column_info[:type].to_s
-
-            if column_type =~ /char|text|string|uuid|enum/i
-              query = query.where("#{connection.quote_column_name(column)} LIKE ?", "%#{value}%")
-            else
-              # For numeric types, try exact match if value looks like a number
-              if value =~ /\A[+-]?\d+(\.\d+)?\z/
-                query = query.where(column => value)
-              else
-                # Otherwise, try string comparison for non-string fields
-                query = query.where("CAST(#{connection.quote_column_name(column)} AS CHAR) LIKE ?", "%#{value}%")
-              end
-            end
-          end
-        end
-      end
-
-      query.count
+      @table_query_operations.filtered_record_count(table_name, column_filters)
     end
 
     # Get the number of columns in a table
@@ -201,7 +127,7 @@ module Dbviewer
     # @return [ActiveRecord::Result] Result set with columns and rows
     # @raise [StandardError] If the query is invalid or unsafe
     def execute_query(sql)
-      @query_executor.execute_query(sql)
+      @table_query_operations.execute_query(sql)
     end
 
     # Execute a SQLite PRAGMA command without adding a LIMIT clause
@@ -209,7 +135,7 @@ module Dbviewer
     # @return [ActiveRecord::Result] Result set with the PRAGMA value
     # @raise [StandardError] If the query is invalid or cannot be executed
     def execute_sqlite_pragma(pragma)
-      @query_executor.execute_sqlite_pragma(pragma)
+      @table_query_operations.execute_sqlite_pragma(pragma)
     end
 
     # Query a table with more granular control using ActiveRecord
@@ -221,28 +147,15 @@ module Dbviewer
     # @param where [String, Hash] Where conditions
     # @return [ActiveRecord::Result] Result set with columns and rows
     def query_table(table_name, select: nil, order: nil, limit: nil, offset: nil, where: nil)
-      model = get_model_for(table_name)
-      query = model.all
-
-      query = query.select(select) if select.present?
-      query = query.where(where) if where.present?
-      query = query.order(order) if order.present?
-
-      # Get max records from configuration
-      max_records = self.class.max_records
-      query = query.limit([ limit || max_records, max_records ].min) # Apply safety limit
-      query = query.offset(offset) if offset.present?
-
-      # Get column names for the result set
-      column_names = if select.is_a?(Array)
-        select
-      elsif select.is_a?(String) && !select.include?("*")
-        select.split(",").map(&:strip)
-      else
-        table_columns(table_name).map { |c| c[:name] }
-      end
-
-      @query_executor.to_result_set(query, column_names)
+      @table_query_operations.query_table(
+        table_name,
+        select: select,
+        order: order,
+        limit: limit,
+        offset: offset,
+        where: where,
+        max_records: self.class.max_records
+      )
     end
 
     # Get table indexes

@@ -11,6 +11,12 @@ module Dbviewer
       @database_manager ||= ::Dbviewer::DatabaseManager.new
     end
 
+    # Initialize the table query operations manager
+    # This gives direct access to table query operations when needed
+    def table_query_operations
+      @table_query_operations ||= database_manager.table_query_operations
+    end
+
     # Get the name of the current database
     def get_database_name
       adapter = database_manager.connection.adapter_name.downcase
@@ -151,19 +157,8 @@ module Dbviewer
     end
 
     # Fetch records for a table with pagination and sorting
-    def fetch_table_records(table_name)
-      column_filters = params[:column_filters] || {}
-      # Clean up blank filters
-      column_filters.reject! { |_, v| v.blank? }
-
-      database_manager.table_records(
-        table_name,
-        @current_page,
-        @order_by,
-        @order_direction,
-        @per_page,
-        column_filters || {}
-      )
+    def fetch_table_records(table_name, query_params)
+      database_manager.table_records(table_name, query_params)
     end
 
     # Get filtered record count for a table

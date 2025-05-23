@@ -7,6 +7,92 @@
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <!-- SVG-Pan-Zoom for interactive diagram navigation -->
   <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    /* Column sorting styles */
+    .sortable-column {
+      cursor: pointer;
+      position: relative;
+      transition: background-color 0.2s ease;
+      background-color: inherit;
+    }
+    
+    .sortable-column:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .sortable-column.sorted {
+      background-color: #f0f0f0;
+    }
+    
+    .sortable-column .column-sort-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      height: 100%;
+      padding: 4px 0;
+    }
+    
+    .sortable-column .column-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .sortable-column .sort-icon-container {
+      flex: 0 0 auto;
+      width: 20px;
+      text-align: center;
+      margin-left: 4px;
+    }
+    
+    .sortable-column .sort-icon {
+      font-size: 0.8em;
+      opacity: 0.7;
+      transition: opacity 0.2s ease, color 0.2s ease;
+    }
+    
+    .sortable-column:hover .sort-icon.invisible {
+      visibility: visible !important;
+      opacity: 0.3;
+    }
+
+    /* Fix scrolling issues with sticky header */
+    .dbviewer-table-header {
+      position: sticky !important;
+      top: 0;
+      z-index: 10;
+      background-color: var(--bs-table-striped-bg, #f2f2f2) !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.075);
+    }
+    
+    [data-bs-theme="dark"] .dbviewer-table-header {
+      background-color: var(--bs-dark-bg-subtle, #343a40) !important;
+    }
+    
+    /* Improve mobile display for sort headers */
+    @media (max-width: 767.98px) {
+      .sortable-column .column-sort-link {
+        flex-direction: row;
+        align-items: center;
+      }
+      
+      .sortable-column .sort-icon-container {
+        width: 16px;
+      }
+    }
+    
+    /* Dark mode compatibility */
+    [data-bs-theme="dark"] .sortable-column:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    [data-bs-theme="dark"] .sortable-column.sorted {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  </style>
+  
   <script>
     // Initialize mermaid when document is ready
     document.addEventListener('DOMContentLoaded', function() {
@@ -119,16 +205,24 @@
 <!-- Records Section -->
 <div class="dbviewer-card card mb-4">
   <div class="card-header d-flex justify-content-between align-items-center">
-    <h5 class="mb-0"><i class="bi bi-table me-2"></i>Records</h5>
+    <h5 class="mb-0">
+      <select id="per-page-select" class="form-select form-select-sm" onchange="window.location.href='<%= table_path(@table_name) %>?per_page=' + this.value + '&page=1&order_by=<%= @order_by %>&order_direction=<%= @order_direction %><%= @column_filters.reject { |_, v| v.blank? }.any? ? "&" + @column_filters.reject { |_, v| v.blank? }.map { |k, v| "column_filters[#{k}]=#{CGI.escape(v.to_s)}" }.join("&") : "" %>'">
+        <% Dbviewer::TablesController.per_page_options.each do |option| %>
+          <option value="<%= option %>" <%= 'selected' if @per_page == option %>><%= option %></option>
+        <% end %>
+      </select>
+    </h5>
     <div class="d-flex align-items-center">
-      <div class="me-3">
-        <label for="per-page-select" class="me-2">Per page:</label>
-        <select id="per-page-select" class="form-select form-select-sm" onchange="window.location.href='<%= table_path(@table_name) %>?per_page=' + this.value + '&page=1&order_by=<%= @order_by %>&order_direction=<%= @order_direction %><%= @column_filters.reject { |_, v| v.blank? }.any? ? "&" + @column_filters.reject { |_, v| v.blank? }.map { |k, v| "column_filters[#{k}]=#{CGI.escape(v.to_s)}" }.join("&") : "" %>'">
-          <% Dbviewer::TablesController.per_page_options.each do |option| %>
-            <option value="<%= option %>" <%= 'selected' if @per_page == option %>><%= option %></option>
-          <% end %>
-        </select>
-      </div>
+      <% if @order_by.present? %>
+        <span class="badge bg-primary me-2" title="Sort order">
+          <i class="bi bi-sort-<%= @order_direction == "ASC" ? "up" : "down" %> me-1"></i>
+          <%= @order_by %> (<%= @order_direction == "ASC" ? "ascending" : "descending" %>)
+          <%= link_to "×", table_path(@table_name, page: 1, per_page: @per_page, column_filters: @column_filters), 
+              class: "text-light ms-2", 
+              style: "text-decoration: none;",
+              title: "Clear sorting" %>
+        </span>
+      <% end %>
       <span class="badge bg-secondary">Total: <%= @total_count %> records</span>
       <% active_filters = @column_filters.reject { |_, v| v.blank? }.size %>
       <% if active_filters > 0 %>
@@ -150,8 +244,9 @@
                 <tr>
                   <% if @records && @records.columns %>
                     <% @records.columns.each do |column_name| %>
-                      <th class="pe-4">
-                        <%= column_name %>
+                      <% is_sorted = @order_by == column_name %>
+                      <th class="px-3 py-2 sortable-column <%= 'sorted' if is_sorted %>">
+                        <%= sortable_column_header(column_name, @order_by, @order_direction, @table_name, @current_page, @per_page, @column_filters) %>
                       </th>
                     <% end %>
                   <% else %>
@@ -162,11 +257,87 @@
                   <% if @records && @records.columns %>
                     <% @records.columns.each do |column_name| %>
                       <th class="p-0">
-                        <%= form.text_field "column_filters[#{column_name}]", 
-                            value: @column_filters[column_name], 
-                            placeholder: "",
-                            class: "form-control form-control-sm column-filter rounded-0",
-                            data: { column: column_name } %>
+                        <% 
+                          # Find column info to detect the type
+                          column_info = @columns.find { |c| c[:name].to_s == column_name.to_s } if @columns
+                          column_type = column_info ? column_info[:type].to_s.downcase : nil
+                        %>
+
+                        <div class="filter-input-group">
+                          <% 
+                            # Define the default operator and available operators based on column type
+                            default_operator = if column_type && column_type =~ /char|text|string|uuid|enum/i
+                              "contains"
+                            else
+                              "eq"
+                            end
+                            
+                            # Get previously selected operator or default
+                            selected_operator = @column_filters["#{column_name}_operator"]
+                            selected_operator = default_operator if selected_operator.nil? || selected_operator == "default"
+                            
+                            # Define operator options based on column type
+                            if column_type && (column_type =~ /datetime/ || column_type =~ /^date$/ || column_type =~ /^time$/)
+                              # Date/Time operators
+                              operator_options = [
+                                ["=", "eq"],
+                                ["≠", "neq"],
+                                ["<", "lt"],
+                                [">", "gt"],
+                                ["≤", "lte"],
+                                ["≥", "gte"]
+                              ]
+                            elsif column_type && column_type =~ /int|float|decimal|double|number|numeric|real|money|bigint|smallint|tinyint|mediumint|bit/i
+                              # Numeric operators
+                              operator_options = [
+                                ["=", "eq"],
+                                ["≠", "neq"],
+                                ["<", "lt"],
+                                [">", "gt"],
+                                ["≤", "lte"],
+                                ["≥", "gte"]
+                              ]
+                            else
+                              # Text operators
+                              operator_options = [
+                                ["contains", "contains"],
+                                ["not contains", "not_contains"],
+                                ["=", "eq"],
+                                ["≠", "neq"],
+                                ["starts with", "starts_with"],
+                                ["ends with", "ends_with"]
+                              ]
+                            end
+                          %>
+                          
+                          <%= form.select "column_filters[#{column_name}_operator]", 
+                              options_for_select(operator_options, selected_operator),
+                              { include_blank: false },
+                              { class: "form-select form-select-sm operator-select" } %>
+                          
+                          <% if column_type && column_type =~ /datetime/ %>
+                            <%= form.datetime_local_field "column_filters[#{column_name}]", 
+                                value: @column_filters[column_name], 
+                                class: "form-control form-control-sm column-filter rounded-0",
+                                data: { column: column_name } %>
+                          <% elsif column_type && column_type =~ /^date$/ %>
+                            <%= form.date_field "column_filters[#{column_name}]", 
+                                value: @column_filters[column_name], 
+                                class: "form-control form-control-sm column-filter rounded-0",
+                                data: { column: column_name } %>
+                          <% elsif column_type && column_type =~ /^time$/ %>
+                            <%= form.time_field "column_filters[#{column_name}]", 
+                                value: @column_filters[column_name], 
+                                class: "form-control form-control-sm column-filter rounded-0",
+                                data: { column: column_name } %>
+                          <% else %>
+                            <%= form.text_field "column_filters[#{column_name}]", 
+                                value: @column_filters[column_name], 
+                                placeholder: "",
+                                class: "form-control form-control-sm column-filter rounded-0",
+                                data: { column: column_name } %>
+                          <% end %>
+                        </div>
                       </th>
                     <% end %>
                   <% else %>
@@ -301,6 +472,7 @@
   document.addEventListener('DOMContentLoaded', function() {
     // Column filter functionality
     const columnFilters = document.querySelectorAll('.column-filter');
+    const operatorSelects = document.querySelectorAll('.operator-select');
     const filterForm = document.getElementById('column-filters-form');
     
     // Add debounce function to reduce form submissions
@@ -323,7 +495,18 @@
     
     // Add event listeners to all filter inputs
     columnFilters.forEach(function(filter) {
+      // For text fields use input event
       filter.addEventListener('input', submitForm);
+      
+      // For date/time fields also use change event since they have calendar/time pickers
+      if (filter.type === 'date' || filter.type === 'datetime-local' || filter.type === 'time') {
+        filter.addEventListener('change', submitForm);
+      }
+    });
+    
+    // Add event listeners to operator selects
+    operatorSelects.forEach(function(select) {
+      select.addEventListener('change', submitForm);
     });
     
     // Add clear button functionality if there are any filters applied
@@ -343,7 +526,17 @@
         paginationContainer.insertAdjacentHTML('afterend', clearButton.outerHTML);
         
         document.getElementById('clear-filters').addEventListener('click', function() {
+          // Reset all input values
           columnFilters.forEach(filter => filter.value = '');
+          
+          // Reset operator selects to their default values
+          operatorSelects.forEach(select => {
+            // Find the first option of the select (usually the default)
+            if (select.options.length > 0) {
+              select.selectedIndex = 0;
+            }
+          });
+          
           submitForm();
         });
       }
@@ -785,6 +978,46 @@
     font-size: 0.85rem;
   }
   
+  /* Filter input group styling */
+  .filter-input-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .filter-input-group .operator-select {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.5rem;
+    border-bottom: none;
+    border-radius: 0.2rem 0.2rem 0 0;
+    background-color: rgba(0,0,0,0.03);
+    font-weight: normal;
+    min-height: 22px; /* Ensure consistent height */
+  }
+  
+  .filter-input-group .operator-select option {
+    font-size: 0.8rem;
+    padding: 2px;
+  }
+  
+  [data-bs-theme="dark"] .filter-input-group .operator-select {
+    background-color: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.9);
+    border-color: rgba(255,255,255,0.15);
+  }
+  
+  .filter-input-group .column-filter {
+    border-radius: 0 0 0.2rem 0.2rem;
+    border-top: none;
+  }
+  
+  /* Ensure consistent sizing for date/time inputs */
+  input[type="date"].column-filter,
+  input[type="datetime-local"].column-filter,
+  input[type="time"].column-filter {
+    padding: 0.2rem 0.5rem;
+  }
+  
   [data-bs-theme="dark"] .column-filters td {
     background-color: rgba(255,255,255,0.05);
   }
@@ -793,6 +1026,13 @@
     background-color: rgba(255,255,255,0.1);
     color: rgba(255,255,255,0.9);
     border-color: rgba(255,255,255,0.15);
+  }
+  
+  /* Special styling for date/time inputs in dark mode */
+  [data-bs-theme="dark"] input[type="datetime-local"].column-filter::-webkit-calendar-picker-indicator,
+  [data-bs-theme="dark"] input[type="date"].column-filter::-webkit-calendar-picker-indicator,
+  [data-bs-theme="dark"] input[type="time"].column-filter::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
   }
   
   /* Mini ERD modal styling */
@@ -914,6 +1154,39 @@
             }
           }
         }
+      }
+    });
+    
+    // Column sorting enhancement
+    const sortableColumns = document.querySelectorAll('.sortable-column');
+    sortableColumns.forEach(column => {
+      const link = column.querySelector('.column-sort-link');
+      
+      // Mouse over effects
+      column.addEventListener('mouseenter', () => {
+        const sortIcon = column.querySelector('.sort-icon');
+        if (sortIcon && sortIcon.classList.contains('invisible')) {
+          sortIcon.style.visibility = 'visible';
+          sortIcon.style.opacity = '0.3';
+        }
+      });
+      
+      column.addEventListener('mouseleave', () => {
+        const sortIcon = column.querySelector('.sort-icon');
+        if (sortIcon && sortIcon.classList.contains('invisible')) {
+          sortIcon.style.visibility = 'hidden';
+          sortIcon.style.opacity = '0';
+        }
+      });
+      
+      // Keyboard accessibility
+      if (link) {
+        link.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            link.click();
+          }
+        });
       }
     });
   });
