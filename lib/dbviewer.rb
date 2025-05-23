@@ -6,6 +6,7 @@ require "dbviewer/cache_manager"
 require "dbviewer/table_metadata_manager"
 require "dbviewer/dynamic_model_factory"
 require "dbviewer/query_executor"
+require "dbviewer/table_query_operations"
 require "dbviewer/database_manager"
 require "dbviewer/sql_validator"
 

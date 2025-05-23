@@ -2,6 +2,7 @@ require "dbviewer/cache_manager"
 require "dbviewer/table_metadata_manager"
 require "dbviewer/dynamic_model_factory"
 require "dbviewer/query_executor"
+require "dbviewer/table_query_operations"
 require "dbviewer/error_handler"
 
 module Dbviewer
@@ -17,6 +18,12 @@ module Dbviewer
       @table_metadata_manager = TableMetadataManager.new(@connection, @cache_manager)
       @dynamic_model_factory = DynamicModelFactory.new(@connection, @cache_manager)
       @query_executor = QueryExecutor.new(@connection, self.class.configuration)
+      @table_query_operations = TableQueryOperations.new(
+        @connection,
+        @dynamic_model_factory,
+        @query_executor,
+        @table_metadata_manager
+      )
       reset_cache_if_needed
     end
 
@@ -64,8 +71,7 @@ module Dbviewer
     # @param table_name [String] Name of the table
     # @return [Integer] Number of records
     def table_count(table_name)
-      model = get_model_for(table_name)
-      model.count
+      @table_query_operations.table_count(table_name)
     end
 
     # Get records from a table with pagination and sorting
@@ -76,54 +82,22 @@ module Dbviewer
     # @param per_page [Integer] Number of records per page
     # @return [ActiveRecord::Result] Result set with columns and rows
     def table_records(table_name, page = 1, order_by = nil, direction = "ASC", per_page = nil, column_filters = nil)
-      page = [ 1, page.to_i ].max
-      default_per_page = self.class.default_per_page
-      column_filters ||= {}
-      max_records = self.class.max_records
-      per_page = (per_page || default_per_page).to_i
-
-      # Ensure we don't fetch too many records for performance/memory reasons
-      per_page = [ per_page, max_records ].min
-
-      model = get_model_for(table_name)
-      query = model.all
-
-      # Apply column filters if provided
-      if column_filters.present?
-        column_filters.each do |column, value|
-          # Skip operator entries (they'll be handled with their corresponding value)
-          next if column.to_s.end_with?("_operator")
-          next if value.blank?
-          next unless column_exists?(table_name, column)
-
-          # Get operator if available, otherwise use default
-          operator = column_filters["#{column}_operator"]
-
-          query = apply_column_filter(query, column, value, table_name, operator)
-        end
-      end
-
-      # Apply sorting if provided
-      if order_by.present? && column_exists?(table_name, order_by)
-        direction = %w[ASC DESC].include?(direction.to_s.upcase) ? direction.to_s.upcase : "ASC"
-        query = query.order("#{connection.quote_column_name(order_by)} #{direction}")
-      end
-
-      # Apply pagination
-      records = query.limit(per_page).offset((page - 1) * per_page)
-
-      # Get column names for consistent ordering
-      column_names = table_columns(table_name).map { |c| c[:name] }
-
-      # Format results
-      @query_executor.to_result_set(records, column_names)
+      @table_query_operations.table_records(
+        table_name,
+        page,
+        order_by,
+        direction,
+        per_page || self.class.default_per_page,
+        column_filters,
+        self.class.max_records
+      )
     end
 
     # Get the number of records in a table (alias for table_count)
     # @param table_name [String] Name of the table
     # @return [Integer] Number of records
     def record_count(table_name)
-      table_count(table_name)
+      @table_query_operations.record_count(table_name)
     end
 
     # Get the number of records in a table with filters applied
@@ -131,25 +105,7 @@ module Dbviewer
     # @param column_filters [Hash] Hash of column_name => filter_value for filtering
     # @return [Integer] Number of filtered records
     def filtered_record_count(table_name, column_filters = {})
-      model = get_model_for(table_name)
-      query = model.all
-
-      # Apply column filters if provided
-      if column_filters.present?
-        column_filters.each do |column, value|
-          # Skip operator entries (they'll be handled with their corresponding value)
-          next if column.to_s.end_with?("_operator")
-          next if value.blank?
-          next unless column_exists?(table_name, column)
-
-          # Get operator if available, otherwise use default
-          operator = column_filters["#{column}_operator"]
-
-          query = apply_column_filter(query, column, value, table_name, operator)
-        end
-      end
-
-      query.count
+      @table_query_operations.filtered_record_count(table_name, column_filters)
     end
 
     # Get the number of columns in a table
@@ -179,7 +135,7 @@ module Dbviewer
     # @return [ActiveRecord::Result] Result set with columns and rows
     # @raise [StandardError] If the query is invalid or unsafe
     def execute_query(sql)
-      @query_executor.execute_query(sql)
+      @table_query_operations.execute_query(sql)
     end
 
     # Execute a SQLite PRAGMA command without adding a LIMIT clause
@@ -187,7 +143,7 @@ module Dbviewer
     # @return [ActiveRecord::Result] Result set with the PRAGMA value
     # @raise [StandardError] If the query is invalid or cannot be executed
     def execute_sqlite_pragma(pragma)
-      @query_executor.execute_sqlite_pragma(pragma)
+      @table_query_operations.execute_sqlite_pragma(pragma)
     end
 
     # Query a table with more granular control using ActiveRecord
@@ -199,28 +155,15 @@ module Dbviewer
     # @param where [String, Hash] Where conditions
     # @return [ActiveRecord::Result] Result set with columns and rows
     def query_table(table_name, select: nil, order: nil, limit: nil, offset: nil, where: nil)
-      model = get_model_for(table_name)
-      query = model.all
-
-      query = query.select(select) if select.present?
-      query = query.where(where) if where.present?
-      query = query.order(order) if order.present?
-
-      # Get max records from configuration
-      max_records = self.class.max_records
-      query = query.limit([ limit || max_records, max_records ].min) # Apply safety limit
-      query = query.offset(offset) if offset.present?
-
-      # Get column names for the result set
-      column_names = if select.is_a?(Array)
-        select
-      elsif select.is_a?(String) && !select.include?("*")
-        select.split(",").map(&:strip)
-      else
-        table_columns(table_name).map { |c| c[:name] }
-      end
-
-      @query_executor.to_result_set(query, column_names)
+      @table_query_operations.query_table(
+        table_name,
+        select: select,
+        order: order,
+        limit: limit,
+        offset: offset,
+        where: where,
+        max_records: self.class.max_records
+      )
     end
 
     # Get table indexes
@@ -266,219 +209,6 @@ module Dbviewer
     # @return [Class] ActiveRecord model class
     def get_model_for(table_name)
       @dynamic_model_factory.get_model_for(table_name)
-    end
-
-    # Helper method to apply column filters to a query
-    # @param query [ActiveRecord::Relation] The query to apply filters to
-    # @param column [String] The column name to filter on
-    # @param value [String] The value to filter by
-    # @param table_name [String] The name of the table being queried
-    # @param operator [String] The operator to use for filtering (eq, neq, lt, gt, etc.)
-    # @return [ActiveRecord::Relation] The filtered query
-    def apply_column_filter(query, column, value, table_name, operator = nil)
-      column_info = table_columns(table_name).find { |c| c[:name] == column }
-      return query unless column_info
-
-      column_type = column_info[:type].to_s
-      quoted_column = connection.quote_column_name(column)
-
-      # Default to appropriate operator if none specified or "default" value is used
-      if operator.nil? || operator == "default"
-        operator = if column_type =~ /char|text|string|uuid|enum/i
-          "contains"
-        else
-          "eq"
-        end
-      end
-
-      if column_type =~ /datetime|timestamp/
-        begin
-          parsed_date = Time.parse(value.to_s)
-
-          case operator
-          when "eq"
-            query = query.where("#{quoted_column} = ?", parsed_date)
-          when "neq"
-            query = query.where("#{quoted_column} != ?", parsed_date)
-          when "lt"
-            query = query.where("#{quoted_column} < ?", parsed_date)
-          when "gt"
-            query = query.where("#{quoted_column} > ?", parsed_date)
-          when "lte"
-            query = query.where("#{quoted_column} <= ?", parsed_date)
-          when "gte"
-            query = query.where("#{quoted_column} >= ?", parsed_date)
-          else
-            # Default to equality
-            query = query.where("#{quoted_column} = ?", parsed_date)
-          end
-        rescue => e
-          # If parsing fails, fall back to string comparison
-          query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
-        end
-      elsif column_type =~ /^date$/
-        begin
-          parsed_date = Date.parse(value.to_s)
-
-          case operator
-          when "eq"
-            query = query.where("#{quoted_column} = ?", parsed_date)
-          when "neq"
-            query = query.where("#{quoted_column} != ?", parsed_date)
-          when "lt"
-            query = query.where("#{quoted_column} < ?", parsed_date)
-          when "gt"
-            query = query.where("#{quoted_column} > ?", parsed_date)
-          when "lte"
-            query = query.where("#{quoted_column} <= ?", parsed_date)
-          when "gte"
-            query = query.where("#{quoted_column} >= ?", parsed_date)
-          else
-            # Default to equality
-            query = query.where("#{quoted_column} = ?", parsed_date)
-          end
-        rescue => e
-          # If parsing fails, fall back to string comparison
-          query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
-        end
-      elsif column_type =~ /^time$/
-        begin
-          parsed_time = Time.parse(value.to_s)
-          formatted_time = parsed_time.strftime("%H:%M:%S")
-
-          # Prepare time comparison SQL based on database adapter
-          time_expr = if @adapter_name =~ /mysql/
-            "TIME(#{quoted_column})"
-          elsif @adapter_name =~ /postgresql/
-            "CAST(#{quoted_column} AS TIME)"
-          else
-            # SQLite and others
-            quoted_column
-          end
-
-          case operator
-          when "eq"
-            query = query.where("#{time_expr} = ?", formatted_time)
-          when "neq"
-            query = query.where("#{time_expr} != ?", formatted_time)
-          when "lt"
-            query = query.where("#{time_expr} < ?", formatted_time)
-          when "gt"
-            query = query.where("#{time_expr} > ?", formatted_time)
-          when "lte"
-            query = query.where("#{time_expr} <= ?", formatted_time)
-          when "gte"
-            query = query.where("#{time_expr} >= ?", formatted_time)
-          else
-            # Default to equality
-            query = query.where("#{time_expr} = ?", formatted_time)
-          end
-        rescue => e
-          # If parsing fails, fall back to string comparison
-          query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
-        end
-      elsif column_type =~ /int|float|decimal|double|number|numeric|real|money|bigint|smallint|tinyint|mediumint|bit/i
-        # Numeric column types
-        if value =~ /\A[+-]?\d+(\.\d+)?\z/
-          # Convert to proper numeric type for comparison
-          numeric_value = value.include?(".") ? value.to_f : value.to_i
-
-          # It's a numeric value, apply numeric operators
-          case operator
-          when "eq"
-            query = query.where("#{quoted_column} = ?", numeric_value)
-          when "neq"
-            query = query.where("#{quoted_column} != ?", numeric_value)
-          when "lt"
-            query = query.where("#{quoted_column} < ?", numeric_value)
-          when "gt"
-            query = query.where("#{quoted_column} > ?", numeric_value)
-          when "lte"
-            query = query.where("#{quoted_column} <= ?", numeric_value)
-          when "gte"
-            query = query.where("#{quoted_column} >= ?", numeric_value)
-          else
-            # Default to equality
-            query = query.where("#{quoted_column} = ?", value)
-          end
-        else
-          # Non-numeric value for numeric column, try string comparison
-          case operator
-          when "contains", "starts_with", "ends_with"
-            query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
-          when "not_contains"
-            query = query.where("CAST(#{quoted_column} AS CHAR) NOT LIKE ?", "%#{value}%")
-          when "eq"
-            query = query.where("CAST(#{quoted_column} AS CHAR) = ?", value)
-          when "neq"
-            query = query.where("CAST(#{quoted_column} AS CHAR) != ?", value)
-          else
-            # Default to contains
-            query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
-          end
-        end
-      elsif column_type =~ /char|text|string|uuid|enum/i
-        # String type columns have specialized operators
-        case operator
-        when "contains"
-          query = query.where("#{quoted_column} LIKE ?", "%#{value}%")
-        when "not_contains"
-          query = query.where("#{quoted_column} NOT LIKE ?", "%#{value}%")
-        when "eq"
-          query = query.where("#{quoted_column} = ?", value)
-        when "neq"
-          query = query.where("#{quoted_column} != ?", value)
-        when "starts_with"
-          query = query.where("#{quoted_column} LIKE ?", "#{value}%")
-        when "ends_with"
-          query = query.where("#{quoted_column} LIKE ?", "%#{value}")
-        else
-          # Default to contains
-          query = query.where("#{quoted_column} LIKE ?", "%#{value}%")
-        end
-      else
-        # Other unrecognized types - fallback to basic filtering
-        if value =~ /\A[+-]?\d+(\.\d+)?\z/
-          # Convert to proper numeric type for comparison
-          numeric_value = value.include?(".") ? value.to_f : value.to_i
-
-          # It's a numeric value, apply numeric operators
-          case operator
-          when "eq"
-            query = query.where("#{quoted_column} = ?", numeric_value)
-          when "neq"
-            query = query.where("#{quoted_column} != ?", numeric_value)
-          when "lt"
-            query = query.where("#{quoted_column} < ?", numeric_value)
-          when "gt"
-            query = query.where("#{quoted_column} > ?", numeric_value)
-          when "lte"
-            query = query.where("#{quoted_column} <= ?", numeric_value)
-          when "gte"
-            query = query.where("#{quoted_column} >= ?", numeric_value)
-          else
-            # Default to equality
-            query = query.where("#{quoted_column} = ?", value)
-          end
-        else
-          # Non-numeric value for numeric column, try string comparison
-          case operator
-          when "contains", "starts_with", "ends_with"
-            query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
-          when "not_contains"
-            query = query.where("CAST(#{quoted_column} AS CHAR) NOT LIKE ?", "%#{value}%")
-          when "eq"
-            query = query.where("CAST(#{quoted_column} AS CHAR) = ?", value)
-          when "neq"
-            query = query.where("CAST(#{quoted_column} AS CHAR) != ?", value)
-          else
-            # Default to contains
-            query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
-          end
-        end
-      end
-
-      query
     end
   end
 end

@@ -2,16 +2,13 @@ module Dbviewer
   class TablesController < ApplicationController
     include Dbviewer::PaginationConcern
 
+    before_action :set_table_name, except: [ :index ]
+
     def index
       @tables = fetch_tables_with_stats(include_record_counts: true)
     end
 
     def show
-      @table_name = params[:id]
-      @columns = fetch_table_columns(@table_name)
-      @metadata = fetch_table_metadata(@table_name)
-      @tables = fetch_tables_with_stats  # Fetch tables for sidebar
-
       set_pagination_params
       set_sorting_params
 
@@ -39,6 +36,9 @@ module Dbviewer
         @timestamp_data = fetch_timestamp_data(@table_name, @time_grouping)
       end
 
+      @columns = fetch_table_columns(@table_name)
+      @metadata = fetch_table_metadata(@table_name)
+
       respond_to do |format|
         format.html # Default HTML response
         format.json do
@@ -53,8 +53,6 @@ module Dbviewer
     end
 
     def mini_erd
-      @table_name = params[:id]
-
       begin
         @erd_data = fetch_mini_erd_for_table(@table_name)
 
@@ -81,7 +79,6 @@ module Dbviewer
     end
 
     def query
-      @table_name = params[:id]
       @read_only_mode = true # Flag to indicate we're in read-only mode
       @columns = fetch_table_columns(@table_name)
       @tables = fetch_tables_with_stats  # Fetch tables for sidebar
@@ -102,20 +99,25 @@ module Dbviewer
         return
       end
 
-      table_name = params[:id]
       limit = (params[:limit] || 10000).to_i
       include_headers = params[:include_headers] != "0"
 
-      csv_data = export_table_to_csv(table_name, limit, include_headers)
+      csv_data = export_table_to_csv(@table_name, limit, include_headers)
 
       # Set filename with timestamp for uniqueness
       timestamp = Time.now.strftime("%Y%m%d%H%M%S")
-      filename = "#{table_name}_export_#{timestamp}.csv"
+      filename = "#{@table_name}_export_#{timestamp}.csv"
 
       # Send data as file
       send_data csv_data,
                 type: "text/csv; charset=utf-8; header=present",
                 disposition: "attachment; filename=#{filename}"
+    end
+
+    private
+
+    def set_table_name
+      @table_name = params[:id]
     end
   end
 end
