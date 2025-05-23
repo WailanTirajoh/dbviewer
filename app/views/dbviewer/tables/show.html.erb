@@ -7,6 +7,92 @@
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <!-- SVG-Pan-Zoom for interactive diagram navigation -->
   <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    /* Column sorting styles */
+    .sortable-column {
+      cursor: pointer;
+      position: relative;
+      transition: background-color 0.2s ease;
+      background-color: inherit;
+    }
+    
+    .sortable-column:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .sortable-column.sorted {
+      background-color: #f0f0f0;
+    }
+    
+    .sortable-column .column-sort-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      height: 100%;
+      padding: 4px 0;
+    }
+    
+    .sortable-column .column-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .sortable-column .sort-icon-container {
+      flex: 0 0 auto;
+      width: 20px;
+      text-align: center;
+      margin-left: 4px;
+    }
+    
+    .sortable-column .sort-icon {
+      font-size: 0.8em;
+      opacity: 0.7;
+      transition: opacity 0.2s ease, color 0.2s ease;
+    }
+    
+    .sortable-column:hover .sort-icon.invisible {
+      visibility: visible !important;
+      opacity: 0.3;
+    }
+
+    /* Fix scrolling issues with sticky header */
+    .dbviewer-table-header {
+      position: sticky !important;
+      top: 0;
+      z-index: 10;
+      background-color: var(--bs-table-striped-bg, #f2f2f2) !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.075);
+    }
+    
+    [data-bs-theme="dark"] .dbviewer-table-header {
+      background-color: var(--bs-dark-bg-subtle, #343a40) !important;
+    }
+    
+    /* Improve mobile display for sort headers */
+    @media (max-width: 767.98px) {
+      .sortable-column .column-sort-link {
+        flex-direction: row;
+        align-items: center;
+      }
+      
+      .sortable-column .sort-icon-container {
+        width: 16px;
+      }
+    }
+    
+    /* Dark mode compatibility */
+    [data-bs-theme="dark"] .sortable-column:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    [data-bs-theme="dark"] .sortable-column.sorted {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  </style>
+  
   <script>
     // Initialize mermaid when document is ready
     document.addEventListener('DOMContentLoaded', function() {
@@ -129,6 +215,16 @@
           <% end %>
         </select>
       </div>
+      <% if @order_by.present? %>
+        <span class="badge bg-primary me-2" title="Sort order">
+          <i class="bi bi-sort-<%= @order_direction == "ASC" ? "up" : "down" %> me-1"></i>
+          <%= @order_by %> (<%= @order_direction == "ASC" ? "ascending" : "descending" %>)
+          <%= link_to "×", table_path(@table_name, page: 1, per_page: @per_page, column_filters: @column_filters), 
+              class: "text-light ms-2", 
+              style: "text-decoration: none;",
+              title: "Clear sorting" %>
+        </span>
+      <% end %>
       <span class="badge bg-secondary">Total: <%= @total_count %> records</span>
       <% active_filters = @column_filters.reject { |_, v| v.blank? }.size %>
       <% if active_filters > 0 %>
@@ -150,8 +246,9 @@
                 <tr>
                   <% if @records && @records.columns %>
                     <% @records.columns.each do |column_name| %>
-                      <th class="pe-4">
-                        <%= column_name %>
+                      <% is_sorted = @order_by == column_name %>
+                      <th class="px-3 py-2 sortable-column <%= 'sorted' if is_sorted %>">
+                        <%= sortable_column_header(column_name, @order_by, @order_direction, @table_name, @current_page, @per_page, @column_filters) %>
                       </th>
                     <% end %>
                   <% else %>
@@ -1059,6 +1156,39 @@
             }
           }
         }
+      }
+    });
+    
+    // Column sorting enhancement
+    const sortableColumns = document.querySelectorAll('.sortable-column');
+    sortableColumns.forEach(column => {
+      const link = column.querySelector('.column-sort-link');
+      
+      // Mouse over effects
+      column.addEventListener('mouseenter', () => {
+        const sortIcon = column.querySelector('.sort-icon');
+        if (sortIcon && sortIcon.classList.contains('invisible')) {
+          sortIcon.style.visibility = 'visible';
+          sortIcon.style.opacity = '0.3';
+        }
+      });
+      
+      column.addEventListener('mouseleave', () => {
+        const sortIcon = column.querySelector('.sort-icon');
+        if (sortIcon && sortIcon.classList.contains('invisible')) {
+          sortIcon.style.visibility = 'hidden';
+          sortIcon.style.opacity = '0';
+        }
+      });
+      
+      // Keyboard accessibility
+      if (link) {
+        link.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            link.click();
+          }
+        });
       }
     });
   });
