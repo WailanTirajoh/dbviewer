@@ -372,17 +372,24 @@ module Dbviewer
     end
 
     # Export table data to CSV
-    def export_table_to_csv(table_name, limit = 10000, include_headers = true)
+    def export_table_to_csv(table_name, query_params = nil, include_headers = true)
       require "csv"
 
       begin
-        records = database_manager.table_records(
-          table_name,
-          1, # First page
-          nil, # Default sorting
-          "asc",
-          limit # Limit number of records
-        )
+        if query_params.is_a?(Dbviewer::TableQueryParams)
+          # Use the query params object directly
+          records = database_manager.query_operations.table_records(table_name, query_params)
+        else
+          # Legacy support for the old method signature
+          limit = query_params.is_a?(Numeric) ? query_params : 10000
+          records = database_manager.table_records(
+            table_name,
+            1, # First page
+            nil, # Default sorting
+            "asc",
+            limit # Limit number of records
+          )
+        end
 
         csv_data = CSV.generate do |csv|
           # Add headers if requested

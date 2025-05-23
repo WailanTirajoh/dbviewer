@@ -123,10 +123,11 @@
 
 <% content_for :sidebar do %>
   <%= render 'dbviewer/shared/sidebar' %>
-<% end %>
-
+<% end %>  
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Table: <%= @table_name %></h1>
+  <div>
+    <h1>Table: <%= @table_name %></h1>
+  </div>
   <div class="d-flex gap-2">
     <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#miniErdModal">
       <i class="bi bi-diagram-3 me-1"></i> View Relationships
@@ -206,23 +207,49 @@
 <div class="dbviewer-card card mb-4">
   <div class="card-header d-flex justify-content-between align-items-center">
     <h5 class="mb-0">
-      <select id="per-page-select" class="form-select form-select-sm" onchange="window.location.href='<%= table_path(@table_name) %>?per_page=' + this.value + '&page=1&order_by=<%= @order_by %>&order_direction=<%= @order_direction %><%= @column_filters.reject { |_, v| v.blank? }.any? ? "&" + @column_filters.reject { |_, v| v.blank? }.map { |k, v| "column_filters[#{k}]=#{CGI.escape(v.to_s)}" }.join("&") : "" %>'">
+      <% 
+        # Build the URL query parameters including creation filters
+        url_params = "per_page=' + this.value + '&page=1&order_by=#{@order_by}&order_direction=#{@order_direction}"
+        
+        # Add column filters
+        if @column_filters.reject { |_, v| v.blank? }.any?
+          url_params += "&" + @column_filters.reject { |_, v| v.blank? }.map { |k, v| "column_filters[#{k}]=#{CGI.escape(v.to_s)}" }.join("&")
+        end
+        
+        # Add creation filters
+        url_params += "&creation_filter_start=#{@creation_filter_start}" if @creation_filter_start.present?
+        url_params += "&creation_filter_end=#{@creation_filter_end}" if @creation_filter_end.present?
+      %>
+      <select id="per-page-select" class="form-select form-select-sm" onchange="window.location.href='<%= table_path(@table_name) %>?<%= url_params %>'">
         <% Dbviewer::TablesController.per_page_options.each do |option| %>
           <option value="<%= option %>" <%= 'selected' if @per_page == option %>><%= option %></option>
         <% end %>
       </select>
     </h5>
-    <div class="d-flex align-items-center">
+    <div class="d-flex align-items-center table-actions">
       <% if @order_by.present? %>
         <span class="badge bg-primary me-2" title="Sort order">
           <i class="bi bi-sort-<%= @order_direction == "ASC" ? "up" : "down" %> me-1"></i>
           <%= @order_by %> (<%= @order_direction == "ASC" ? "ascending" : "descending" %>)
-          <%= link_to "×", table_path(@table_name, page: 1, per_page: @per_page, column_filters: @column_filters), 
-              class: "text-light ms-2", 
-              style: "text-decoration: none;",
-              title: "Clear sorting" %>
         </span>
       <% end %>
+      
+      <% 
+        clear_sort_params = {
+          page: 1, 
+          per_page: @per_page, 
+          column_filters: @column_filters
+        }
+        
+        # Add creation filters if they exist
+        clear_sort_params[:creation_filter_start] = @creation_filter_start if @creation_filter_start.present?
+        clear_sort_params[:creation_filter_end] = @creation_filter_end if @creation_filter_end.present?
+      %>
+        <%= link_to "×", table_path(@table_name, clear_sort_params), 
+            class: "text-light ms-2", 
+            style: "text-decoration: none;",
+            title: "Clear sorting" %>
+      </span>
       <span class="badge bg-secondary">Total: <%= @total_count %> records</span>
       <% active_filters = @column_filters.reject { |_, v| v.blank? }.size %>
       <% if active_filters > 0 %>
@@ -365,10 +392,17 @@
                                           nil
                           %>
                           <% if foreign_key && !cell.nil? %>
+                            <% 
+                              # Build params for foreign key links with creation filters
+                              fk_params = { column_filters: { foreign_key[:primary_key] => cell } }
+                              
+                              # Add creation filters if they exist
+                              fk_params[:creation_filter_start] = @creation_filter_start if @creation_filter_start.present?
+                              fk_params[:creation_filter_end] = @creation_filter_end if @creation_filter_end.present?
+                            %>
                             <td title="<%= cell_value %> (Click to view referenced record)">
                               <%= link_to cell_value, 
-                                  table_path(foreign_key[:to_table], 
-                                  column_filters: { foreign_key[:primary_key] => cell }), 
+                                  table_path(foreign_key[:to_table], fk_params), 
                                   class: "text-decoration-none foreign-key-link" %>
                               <i class="bi bi-link-45deg text-muted small"></i>
                             </td>
@@ -385,10 +419,23 @@
       </div>
       
       <% if @total_pages && @total_pages > 1 %>
+        <%
+          # Prepare common URL params including creation filters
+          common_params = {
+            order_by: @order_by, 
+            order_direction: @order_direction, 
+            per_page: @per_page, 
+            column_filters: @column_filters
+          }
+          
+          # Add creation filters if they exist
+          common_params[:creation_filter_start] = @creation_filter_start if @creation_filter_start.present?
+          common_params[:creation_filter_end] = @creation_filter_end if @creation_filter_end.present?
+        %>
         <nav aria-label="Page navigation">
           <ul class="pagination justify-content-center">
             <li class="page-item <%= 'disabled' if @current_page == 1 %>">
-              <%= link_to '«', table_path(@table_name, page: [@current_page - 1, 1].max, order_by: @order_by, order_direction: @order_direction, per_page: @per_page, column_filters: @column_filters), class: 'page-link' %>
+              <%= link_to '«', table_path(@table_name, common_params.merge(page: [@current_page - 1, 1].max)), class: 'page-link' %>
             </li>
             
             <% start_page = [1, @current_page - 2].max %>
@@ -397,12 +444,12 @@
             
             <% (start_page..end_page).each do |page_num| %>
               <li class="page-item <%= 'active' if page_num == @current_page %>">
-                <%= link_to page_num, table_path(@table_name, page: page_num, order_by: @order_by, order_direction: @order_direction, per_page: @per_page, column_filters: @column_filters), class: 'page-link' %>
+                <%= link_to page_num, table_path(@table_name, common_params.merge(page: page_num)), class: 'page-link' %>
               </li>
             <% end %>
             
             <li class="page-item <%= 'disabled' if @current_page == @total_pages %>">
-              <%= link_to '»', table_path(@table_name, page: [@current_page + 1, @total_pages].min, order_by: @order_by, order_direction: @order_direction, per_page: @per_page, column_filters: @column_filters), class: 'page-link' %>
+              <%= link_to '»', table_path(@table_name, common_params.merge(page: [@current_page + 1, @total_pages].min)), class: 'page-link' %>
             </li>
           </ul>
         </nav>
@@ -420,10 +467,23 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Record Creation Timeline</h5>
           <div>
+            <% 
+              # Build common params for time grouping links
+              time_params = {
+                page: @current_page, 
+                order_by: @order_by, 
+                order_direction: @order_direction, 
+                per_page: @per_page
+              }
+              
+              # Add creation filters if they exist
+              time_params[:creation_filter_start] = @creation_filter_start if @creation_filter_start.present?
+              time_params[:creation_filter_end] = @creation_filter_end if @creation_filter_end.present?
+            %>
             <div class="btn-group btn-group-sm" role="group" aria-label="Time grouping">
-              <%= link_to "Hourly", table_path(@table_name, time_group: "hourly", page: @current_page, order_by: @order_by, order_direction: @order_direction, per_page: @per_page), class: "btn btn-outline-primary #{@time_grouping == 'hourly' ? 'active' : ''}" %>
-              <%= link_to "Daily", table_path(@table_name, time_group: "daily", page: @current_page, order_by: @order_by, order_direction: @order_direction, per_page: @per_page), class: "btn btn-outline-primary #{@time_grouping == 'daily' ? 'active' : ''}" %>
-              <%= link_to "Weekly", table_path(@table_name, time_group: "weekly", page: @current_page, order_by: @order_by, order_direction: @order_direction, per_page: @per_page), class: "btn btn-outline-primary #{@time_grouping == 'weekly' ? 'active' : ''}" %>
+              <%= link_to "Hourly", table_path(@table_name, time_params.merge(time_group: "hourly")), class: "btn btn-outline-primary #{@time_grouping == 'hourly' ? 'active' : ''}" %>
+              <%= link_to "Daily", table_path(@table_name, time_params.merge(time_group: "daily")), class: "btn btn-outline-primary #{@time_grouping == 'daily' ? 'active' : ''}" %>
+              <%= link_to "Weekly", table_path(@table_name, time_params.merge(time_group: "weekly")), class: "btn btn-outline-primary #{@time_grouping == 'weekly' ? 'active' : ''}" %>
             </div>
           </div>
         </div>

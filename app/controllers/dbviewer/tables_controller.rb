@@ -12,7 +12,13 @@ module Dbviewer
       set_pagination_params
       set_sorting_params
 
+      # Get column filters from params first
       @column_filters = params[:column_filters].presence ? params[:column_filters].to_enum.to_h : {}
+
+      # Then apply global creation filters (this will modify @column_filters)
+      set_global_filters
+
+      # Now create the query params with the combined filters
       query_params = Dbviewer::TableQueryParams.new(
         page: @current_page,
         per_page: @per_page,
@@ -100,11 +106,31 @@ module Dbviewer
       limit = (params[:limit] || 10000).to_i
       include_headers = params[:include_headers] != "0"
 
-      csv_data = export_table_to_csv(@table_name, limit, include_headers)
+      # Apply global creation filters
+      set_global_filters
+
+      # Create query parameters for export
+      query_params = Dbviewer::TableQueryParams.new(
+        page: 1,
+        per_page: limit,
+        order_by: nil,
+        direction: "asc",
+        column_filters: @column_filters.reject { |_, v| v.blank? }
+      )
+
+      # Get filtered data for export
+      csv_data = export_table_to_csv(@table_name, query_params, include_headers)
 
       # Set filename with timestamp for uniqueness
       timestamp = Time.now.strftime("%Y%m%d%H%M%S")
-      filename = "#{@table_name}_export_#{timestamp}.csv"
+
+      # Add filter info to filename if filters are applied
+      filename_suffix = ""
+      if @creation_filter_start.present? || @creation_filter_end.present?
+        filename_suffix = "_filtered"
+      end
+
+      filename = "#{@table_name}#{filename_suffix}_#{timestamp}.csv"
 
       # Send data as file
       send_data csv_data,
@@ -116,6 +142,59 @@ module Dbviewer
 
     def set_table_name
       @table_name = params[:id]
+    end    # Handle global creation datetime filters across tables
+    def set_global_filters
+      # Store creation filter datetimes in session to persist between table navigation
+      if params[:creation_filter_start].present?
+        session[:creation_filter_start] = params[:creation_filter_start]
+      end
+
+      if params[:creation_filter_end].present?
+        session[:creation_filter_end] = params[:creation_filter_end]
+      end
+
+      # Clear filters if explicitly requested
+      if params[:clear_creation_filter] == "true"
+        session.delete(:creation_filter_start)
+        session.delete(:creation_filter_end)
+      end
+
+      # Set instance variables for view access
+      @creation_filter_start = session[:creation_filter_start]
+      @creation_filter_end = session[:creation_filter_end]
+
+      # Initialize column_filters if not present
+      @column_filters ||= {}
+
+      # Apply creation filters to column_filters if the table has a created_at column
+      if has_timestamp_column?(@table_name) && (@creation_filter_start.present? || @creation_filter_end.present?)
+        # Clear any existing created_at filters to avoid conflicts
+        @column_filters.delete("created_at")
+        @column_filters.delete("created_at_operator")
+        @column_filters.delete("created_at_end")
+
+        if @creation_filter_start.present? && @creation_filter_end.present?
+          # If both start and end are present, set up a range filter
+          @column_filters["created_at"] = @creation_filter_start
+          @column_filters["created_at_end"] = @creation_filter_end
+          # No need for operator when using start and end together
+          Rails.logger.info("[DBViewer] Setting creation filter range: #{@creation_filter_start} to #{@creation_filter_end}")
+        elsif @creation_filter_start.present?
+          # Only start date is present
+          @column_filters["created_at"] = @creation_filter_start
+          @column_filters["created_at_operator"] = "gte" # Greater than or equal
+          Rails.logger.info("[DBViewer] Setting creation filter start: #{@creation_filter_start}")
+        elsif @creation_filter_end.present?
+          # Only end date is present
+          @column_filters["created_at"] = @creation_filter_end
+          @column_filters["created_at_operator"] = "lte" # Less than or equal
+          Rails.logger.info("[DBViewer] Setting creation filter end: #{@creation_filter_end}")
+        end
+      else
+        if @creation_filter_start.present? || @creation_filter_end.present?
+          Rails.logger.info("[DBViewer] Creation filter present but table #{@table_name} has no created_at column")
+        end
+      end
     end
   end
 end

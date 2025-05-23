@@ -11,6 +11,9 @@ module Dbviewer
   class DatabaseManager
     attr_reader :connection, :adapter_name, :table_query_operations
 
+    # Expose query_operations as an alias
+    alias_method :query_operations, :table_query_operations
+
     # Initialize the database manager
     def initialize
       ensure_connection
