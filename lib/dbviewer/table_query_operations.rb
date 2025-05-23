@@ -31,7 +31,7 @@ module Dbviewer
     # @param table_name [String] Name of the table
     # @param params [TableQueryParams] Query parameters object
     # @return [ActiveRecord::Result] Result set with columns and rows
-    def table_records(table_name, params = TableQueryParams.new)
+    def table_records(table_name, params)
       model = get_model_for(table_name)
       query = model.all
 

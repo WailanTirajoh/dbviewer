@@ -76,20 +76,12 @@ module Dbviewer
 
     # Get records from a table with pagination and sorting
     # @param table_name [String] Name of the table
-    # @param page [Integer] Page number (1-based)
-    # @param order_by [String] Column to sort by
-    # @param direction [String] Sort direction ('ASC' or 'DESC')
-    # @param per_page [Integer] Number of records per page
+    # @param query_params [TableQueryParams] Query parameters for pagination and sorting
     # @return [ActiveRecord::Result] Result set with columns and rows
-    def table_records(table_name, page = 1, order_by = nil, direction = "ASC", per_page = nil, column_filters = nil)
+    def table_records(table_name, query_params)
       @table_query_operations.table_records(
         table_name,
-        page,
-        order_by,
-        direction,
-        per_page || self.class.default_per_page,
-        column_filters,
-        self.class.max_records
+        query_params
       )
     end
 

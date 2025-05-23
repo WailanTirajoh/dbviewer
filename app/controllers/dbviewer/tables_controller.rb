@@ -12,21 +12,15 @@ module Dbviewer
       set_pagination_params
       set_sorting_params
 
-      # Extract column filters from params
       @column_filters = params[:column_filters].presence ? params[:column_filters].to_enum.to_h : {}
-
-      if @column_filters.present? && @column_filters.values.any?(&:present?)
-        @total_count = fetch_filtered_record_count(@table_name, @column_filters)
-      else
-        @total_count = fetch_table_record_count(@table_name)
-      end
-
+      @total_count = fetch_total_count(@table_name, @column_filters)
       @total_pages = calculate_total_pages(@total_count, @per_page)
-      @records = fetch_table_records(@table_name)
+      @records = fetch_table_records(@table_name, @column_filters)
+      @columns = fetch_table_columns(@table_name)
+      @metadata = fetch_table_metadata(@table_name)
 
-      # Ensure @records is never nil to prevent template errors
       if @records.nil?
-        column_names = fetch_table_columns(@table_name).map { |c| c[:name] }
+        column_names = @columns.map { |c| c[:name] }
         @records = ActiveRecord::Result.new(column_names, [])
       end
 
@@ -35,9 +29,6 @@ module Dbviewer
         @time_grouping = params[:time_group] || "daily"
         @timestamp_data = fetch_timestamp_data(@table_name, @time_grouping)
       end
-
-      @columns = fetch_table_columns(@table_name)
-      @metadata = fetch_table_metadata(@table_name)
 
       respond_to do |format|
         format.html # Default HTML response

@@ -35,6 +35,14 @@ module Dbviewer
       @order_direction = "ASC" unless self.class::VALID_SORT_DIRECTIONS.include?(@order_direction)
     end
 
+    def fetch_total_count(table_name, column_filters)
+      if column_filters.present? && column_filters.values.any?(&:present?)
+        fetch_filtered_record_count(table_name, column_filters)
+      else
+        fetch_table_record_count(table_name)
+      end
+    end
+
     # Calculate the total number of pages
     def calculate_total_pages(total_count, per_page)
       (total_count.to_f / per_page).ceil
