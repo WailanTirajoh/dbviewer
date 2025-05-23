@@ -162,11 +162,34 @@
                   <% if @records && @records.columns %>
                     <% @records.columns.each do |column_name| %>
                       <th class="p-0">
-                        <%= form.text_field "column_filters[#{column_name}]", 
-                            value: @column_filters[column_name], 
-                            placeholder: "",
-                            class: "form-control form-control-sm column-filter rounded-0",
-                            data: { column: column_name } %>
+                        <% 
+                          # Find column info to detect the type
+                          column_info = @columns.find { |c| c[:name].to_s == column_name.to_s } if @columns
+                          column_type = column_info ? column_info[:type].to_s.downcase : nil
+                        %>
+
+                        <% if column_type && column_type =~ /datetime/ %>
+                          <%= form.datetime_local_field "column_filters[#{column_name}]", 
+                              value: @column_filters[column_name], 
+                              class: "form-control form-control-sm column-filter rounded-0",
+                              data: { column: column_name } %>
+                        <% elsif column_type && column_type =~ /^date$/ %>
+                          <%= form.date_field "column_filters[#{column_name}]", 
+                              value: @column_filters[column_name], 
+                              class: "form-control form-control-sm column-filter rounded-0",
+                              data: { column: column_name } %>
+                        <% elsif column_type && column_type =~ /^time$/ %>
+                          <%= form.time_field "column_filters[#{column_name}]", 
+                              value: @column_filters[column_name], 
+                              class: "form-control form-control-sm column-filter rounded-0",
+                              data: { column: column_name } %>
+                        <% else %>
+                          <%= form.text_field "column_filters[#{column_name}]", 
+                              value: @column_filters[column_name], 
+                              placeholder: "",
+                              class: "form-control form-control-sm column-filter rounded-0",
+                              data: { column: column_name } %>
+                        <% end %>
                       </th>
                     <% end %>
                   <% else %>
@@ -323,7 +346,13 @@
     
     // Add event listeners to all filter inputs
     columnFilters.forEach(function(filter) {
+      // For text fields use input event
       filter.addEventListener('input', submitForm);
+      
+      // For date/time fields also use change event since they have calendar/time pickers
+      if (filter.type === 'date' || filter.type === 'datetime-local' || filter.type === 'time') {
+        filter.addEventListener('change', submitForm);
+      }
     });
     
     // Add clear button functionality if there are any filters applied
@@ -785,6 +814,13 @@
     font-size: 0.85rem;
   }
   
+  /* Ensure consistent sizing for date/time inputs */
+  input[type="date"].column-filter,
+  input[type="datetime-local"].column-filter,
+  input[type="time"].column-filter {
+    padding: 0.2rem 0.5rem;
+  }
+  
   [data-bs-theme="dark"] .column-filters td {
     background-color: rgba(255,255,255,0.05);
   }
@@ -793,6 +829,13 @@
     background-color: rgba(255,255,255,0.1);
     color: rgba(255,255,255,0.9);
     border-color: rgba(255,255,255,0.15);
+  }
+  
+  /* Special styling for date/time inputs in dark mode */
+  [data-bs-theme="dark"] input[type="datetime-local"].column-filter::-webkit-calendar-picker-indicator,
+  [data-bs-theme="dark"] input[type="date"].column-filter::-webkit-calendar-picker-indicator,
+  [data-bs-theme="dark"] input[type="time"].column-filter::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
   }
   
   /* Mini ERD modal styling */

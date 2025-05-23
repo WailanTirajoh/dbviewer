@@ -94,23 +94,7 @@ module Dbviewer
           next if value.blank?
           next unless column_exists?(table_name, column)
 
-          # Use LIKE for string-based searches, = for exact matches on other types
-          column_info = table_columns(table_name).find { |c| c[:name] == column }
-          if column_info
-            column_type = column_info[:type].to_s
-
-            if column_type =~ /char|text|string|uuid|enum/i
-              query = query.where("#{connection.quote_column_name(column)} LIKE ?", "%#{value}%")
-            else
-              # For numeric types, try exact match if value looks like a number
-              if value =~ /\A[+-]?\d+(\.\d+)?\z/
-                query = query.where(column => value)
-              else
-                # Otherwise, try string comparison for non-string fields
-                query = query.where("CAST(#{connection.quote_column_name(column)} AS CHAR) LIKE ?", "%#{value}%")
-              end
-            end
-          end
+          query = apply_column_filter(query, column, value, table_name)
         end
       end
 
@@ -151,23 +135,7 @@ module Dbviewer
           next if value.blank?
           next unless column_exists?(table_name, column)
 
-          # Use LIKE for string-based searches, = for exact matches on other types
-          column_info = table_columns(table_name).find { |c| c[:name] == column }
-          if column_info
-            column_type = column_info[:type].to_s
-
-            if column_type =~ /char|text|string|uuid|enum/i
-              query = query.where("#{connection.quote_column_name(column)} LIKE ?", "%#{value}%")
-            else
-              # For numeric types, try exact match if value looks like a number
-              if value =~ /\A[+-]?\d+(\.\d+)?\z/
-                query = query.where(column => value)
-              else
-                # Otherwise, try string comparison for non-string fields
-                query = query.where("CAST(#{connection.quote_column_name(column)} AS CHAR) LIKE ?", "%#{value}%")
-              end
-            end
-          end
+          query = apply_column_filter(query, column, value, table_name)
         end
       end
 
@@ -288,6 +256,73 @@ module Dbviewer
     # @return [Class] ActiveRecord model class
     def get_model_for(table_name)
       @dynamic_model_factory.get_model_for(table_name)
+    end
+
+    # Helper method to apply column filters to a query
+    # @param query [ActiveRecord::Relation] The query to apply filters to
+    # @param column [String] The column name to filter on
+    # @param value [String] The value to filter by
+    # @param table_name [String] The name of the table being queried
+    # @return [ActiveRecord::Relation] The filtered query
+    def apply_column_filter(query, column, value, table_name)
+      column_info = table_columns(table_name).find { |c| c[:name] == column }
+      return query unless column_info
+
+      column_type = column_info[:type].to_s
+      quoted_column = connection.quote_column_name(column)
+
+      if column_type =~ /datetime|timestamp/
+        # For datetime columns, get records from that day
+        begin
+          parsed_date = Time.parse(value.to_s)
+          query = query.where("#{quoted_column} = ?", parsed_date)
+        rescue => e
+          Rails.logger.debug("[DBViewer] Failed to parse datetime: #{e.message}")
+          # If parsing fails, fall back to string comparison
+          query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
+        end
+      elsif column_type =~ /^date$/
+        # For date columns, get records from that day
+        begin
+          parsed_date = Date.parse(value.to_s)
+          query = query.where("#{quoted_column} = ?", parsed_date)
+        rescue => e
+          Rails.logger.debug("[DBViewer] Failed to parse date: #{e.message}")
+          # If parsing fails, fall back to string comparison
+          query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
+        end
+      elsif column_type =~ /^time$/
+        # For time columns, match the time portion
+        begin
+          parsed_time = Time.parse(value.to_s)
+          formatted_time = parsed_time.strftime("%H:%M:%S")
+          # Different databases handle time extraction differently
+          if @adapter_name =~ /mysql/
+            query = query.where("TIME(#{quoted_column}) = ?", formatted_time)
+          elsif @adapter_name =~ /postgresql/
+            query = query.where("CAST(#{quoted_column} AS TIME) = ?", formatted_time)
+          else
+            # SQLite and others - try basic comparison
+            query = query.where("#{quoted_column} = ?", formatted_time)
+          end
+        rescue => e
+          Rails.logger.debug("[DBViewer] Failed to parse time: #{e.message}")
+          # If parsing fails, fall back to string comparison
+          query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
+        end
+      elsif column_type =~ /char|text|string|uuid|enum/i
+        query = query.where("#{quoted_column} LIKE ?", "%#{value}%")
+      else
+        # For numeric types, try exact match if value looks like a number
+        if value =~ /\A[+-]?\d+(\.\d+)?\z/
+          query = query.where(column => value)
+        else
+          # Otherwise, try string comparison for non-string fields
+          query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
+        end
+      end
+
+      query
     end
   end
 end
