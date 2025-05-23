@@ -90,9 +90,6 @@ module Dbviewer
 
       # Apply column filters if provided
       if column_filters.present?
-        # Debug log to see all filter parameters
-        Rails.logger.debug("[DBViewer] Column filters: #{column_filters.inspect}")
-
         column_filters.each do |column, value|
           # Skip operator entries (they'll be handled with their corresponding value)
           next if column.to_s.end_with?("_operator")
@@ -101,7 +98,6 @@ module Dbviewer
 
           # Get operator if available, otherwise use default
           operator = column_filters["#{column}_operator"]
-          Rails.logger.debug("[DBViewer] Column: #{column}, Value: #{value}, Operator: #{operator || 'default'}")
 
           query = apply_column_filter(query, column, value, table_name, operator)
         end
@@ -295,17 +291,6 @@ module Dbviewer
         end
       end
 
-      Rails.logger.debug("[DBViewer] apply_column_filter - Column: #{column}, Type: #{column_type}, Operator: #{operator}, Value: #{value}")
-
-      # Check what type of column we're dealing with for debugging
-      is_numeric = !!(column_type =~ /int|float|decimal|double|number|numeric|real|money|bigint|smallint|tinyint|mediumint|bit/i)
-      is_string = !!(column_type =~ /char|text|string|uuid|enum/i)
-      is_date = !!(column_type =~ /^date$/)
-      is_datetime = !!(column_type =~ /datetime|timestamp/)
-      is_time = !!(column_type =~ /^time$/)
-
-      Rails.logger.debug("[DBViewer] Column type detection: numeric=#{is_numeric}, string=#{is_string}, date=#{is_date}, datetime=#{is_datetime}, time=#{is_time}")
-
       if column_type =~ /datetime|timestamp/
         begin
           parsed_date = Time.parse(value.to_s)
@@ -328,7 +313,6 @@ module Dbviewer
             query = query.where("#{quoted_column} = ?", parsed_date)
           end
         rescue => e
-          Rails.logger.debug("[DBViewer] Failed to parse datetime: #{e.message}")
           # If parsing fails, fall back to string comparison
           query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
         end
@@ -354,7 +338,6 @@ module Dbviewer
             query = query.where("#{quoted_column} = ?", parsed_date)
           end
         rescue => e
-          Rails.logger.debug("[DBViewer] Failed to parse date: #{e.message}")
           # If parsing fails, fall back to string comparison
           query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
         end
@@ -391,7 +374,6 @@ module Dbviewer
             query = query.where("#{time_expr} = ?", formatted_time)
           end
         rescue => e
-          Rails.logger.debug("[DBViewer] Failed to parse time: #{e.message}")
           # If parsing fails, fall back to string comparison
           query = query.where("CAST(#{quoted_column} AS CHAR) LIKE ?", "%#{value}%")
         end
@@ -400,9 +382,6 @@ module Dbviewer
         if value =~ /\A[+-]?\d+(\.\d+)?\z/
           # Convert to proper numeric type for comparison
           numeric_value = value.include?(".") ? value.to_f : value.to_i
-
-          # Log the numeric value conversion
-          Rails.logger.debug("[DBViewer] Converting value #{value} to numeric: #{numeric_value}")
 
           # It's a numeric value, apply numeric operators
           case operator
@@ -462,9 +441,6 @@ module Dbviewer
         if value =~ /\A[+-]?\d+(\.\d+)?\z/
           # Convert to proper numeric type for comparison
           numeric_value = value.include?(".") ? value.to_f : value.to_i
-
-          # Log unknown column type but numeric value
-          Rails.logger.debug("[DBViewer] Unknown column type #{column_type} with numeric value: #{numeric_value}")
 
           # It's a numeric value, apply numeric operators
           case operator
