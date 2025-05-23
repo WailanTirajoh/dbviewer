@@ -14,7 +14,7 @@ module Dbviewer
     # Initialize the table query operations manager
     # This gives direct access to table query operations when needed
     def table_query_operations
-      @table_query_operations ||= database_manager.instance_variable_get(:@table_query_operations)
+      @table_query_operations ||= database_manager.table_query_operations
     end
 
     # Get the name of the current database

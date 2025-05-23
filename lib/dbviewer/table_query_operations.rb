@@ -1,4 +1,5 @@
 require "dbviewer/error_handler"
+require "dbviewer/table_query_params"
 
 module Dbviewer
   # TableQueryOperations handles CRUD operations and data querying for database tables
@@ -28,33 +29,22 @@ module Dbviewer
 
     # Get records from a table with pagination and sorting
     # @param table_name [String] Name of the table
-    # @param page [Integer] Page number (1-based)
-    # @param order_by [String] Column to sort by
-    # @param direction [String] Sort direction ('ASC' or 'DESC')
-    # @param per_page [Integer] Number of records per page
+    # @param params [TableQueryParams] Query parameters object
     # @return [ActiveRecord::Result] Result set with columns and rows
-    def table_records(table_name, page = 1, order_by = nil, direction = "ASC", per_page = nil, column_filters = nil, max_records = 1000)
-      page = [ 1, page.to_i ].max
-      column_filters ||= {}
-      per_page = (per_page || 25).to_i
-
-      # Ensure we don't fetch too many records for performance/memory reasons
-      per_page = [ per_page, max_records ].min
-
+    def table_records(table_name, params = TableQueryParams.new)
       model = get_model_for(table_name)
       query = model.all
 
       # Apply column filters if provided
-      query = apply_column_filters(query, table_name, column_filters)
+      query = apply_column_filters(query, table_name, params.column_filters)
 
       # Apply sorting if provided
-      if order_by.present? && column_exists?(table_name, order_by)
-        direction = %w[ASC DESC].include?(direction.to_s.upcase) ? direction.to_s.upcase : "ASC"
-        query = query.order("#{connection.quote_column_name(order_by)} #{direction}")
+      if params.order_by.present? && column_exists?(table_name, params.order_by)
+        query = query.order("#{connection.quote_column_name(params.order_by)} #{params.direction}")
       end
 
       # Apply pagination
-      records = query.limit(per_page).offset((page - 1) * per_page)
+      records = query.limit(params.per_page).offset((params.page - 1) * params.per_page)
 
       # Get column names for consistent ordering
       column_names = table_columns(table_name).map { |c| c[:name] }
@@ -185,19 +175,11 @@ module Dbviewer
         end
       end
 
-      query = if adapter =~ /sqlite/
-                # For SQLite, we need to make sure the date format works
-                "SELECT #{date_format} as label, COUNT(*) as count FROM #{table_name}
-                WHERE #{column} IS NOT NULL
-                GROUP BY label
-                ORDER BY MIN(#{column}) DESC LIMIT 30"
-      else
-                # For MySQL and PostgreSQL
-                "SELECT #{date_format} as label, COUNT(*) as count FROM #{table_name}
-                WHERE #{column} IS NOT NULL
-                GROUP BY label
-                ORDER BY MIN(#{column}) DESC LIMIT 30"
-      end
+      # Query works the same for all database adapters
+      query = "SELECT #{date_format} as label, COUNT(*) as count FROM #{table_name}
+               WHERE #{column} IS NOT NULL
+               GROUP BY label
+               ORDER BY MIN(#{column}) DESC LIMIT 30"
 
       begin
         result = @connection.execute(query)

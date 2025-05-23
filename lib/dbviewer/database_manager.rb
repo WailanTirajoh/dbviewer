@@ -9,7 +9,7 @@ module Dbviewer
   # DatabaseManager handles all database interactions for the DBViewer engine
   # It provides methods to access database structure and data
   class DatabaseManager
-    attr_reader :connection, :adapter_name
+    attr_reader :connection, :adapter_name, :table_query_operations
 
     # Initialize the database manager
     def initialize
