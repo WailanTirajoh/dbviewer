@@ -47,7 +47,8 @@ module Dbviewer
       metadata = {
         primary_key: primary_key(table_name),
         indexes: fetch_indexes(table_name),
-        foreign_keys: fetch_foreign_keys(table_name)
+        foreign_keys: fetch_foreign_keys(table_name),
+        reverse_foreign_keys: fetch_reverse_foreign_keys(table_name)
       }
 
       @cache_manager.store_metadata(table_name, metadata)
@@ -99,6 +100,37 @@ module Dbviewer
           primary_key: fk.primary_key
         }
       end
+    end
+
+    # Get reverse foreign keys (tables that reference this table)
+    # @param table_name [String] Name of the table
+    # @return [Array<Hash>] List of reverse foreign keys with details
+    def fetch_reverse_foreign_keys(table_name)
+      reverse_fks = []
+
+      # Get all tables and check their foreign keys
+      tables.each do |other_table|
+        next if other_table == table_name
+
+        begin
+          @connection.foreign_keys(other_table).each do |fk|
+            if fk.to_table == table_name
+              reverse_fks << {
+                name: fk.name,
+                from_table: fk.from_table,
+                to_table: fk.to_table,
+                column: fk.column,
+                primary_key: fk.primary_key,
+                relationship_type: "has_many"
+              }
+            end
+          end
+        rescue => e
+          Rails.logger.error("[DBViewer] Error retrieving foreign keys for table #{other_table}: #{e.message}")
+        end
+      end
+
+      reverse_fks
     end
   end
 end

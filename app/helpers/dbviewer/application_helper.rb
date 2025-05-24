@@ -426,7 +426,7 @@ module Dbviewer
     def render_table_row(row, records, metadata)
       content_tag(:tr) do
         # Start with action column (sticky first column)
-        cells = [ render_action_cell(row, records.columns) ]
+        cells = [ render_action_cell(row, records.columns, metadata) ]
 
         # Add all data cells
         cells += row.each_with_index.map do |cell, cell_index|
@@ -458,7 +458,7 @@ module Dbviewer
     end
 
     # Render action buttons for a record
-    def render_action_cell(row_data, columns)
+    def render_action_cell(row_data, columns, metadata = nil)
       data_attributes = {}
 
       # Create a hash of column_name: value pairs for data attributes
@@ -474,7 +474,9 @@ module Dbviewer
           data: {
             bs_toggle: "modal",
             bs_target: "#recordDetailModal",
-            record_data: data_attributes.to_json
+            record_data: data_attributes.to_json,
+            foreign_keys: metadata && metadata[:foreign_keys] ? metadata[:foreign_keys].to_json : "[]",
+            reverse_foreign_keys: metadata && metadata[:reverse_foreign_keys] ? metadata[:reverse_foreign_keys].to_json : "[]"
           }
         ) do
           content_tag(:i, "", class: "bi bi-eye")
