@@ -7,7 +7,7 @@ module Dbviewer
 
     def analytics
       @analytics = fetch_database_analytics
-      
+
       respond_to do |format|
         format.json { render json: @analytics }
       end
@@ -19,7 +19,7 @@ module Dbviewer
       else
         []
       end
-      
+
       respond_to do |format|
         format.json do
           render json: {

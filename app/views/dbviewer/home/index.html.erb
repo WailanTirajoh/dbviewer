@@ -18,9 +18,9 @@
           <div class="text-start">
             <h5 class="mb-1">Tables</h5>
             <h2 class="mb-0">
-              <div class="spinner-border spinner-border-sm" role="status" id="tables-loading">
-                <span class="visually-hidden">Loading...</span>
-              </div>
+              <span class="skeleton-loader number-loader" id="tables-loading">
+                &nbsp;&nbsp;
+              </span>
               <span id="tables-count" class="d-none">0</span>
             </h2>
           </div>
@@ -37,9 +37,9 @@
           <div class="text-start">
             <h5 class="mb-1">Records</h5>
             <h2 class="mb-0">
-              <div class="spinner-border spinner-border-sm" role="status" id="records-loading">
-                <span class="visually-hidden">Loading...</span>
-              </div>
+              <span class="skeleton-loader number-loader" id="records-loading">
+                &nbsp;&nbsp;&nbsp;&nbsp;
+              </span>
               <span id="records-count" class="d-none">0</span>
             </h2>
           </div>
@@ -56,9 +56,9 @@
           <div class="text-start">
             <h5 class="mb-1">Relationships</h5>
             <h2 class="mb-0">
-              <div class="spinner-border spinner-border-sm" role="status" id="relationships-loading">
-                <span class="visually-hidden">Loading...</span>
-              </div>
+              <span class="skeleton-loader number-loader" id="relationships-loading">
+                &nbsp;&nbsp;
+              </span>
               <span id="relationships-count" class="d-none">0</span>
             </h2>
             <small class="text-muted d-block">Foreign Key Connections</small>
@@ -76,9 +76,9 @@
           <div class="text-start">
             <h5 class="mb-1">Database Size</h5>
             <h2 class="mb-0">
-              <div class="spinner-border spinner-border-sm" role="status" id="size-loading">
-                <span class="visually-hidden">Loading...</span>
-              </div>
+              <span class="skeleton-loader number-loader" id="size-loading">
+                &nbsp;&nbsp;&nbsp;
+              </span>
               <span id="size-count" class="d-none">0</span>
             </h2>
           </div>
@@ -94,11 +94,23 @@
           <h5 class="card-title mb-0">Largest Tables</h5>
         </div>
         <div class="card-body p-0" id="largest-tables-container">
-          <div class="text-center my-4">
-            <div class="spinner-border" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-            <p class="mt-2">Loading table data...</p>
+          <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Table Name</th>
+                  <th class="text-end">Records</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% 10.times do %>
+                  <tr>
+                    <td><div class="skeleton-loader table-cell-loader"></div></td>
+                    <td class="text-end"><div class="skeleton-loader records-loader"></div></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -113,11 +125,25 @@
           </div>
         </div>
         <div class="card-body p-0" id="recent-queries-container">
-          <div class="text-center my-4">
-            <div class="spinner-border" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-            <p class="mt-2">Loading recent queries...</p>
+          <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Query</th>
+                  <th class="text-end" style="width: 120px">Duration</th>
+                  <th class="text-end" style="width: 180px">Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% 5.times do %>
+                  <tr>
+                    <td><div class="skeleton-loader query-cell-loader"></div></td>
+                    <td class="text-end"><div class="skeleton-loader duration-cell-loader"></div></td>
+                    <td class="text-end"><div class="skeleton-loader time-cell-loader"></div></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -371,5 +397,49 @@ document.addEventListener('DOMContentLoaded', function() {
   .spinner-border-sm {
     width: 1rem;
     height: 1rem;
+  }
+  
+  /* Skeleton loader styles */
+  .skeleton-loader {
+    display: inline-block;
+    height: 1.2em;
+    width: 100%;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%);
+    background-size: 400% 100%;
+    animation: skeleton-loading 1.2s ease-in-out infinite;
+    border-radius: 4px;
+  }
+  .number-loader {
+    width: 2.5em;
+    height: 1.5em;
+    margin-bottom: 0.2em;
+  }
+  .table-cell-loader {
+    width: 6em;
+    height: 1.2em;
+  }
+  .records-loader {
+    width: 3em;
+    height: 1.2em;
+  }
+  .query-cell-loader {
+    width: 12em;
+    height: 1.2em;
+  }
+  .duration-cell-loader {
+    width: 4em;
+    height: 1.2em;
+  }
+  .time-cell-loader {
+    width: 7em;
+    height: 1.2em;
+  }
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0 50%;
+    }
   }
 </style>
