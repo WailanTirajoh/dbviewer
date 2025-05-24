@@ -367,12 +367,19 @@ module Dbviewer
       return content_tag(:tr) { content_tag(:th, "No columns available") } unless records&.columns
 
       content_tag(:tr) do
-        records.columns.map do |column_name|
+        headers = records.columns.map do |column_name|
           is_sorted = order_by == column_name
           content_tag(:th, class: "px-3 py-2 sortable-column #{is_sorted ? 'sorted' : ''}") do
             sortable_column_header(column_name, order_by, order_direction, table_name, current_page, per_page, column_filters)
           end
-        end.join.html_safe
+        end
+
+        # Add action column header
+        headers << content_tag(:th, class: "px-3 py-2 text-center", width: "60px") do
+          content_tag(:span, "Actions")
+        end
+
+        headers.join.html_safe
       end
     end
 
@@ -381,11 +388,16 @@ module Dbviewer
       return content_tag(:tr) { content_tag(:th, "") } unless records&.columns
 
       content_tag(:tr, class: "column-filters") do
-        records.columns.map do |column_name|
+        filters = records.columns.map do |column_name|
           content_tag(:th, class: "p-0") do
             render_column_filter(form, column_name, columns, column_filters)
           end
-        end.join.html_safe
+        end
+
+        # Add placeholder for action column
+        filters << content_tag(:th, "", class: "p-0")
+
+        filters.join.html_safe
       end
     end
 
@@ -413,10 +425,15 @@ module Dbviewer
     # Render a table row with cells
     def render_table_row(row, records, metadata)
       content_tag(:tr) do
-        row.each_with_index.map do |cell, cell_index|
+        cells = row.each_with_index.map do |cell, cell_index|
           column_name = records.columns[cell_index]
           render_table_cell(cell, column_name, metadata)
-        end.join.html_safe
+        end
+
+        # Add action column
+        cells << render_action_cell(row, records.columns)
+
+        cells.join.html_safe
       end
     end
 
@@ -433,6 +450,31 @@ module Dbviewer
           records.rows.map do |row|
             render_table_row(row, records, metadata)
           end.join.html_safe
+        end
+      end
+    end
+
+    # Render action buttons for a record
+    def render_action_cell(row_data, columns)
+      data_attributes = {}
+
+      # Create a hash of column_name: value pairs for data attributes
+      columns.each_with_index do |column_name, index|
+        data_attributes[column_name] = row_data[index].to_s
+      end
+
+      content_tag(:td, class: "text-center action-column") do
+        button_tag(
+          type: "button",
+          class: "btn btn-sm btn-outline-primary view-record-btn",
+          title: "View Record Details",
+          data: {
+            bs_toggle: "modal",
+            bs_target: "#recordDetailModal",
+            record_data: data_attributes.to_json
+          }
+        ) do
+          content_tag(:i, "", class: "bi bi-eye")
         end
       end
     end
