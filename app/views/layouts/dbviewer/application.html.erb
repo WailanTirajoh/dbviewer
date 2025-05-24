@@ -410,6 +410,46 @@
       top: 0; 
       z-index: 1;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      width: 100%;
+    }
+    
+    /* Ensure the scrollable table headers have solid backgrounds */
+    [data-bs-theme="light"] .dbviewer-scrollable thead {
+      background-color: #f1f3f5;
+    }
+    
+    [data-bs-theme="dark"] .dbviewer-scrollable thead {
+      background-color: #343a40;
+    }
+    
+    /* Ensure individual th cells also have proper background */
+    .dbviewer-scrollable thead th {
+      background-color: transparent;
+    }
+    
+    /* Specific fix for sticky table headers to ensure solid backgrounds */
+    .table-responsive .table thead,
+    .dbviewer-scrollable .table thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    /* Additional specificity for table headers in dark mode */
+    [data-bs-theme="light"] .table-responsive .table thead th,
+    [data-bs-theme="light"] .dbviewer-scrollable .table thead th {
+      background-color: #f1f3f5;
+    }
+    
+    [data-bs-theme="dark"] .table-responsive .table thead th,
+    [data-bs-theme="dark"] .dbviewer-scrollable .table thead th {
+      background-color: #343a40;
+    }
+    
+    /* Ensure borders appear properly with sticky headers */
+    .table thead th {
+      box-shadow: inset 0 1px 0 var(--bs-border-color), 
+                 inset 0 -1px 0 var(--bs-border-color);
     }
     
     /* Enhanced badge styling */
@@ -434,11 +474,11 @@
     
     /* Table header styling */
     .dbviewer-table-header {
-      background-color: rgba(0, 0, 0, 0.05);
+      background-color: #f1f3f5;
     }
     
     [data-bs-theme="dark"] .dbviewer-table-header {
-      background-color: rgba(255, 255, 255, 0.05);
+      background-color: #343a40;
     }
     
     /* List group styling for dark mode */
@@ -451,7 +491,7 @@
     [data-bs-theme="dark"] .dbviewer-table-header {
       position: sticky;
       top: 0;
-      background: #212529;
+      background: #343a40;
       z-index: 1;
     }
     
@@ -837,18 +877,22 @@
       border-spacing: 0;
     }
     
+    .table thead {
+      background-color: #f1f3f5;
+    }
+    
     .table thead th {
       padding: 1rem;
       font-weight: 600;
       border-top: 0;
       vertical-align: middle;
-      background: var(--bs-card-cap-bg);
       letter-spacing: 0.01em;
       font-size: 0.88rem;
       text-transform: uppercase;
       position: sticky;
       top: 0;
       z-index: 5;
+      background-color: inherit; /* Ensure it inherits from parent thead */
     }
     
     .table tbody td {
@@ -862,11 +906,19 @@
       background-color: rgba(0, 0, 0, 0.02);
     }
     
+    [data-bs-theme="light"] .table thead {
+      background-color: #f1f3f5;
+    }
+    
     [data-bs-theme="light"] .table thead th {
       color: #495057;
       border-color: #dee2e6;
       border-bottom: 2px solid #dee2e6;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+    
+    [data-bs-theme="dark"] .table thead {
+      background-color: #343a40;
     }
     
     [data-bs-theme="dark"] .table thead th {
