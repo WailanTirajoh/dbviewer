@@ -1,3 +1,5 @@
+require "csv"
+
 module Dbviewer
   module DatabaseOperations
     extend ActiveSupport::Concern
@@ -373,39 +375,19 @@ module Dbviewer
 
     # Export table data to CSV
     def export_table_to_csv(table_name, query_params = nil, include_headers = true)
-      require "csv"
+      records = database_manager.query_operations.table_records(table_name, query_params)
 
-      begin
-        if query_params.is_a?(Dbviewer::TableQueryParams)
-          # Use the query params object directly
-          records = database_manager.query_operations.table_records(table_name, query_params)
-        else
-          # Legacy support for the old method signature
-          limit = query_params.is_a?(Numeric) ? query_params : 10000
-          records = database_manager.table_records(
-            table_name,
-            1, # First page
-            nil, # Default sorting
-            "asc",
-            limit # Limit number of records
-          )
+      csv_data = CSV.generate do |csv|
+        # Add headers if requested
+        csv << records.columns if include_headers
+
+        # Add rows
+        records.rows.each do |row|
+          csv << row.map { |cell| format_csv_value(cell) }
         end
-
-        csv_data = CSV.generate do |csv|
-          # Add headers if requested
-          csv << records.columns if include_headers
-
-          # Add rows
-          records.rows.each do |row|
-            csv << row.map { |cell| format_csv_value(cell) }
-          end
-        end
-
-        csv_data
-      rescue => e
-        Rails.logger.error("CSV Export error for table #{table_name}: #{e.message}")
-        raise "Error exporting to CSV: #{e.message}"
       end
+
+      csv_data
     end
 
     private

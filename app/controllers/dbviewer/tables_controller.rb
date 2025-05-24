@@ -3,22 +3,14 @@ module Dbviewer
     include Dbviewer::PaginationConcern
 
     before_action :set_table_name, except: [ :index ]
+    before_action :set_query_filters, only: [ :show, :export_csv ]
+    before_action :set_global_filters, only: [ :show, :export_csv ]
 
     def index
       @tables = fetch_tables_with_stats(include_record_counts: true)
     end
 
     def show
-      set_pagination_params
-      set_sorting_params
-
-      # Get column filters from params first
-      @column_filters = params[:column_filters].presence ? params[:column_filters].to_enum.to_h : {}
-
-      # Then apply global creation filters (this will modify @column_filters)
-      set_global_filters
-
-      # Now create the query params with the combined filters
       query_params = Dbviewer::TableQueryParams.new(
         page: @current_page,
         per_page: @per_page,
@@ -33,7 +25,7 @@ module Dbviewer
       @metadata = fetch_table_metadata(@table_name)
 
       if @records.nil?
-        column_names = @columns.map { |c| c[:name] }
+        column_names = @columns.map { |column| column[:name] }
         @records = ActiveRecord::Result.new(column_names, [])
       end
 
@@ -57,28 +49,11 @@ module Dbviewer
     end
 
     def mini_erd
-      begin
-        @erd_data = fetch_mini_erd_for_table(@table_name)
+      @erd_data = fetch_mini_erd_for_table(@table_name)
 
-        if @erd_data[:error].present?
-          Rails.logger.error("Mini ERD error: #{@erd_data[:error]}")
-        end
-
-        respond_to do |format|
-          format.json { render json: @erd_data }
-          format.html { render layout: false }
-        end
-      rescue => e
-        Rails.logger.error("Error generating Mini ERD: #{e.message}")
-        Rails.logger.error(e.backtrace.join("\n"))
-
-        @error_message = e.message
-        @erd_data = { tables: [], relationships: [], error: @error_message }
-
-        respond_to do |format|
-          format.json { render json: { error: @error_message }, status: :internal_server_error }
-          format.html { render layout: false }
-        end
+      respond_to do |format|
+        format.json { render json: @erd_data }
+        format.html { render layout: false }
       end
     end
 
@@ -100,36 +75,19 @@ module Dbviewer
         return
       end
 
-      limit = (params[:limit] || 10000).to_i
       include_headers = params[:include_headers] != "0"
-
-      # Apply global creation filters
-      set_global_filters
-
-      # Create query parameters for export
       query_params = Dbviewer::TableQueryParams.new(
-        page: 1,
-        per_page: limit,
-        order_by: nil,
-        direction: "asc",
+        page: @current_page,
+        per_page: (params[:limit] || 10000).to_i,
+        order_by: @order_by,
+        direction: @order_direction,
         column_filters: @column_filters.reject { |_, v| v.blank? }
       )
-
-      # Get filtered data for export
       csv_data = export_table_to_csv(@table_name, query_params, include_headers)
 
-      # Set filename with timestamp for uniqueness
       timestamp = Time.now.strftime("%Y%m%d%H%M%S")
+      filename = "#{@table_name}_#{timestamp}.csv"
 
-      # Add filter info to filename if filters are applied
-      filename_suffix = ""
-      if @creation_filter_start.present? || @creation_filter_end.present?
-        filename_suffix = "_filtered"
-      end
-
-      filename = "#{@table_name}#{filename_suffix}_#{timestamp}.csv"
-
-      # Send data as file
       send_data csv_data,
                 type: "text/csv; charset=utf-8; header=present",
                 disposition: "attachment; filename=#{filename}"
@@ -139,6 +97,18 @@ module Dbviewer
 
     def set_table_name
       @table_name = params[:id]
+    end
+
+    def set_query_filters
+      @current_page = [ 1, params[:page].to_i ].max
+      @per_page = params[:per_page] ? params[:per_page].to_i : self.class.default_per_page
+      @per_page = self.class.default_per_page unless self.class.per_page_options.include?(@per_page)
+      @order_by = params[:order_by].presence ||
+                  database_manager.primary_key(@table_name).presence ||
+                  (@columns.first ? @columns.first[:name] : nil)
+      @order_direction = params[:order_direction].upcase if params[:order_direction].present?
+      @order_direction = "ASC" unless self.class::VALID_SORT_DIRECTIONS.include?(@order_direction)
+      @column_filters = params[:column_filters].presence ? params[:column_filters].to_enum.to_h : {}
     end
 
     def set_global_filters
@@ -166,31 +136,25 @@ module Dbviewer
 
       # Apply creation filters to column_filters if the table has a created_at column
       if has_timestamp_column?(@table_name) && (@creation_filter_start.present? || @creation_filter_end.present?)
-        # Clear any existing created_at filters to avoid conflicts
-        @column_filters.delete("created_at")
-        @column_filters.delete("created_at_operator")
-        @column_filters.delete("created_at_end")
+        # Clear any existing created_at filters
+        %w[created_at created_at_operator created_at_end].each { |key| @column_filters.delete(key) }
 
-        if @creation_filter_start.present? && @creation_filter_end.present?
-          # If both start and end are present, set up a range filter
-          @column_filters["created_at"] = @creation_filter_start
-          @column_filters["created_at_end"] = @creation_filter_end
-          # No need for operator when using start and end together
-          Rails.logger.info("[DBViewer] Setting creation filter range: #{@creation_filter_start} to #{@creation_filter_end}")
-        elsif @creation_filter_start.present?
-          # Only start date is present
-          @column_filters["created_at"] = @creation_filter_start
-          @column_filters["created_at_operator"] = "gte" # Greater than or equal
-          Rails.logger.info("[DBViewer] Setting creation filter start: #{@creation_filter_start}")
-        elsif @creation_filter_end.present?
-          # Only end date is present
-          @column_filters["created_at"] = @creation_filter_end
-          @column_filters["created_at_operator"] = "lte" # Less than or equal
-          Rails.logger.info("[DBViewer] Setting creation filter end: #{@creation_filter_end}")
-        end
-      else
-        if @creation_filter_start.present? || @creation_filter_end.present?
-          Rails.logger.info("[DBViewer] Creation filter present but table #{@table_name} has no created_at column")
+        case
+        when @creation_filter_start.present? && @creation_filter_end.present?
+          @column_filters.merge!({
+            "created_at" => @creation_filter_start,
+            "created_at_end" => @creation_filter_end
+          })
+        when @creation_filter_start.present?
+          @column_filters.merge!({
+            "created_at" => @creation_filter_start,
+            "created_at_operator" => "gte"
+          })
+        when @creation_filter_end.present?
+          @column_filters.merge!({
+            "created_at" => @creation_filter_end,
+            "created_at_operator" => "lte"
+          })
         end
       end
     end
