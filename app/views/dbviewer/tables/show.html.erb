@@ -204,20 +204,7 @@
 <div class="dbviewer-card card mb-4">
   <div class="card-header d-flex justify-content-between align-items-center">
     <h5 class="mb-0">
-      <% 
-        # Build the URL query parameters including creation filters
-        url_params = "per_page=' + this.value + '&page=1&order_by=#{@order_by}&order_direction=#{@order_direction}"
-        
-        # Add column filters
-        if @column_filters.reject { |_, v| v.blank? }.any?
-          url_params += "&" + @column_filters.reject { |_, v| v.blank? }.map { |k, v| "column_filters[#{k}]=#{CGI.escape(v.to_s)}" }.join("&")
-        end
-        
-        # Add creation filters
-        url_params += "&creation_filter_start=#{@creation_filter_start}" if @creation_filter_start.present?
-        url_params += "&creation_filter_end=#{@creation_filter_end}" if @creation_filter_end.present?
-      %>
-      <select id="per-page-select" class="form-select form-select-sm" onchange="window.location.href='<%= table_path(@table_name) %>?<%= url_params %>'">
+      <select id="per-page-select" class="form-select form-select-sm" onchange="window.location.href='<%= table_path(@table_name) %>?<%= per_page_url_params(@table_name) %>'">
         <% Dbviewer::TablesController.per_page_options.each do |option| %>
           <option value="<%= option %>" <%= 'selected' if @per_page == option %>><%= option %></option>
         <% end %>
@@ -248,192 +235,14 @@
           
           <table class="table table-bordered table-striped rounded-none">
               <thead class="dbviewer-table-header">
-                <tr>
-                  <% if @records && @records.columns %>
-                    <% @records.columns.each do |column_name| %>
-                      <% is_sorted = @order_by == column_name %>
-                      <th class="px-3 py-2 sortable-column <%= 'sorted' if is_sorted %>">
-                        <%= sortable_column_header(column_name, @order_by, @order_direction, @table_name, @current_page, @per_page, @column_filters) %>
-                      </th>
-                    <% end %>
-                  <% else %>
-                    <th>No columns available</th>
-                  <% end %>
-                </tr>
-                <tr class="column-filters">
-                  <% if @records && @records.columns %>
-                    <% @records.columns.each do |column_name| %>
-                      <th class="p-0">
-                        <% 
-                          # Find column info to detect the type
-                          column_info = @columns.find { |c| c[:name].to_s == column_name.to_s } if @columns
-                          column_type = column_info ? column_info[:type].to_s.downcase : nil
-                        %>
-
-                        <div class="filter-input-group">
-                          <% 
-                            # Define the default operator and available operators based on column type
-                            default_operator = if column_type && column_type =~ /char|text|string|uuid|enum/i
-                              "contains"
-                            else
-                              "eq"
-                            end
-                            
-                            # Get previously selected operator or default
-                            selected_operator = @column_filters["#{column_name}_operator"]
-                            selected_operator = default_operator if selected_operator.nil? || selected_operator == "default"
-                            
-                            # Define operator options based on column type
-                            if column_type && (column_type =~ /datetime/ || column_type =~ /^date$/ || column_type =~ /^time$/)
-                              # Date/Time operators
-                              operator_options = [
-                                ["=", "eq"],
-                                ["≠", "neq"],
-                                ["<", "lt"],
-                                [">", "gt"],
-                                ["≤", "lte"],
-                                ["≥", "gte"]
-                              ]
-                            elsif column_type && column_type =~ /int|float|decimal|double|number|numeric|real|money|bigint|smallint|tinyint|mediumint|bit/i
-                              # Numeric operators
-                              operator_options = [
-                                ["=", "eq"],
-                                ["≠", "neq"],
-                                ["<", "lt"],
-                                [">", "gt"],
-                                ["≤", "lte"],
-                                ["≥", "gte"]
-                              ]
-                            else
-                              # Text operators
-                              operator_options = [
-                                ["contains", "contains"],
-                                ["not contains", "not_contains"],
-                                ["=", "eq"],
-                                ["≠", "neq"],
-                                ["starts with", "starts_with"],
-                                ["ends with", "ends_with"]
-                              ]
-                            end
-                          %>
-                          
-                          <%= form.select "column_filters[#{column_name}_operator]", 
-                              options_for_select(operator_options, selected_operator),
-                              { include_blank: false },
-                              { class: "form-select form-select-sm operator-select" } %>
-                          
-                          <% if column_type && column_type =~ /datetime/ %>
-                            <%= form.datetime_local_field "column_filters[#{column_name}]", 
-                                value: @column_filters[column_name], 
-                                class: "form-control form-control-sm column-filter rounded-0",
-                                data: { column: column_name } %>
-                          <% elsif column_type && column_type =~ /^date$/ %>
-                            <%= form.date_field "column_filters[#{column_name}]", 
-                                value: @column_filters[column_name], 
-                                class: "form-control form-control-sm column-filter rounded-0",
-                                data: { column: column_name } %>
-                          <% elsif column_type && column_type =~ /^time$/ %>
-                            <%= form.time_field "column_filters[#{column_name}]", 
-                                value: @column_filters[column_name], 
-                                class: "form-control form-control-sm column-filter rounded-0",
-                                data: { column: column_name } %>
-                          <% else %>
-                            <%= form.text_field "column_filters[#{column_name}]", 
-                                value: @column_filters[column_name], 
-                                placeholder: "",
-                                class: "form-control form-control-sm column-filter rounded-0",
-                                data: { column: column_name } %>
-                          <% end %>
-                        </div>
-                      </th>
-                    <% end %>
-                  <% else %>
-                    <th></th>
-                  <% end %>
-                </tr>
+                <%= render_sortable_header_row(@records, @order_by, @order_direction, @table_name, @current_page, @per_page, @column_filters) %>
+                <%= render_column_filters_row(form, @records, @columns, @column_filters) %>
               </thead>
-              <tbody>
-                <% if @records.nil? || @records.rows.nil? || @records.empty? %>
-                  <tr>
-                    <td colspan="100%" class="text-center">No records found or table is empty.</td>
-                  </tr>
-                <% end %>
-                <% if @records && @records.rows %>
-                  <% @records.rows.each do |row| %>
-                    <tr>
-                        <% row.each_with_index do |cell, cell_index| %>
-                          <% 
-                            column_name = @records.columns[cell_index]
-                            cell_value = format_cell_value(cell)
-                            
-                            # Check if this column is a foreign key
-                            foreign_key = @metadata && @metadata[:foreign_keys] ? 
-                                          @metadata[:foreign_keys].find { |fk| fk[:column] == column_name } : 
-                                          nil
-                          %>
-                          <% if foreign_key && !cell.nil? %>
-                            <% 
-                              # Build params for foreign key links with creation filters
-                              fk_params = { column_filters: { foreign_key[:primary_key] => cell } }
-                              
-                              # Add creation filters if they exist
-                              fk_params[:creation_filter_start] = @creation_filter_start if @creation_filter_start.present?
-                              fk_params[:creation_filter_end] = @creation_filter_end if @creation_filter_end.present?
-                            %>
-                            <td title="<%= cell_value %> (Click to view referenced record)">
-                              <%= link_to cell_value, 
-                                  table_path(foreign_key[:to_table], fk_params), 
-                                  class: "text-decoration-none foreign-key-link" %>
-                              <i class="bi bi-link-45deg text-muted small"></i>
-                            </td>
-                          <% else %>
-                            <td title="<%= cell_value %>"><%= cell_value %></td>
-                          <% end %>
-                      <% end %>
-                    </tr>
-                  <% end %>
-                <% end %>
-            </tbody>
+              <%= render_table_body(@records, @metadata) %>
         </table>
         <% end %> <!-- End of form_with -->
       </div>
-      
-      <% if @total_pages && @total_pages > 1 %>
-        <%
-          # Prepare common URL params including creation filters
-          common_params = {
-            order_by: @order_by, 
-            order_direction: @order_direction, 
-            per_page: @per_page, 
-            column_filters: @column_filters
-          }
-          
-          # Add creation filters if they exist
-          common_params[:creation_filter_start] = @creation_filter_start if @creation_filter_start.present?
-          common_params[:creation_filter_end] = @creation_filter_end if @creation_filter_end.present?
-        %>
-        <nav aria-label="Page navigation">
-          <ul class="pagination justify-content-center">
-            <li class="page-item <%= 'disabled' if @current_page == 1 %>">
-              <%= link_to '«', table_path(@table_name, common_params.merge(page: [@current_page - 1, 1].max)), class: 'page-link' %>
-            </li>
-            
-            <% start_page = [1, @current_page - 2].max %>
-            <% end_page = [start_page + 4, @total_pages].min %>
-            <% start_page = [1, end_page - 4].max %>
-            
-            <% (start_page..end_page).each do |page_num| %>
-              <li class="page-item <%= 'active' if page_num == @current_page %>">
-                <%= link_to page_num, table_path(@table_name, common_params.merge(page: page_num)), class: 'page-link' %>
-              </li>
-            <% end %>
-            
-            <li class="page-item <%= 'disabled' if @current_page == @total_pages %>">
-              <%= link_to '»', table_path(@table_name, common_params.merge(page: [@current_page + 1, @total_pages].min)), class: 'page-link' %>
-            </li>
-          </ul>
-        </nav>
-      <% end %>
+      <%= render_pagination(@table_name, @current_page, @total_pages, common_params) %>
     </div>
   </div>
 </div>
@@ -447,24 +256,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Record Creation Timeline</h5>
           <div>
-            <% 
-              # Build common params for time grouping links
-              time_params = {
-                page: @current_page, 
-                order_by: @order_by, 
-                order_direction: @order_direction, 
-                per_page: @per_page
-              }
-              
-              # Add creation filters if they exist
-              time_params[:creation_filter_start] = @creation_filter_start if @creation_filter_start.present?
-              time_params[:creation_filter_end] = @creation_filter_end if @creation_filter_end.present?
-            %>
-            <div class="btn-group btn-group-sm" role="group" aria-label="Time grouping">
-              <%= link_to "Hourly", table_path(@table_name, time_params.merge(time_group: "hourly")), class: "btn btn-outline-primary #{@time_grouping == 'hourly' ? 'active' : ''}" %>
-              <%= link_to "Daily", table_path(@table_name, time_params.merge(time_group: "daily")), class: "btn btn-outline-primary #{@time_grouping == 'daily' ? 'active' : ''}" %>
-              <%= link_to "Weekly", table_path(@table_name, time_params.merge(time_group: "weekly")), class: "btn btn-outline-primary #{@time_grouping == 'weekly' ? 'active' : ''}" %>
-            </div>
+            <%= time_grouping_links(@table_name, @time_grouping) %>
           </div>
         </div>
         <div class="card-body">

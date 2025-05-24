@@ -14,6 +14,110 @@ module Dbviewer
       @database_manager ||= ::Dbviewer::DatabaseManager.new
     end
 
+    # Extract column type from columns info
+    def column_type_from_info(column_name, columns)
+      return nil unless columns.present?
+
+      column_info = columns.find { |c| c[:name].to_s == column_name.to_s }
+      column_info ? column_info[:type].to_s.downcase : nil
+    end
+
+    # Determine default operator based on column type
+    def default_operator_for_column_type(column_type)
+      if column_type && column_type =~ /char|text|string|uuid|enum/i
+        "contains"
+      else
+        "eq"
+      end
+    end
+
+    # Generate operator options based on column type
+    def operator_options_for_column_type(column_type)
+      if column_type && (column_type =~ /datetime/ || column_type =~ /^date$/ || column_type =~ /^time$/)
+        # Date/Time operators
+        [
+          [ "=", "eq" ],
+          [ "≠", "neq" ],
+          [ "<", "lt" ],
+          [ ">", "gt" ],
+          [ "≤", "lte" ],
+          [ "≥", "gte" ]
+        ]
+      elsif column_type && column_type =~ /int|float|decimal|double|number|numeric|real|money|bigint|smallint|tinyint|mediumint|bit/i
+        # Numeric operators
+        [
+          [ "=", "eq" ],
+          [ "≠", "neq" ],
+          [ "<", "lt" ],
+          [ ">", "gt" ],
+          [ "≤", "lte" ],
+          [ "≥", "gte" ]
+        ]
+      else
+        # Text operators
+        [
+          [ "contains", "contains" ],
+          [ "not contains", "not_contains" ],
+          [ "=", "eq" ],
+          [ "≠", "neq" ],
+          [ "starts with", "starts_with" ],
+          [ "ends with", "ends_with" ]
+        ]
+      end
+    end
+
+    # Render column filter input based on column type
+    def render_column_filter_input(form, column_name, column_type, column_filters)
+      if column_type && column_type =~ /datetime/
+        form.datetime_local_field("column_filters[#{column_name}]",
+          value: column_filters[column_name],
+          class: "form-control form-control-sm column-filter rounded-0",
+          data: { column: column_name })
+      elsif column_type && column_type =~ /^date$/
+        form.date_field("column_filters[#{column_name}]",
+          value: column_filters[column_name],
+          class: "form-control form-control-sm column-filter rounded-0",
+          data: { column: column_name })
+      elsif column_type && column_type =~ /^time$/
+        form.time_field("column_filters[#{column_name}]",
+          value: column_filters[column_name],
+          class: "form-control form-control-sm column-filter rounded-0",
+          data: { column: column_name })
+      else
+        form.text_field("column_filters[#{column_name}]",
+          value: column_filters[column_name],
+          placeholder: "",
+          class: "form-control form-control-sm column-filter rounded-0",
+          data: { column: column_name })
+      end
+    end
+
+    # Render operator select for column filter
+    def render_operator_select(form, column_name, column_type, column_filters)
+      # Get previously selected operator or default
+      default_operator = default_operator_for_column_type(column_type)
+      selected_operator = column_filters["#{column_name}_operator"]
+      selected_operator = default_operator if selected_operator.nil? || selected_operator == "default"
+
+      # Get appropriate options
+      operator_options = operator_options_for_column_type(column_type)
+
+      form.select("column_filters[#{column_name}_operator]",
+        options_for_select(operator_options, selected_operator),
+        { include_blank: false },
+        { class: "form-select form-select-sm operator-select" })
+    end
+
+    # Render complete filter input group for a column
+    def render_column_filter(form, column_name, columns, column_filters)
+      column_type = column_type_from_info(column_name, columns)
+
+      content_tag(:div, class: "filter-input-group") do
+        render_operator_select(form, column_name, column_type, column_filters) +
+        render_column_filter_input(form, column_name, column_type, column_filters)
+      end
+    end
+
     def format_cell_value(value)
       return "NULL" if value.nil?
       return value.to_s.truncate(100) unless value.is_a?(String)
@@ -38,6 +142,91 @@ module Dbviewer
         end
       else
         value.to_s.truncate(100)
+      end
+    end
+
+    # Common parameters for pagination and filtering
+    def common_params(options = {})
+      params = {
+        order_by: @order_by,
+        order_direction: @order_direction,
+        per_page: @per_page,
+        column_filters: @column_filters
+      }.merge(options)
+
+      # Add creation filters if they exist
+      params[:creation_filter_start] = @creation_filter_start if @creation_filter_start.present?
+      params[:creation_filter_end] = @creation_filter_end if @creation_filter_end.present?
+
+      params
+    end
+
+    # Render pagination UI
+    def render_pagination(table_name, current_page, total_pages, params = {})
+      return unless total_pages && total_pages > 1
+
+      content_tag(:nav, 'aria-label': "Page navigation") do
+        content_tag(:ul, class: "pagination justify-content-center") do
+          prev_link = content_tag(:li, class: "page-item #{current_page == 1 ? 'disabled' : ''}") do
+            link_to "«", table_path(table_name, params.merge(page: [ current_page - 1, 1 ].max)), class: "page-link"
+          end
+
+          # Calculate page range to display
+          start_page = [ 1, current_page - 2 ].max
+          end_page = [ start_page + 4, total_pages ].min
+          start_page = [ 1, end_page - 4 ].max
+
+          # Generate page links
+          page_links = (start_page..end_page).map do |page_num|
+            content_tag(:li, class: "page-item #{page_num == current_page ? 'active' : ''}") do
+              link_to page_num, table_path(table_name, params.merge(page: page_num)), class: "page-link"
+            end
+          end.join.html_safe
+
+          next_link = content_tag(:li, class: "page-item #{current_page == total_pages ? 'disabled' : ''}") do
+            link_to "»", table_path(table_name, params.merge(page: [ current_page + 1, total_pages ].min)), class: "page-link"
+          end
+
+          prev_link + page_links + next_link
+        end
+      end
+    end
+
+    # Generate URL parameters for per-page dropdown
+    def per_page_url_params(table_name)
+      # Start with the dynamic part for the select element
+      url_params = "per_page=' + this.value + '&page=1"
+
+      # Add all other common parameters except per_page and page which we already set
+      params = common_params.except(:per_page, :page)
+
+      # Convert the params hash to URL parameters
+      params.each do |key, value|
+        if key == :column_filters && value.is_a?(Hash) && value.reject { |_, v| v.blank? }.any?
+          value.reject { |_, v| v.blank? }.each do |filter_key, filter_value|
+            url_params += "&column_filters[#{filter_key}]=#{CGI.escape(filter_value.to_s)}"
+          end
+        elsif value.present?
+          url_params += "&#{key}=#{CGI.escape(value.to_s)}"
+        end
+      end
+
+      url_params
+    end
+
+    # Render time grouping links
+    def time_grouping_links(table_name, current_grouping)
+      params = common_params
+
+      content_tag(:div, class: "btn-group btn-group-sm", role: "group", 'aria-label': "Time grouping") do
+        [
+          link_to("Hourly", table_path(table_name, params.merge(time_group: "hourly")),
+                 class: "btn btn-outline-primary #{current_grouping == 'hourly' ? 'active' : ''}"),
+          link_to("Daily", table_path(table_name, params.merge(time_group: "daily")),
+                 class: "btn btn-outline-primary #{current_grouping == 'daily' ? 'active' : ''}"),
+          link_to("Weekly", table_path(table_name, params.merge(time_group: "weekly")),
+                 class: "btn btn-outline-primary #{current_grouping == 'weekly' ? 'active' : ''}")
+        ].join.html_safe
       end
     end
 
@@ -159,23 +348,8 @@ module Dbviewer
         "none"
       end
 
-      # Build parameters for the sort link
-      sort_params = {
-        order_by: column_name,
-        order_direction: sort_direction,
-        page: current_page,
-        per_page: per_page,
-        column_filters: column_filters
-      }
-
-      # Add creation filter parameters if they're in the controller
-      if defined?(@creation_filter_start) && @creation_filter_start.present?
-        sort_params[:creation_filter_start] = @creation_filter_start
-      end
-
-      if defined?(@creation_filter_end) && @creation_filter_end.present?
-        sort_params[:creation_filter_end] = @creation_filter_end
-      end
+      # Use common_params helper to build parameters
+      sort_params = common_params(order_by: column_name, order_direction: sort_direction)
 
       link_to table_path(table_name, sort_params),
         class: "d-flex align-items-center text-decoration-none text-reset column-sort-link",
@@ -185,6 +359,81 @@ module Dbviewer
         tabindex: "0" do
           content_tag(:span, column_name, class: "column-name") +
           content_tag(:span, sort_icon(column_name, current_order_by, current_direction), class: "sort-icon-container")
+      end
+    end
+
+    # Render a complete table header row with sortable columns
+    def render_sortable_header_row(records, order_by, order_direction, table_name, current_page, per_page, column_filters)
+      return content_tag(:tr) { content_tag(:th, "No columns available") } unless records&.columns
+
+      content_tag(:tr) do
+        records.columns.map do |column_name|
+          is_sorted = order_by == column_name
+          content_tag(:th, class: "px-3 py-2 sortable-column #{is_sorted ? 'sorted' : ''}") do
+            sortable_column_header(column_name, order_by, order_direction, table_name, current_page, per_page, column_filters)
+          end
+        end.join.html_safe
+      end
+    end
+
+    # Render the column filters row
+    def render_column_filters_row(form, records, columns, column_filters)
+      return content_tag(:tr) { content_tag(:th, "") } unless records&.columns
+
+      content_tag(:tr, class: "column-filters") do
+        records.columns.map do |column_name|
+          content_tag(:th, class: "p-0") do
+            render_column_filter(form, column_name, columns, column_filters)
+          end
+        end.join.html_safe
+      end
+    end
+
+    # Render a cell that may include a foreign key link
+    def render_table_cell(cell, column_name, metadata)
+      cell_value = format_cell_value(cell)
+      foreign_key = metadata && metadata[:foreign_keys] ? 
+                    metadata[:foreign_keys].find { |fk| fk[:column] == column_name } : 
+                    nil
+
+      if foreign_key && !cell.nil?
+        fk_params = { column_filters: { foreign_key[:primary_key] => cell } }
+        fk_params = fk_params.merge(common_params.except(:column_filters))
+        
+        content_tag(:td, title: "#{cell_value} (Click to view referenced record)") do
+          link_to(cell_value, table_path(foreign_key[:to_table], fk_params), 
+                  class: "text-decoration-none foreign-key-link") +
+          content_tag(:i, "", class: "bi bi-link-45deg text-muted small")
+        end
+      else
+        content_tag(:td, cell_value, title: cell_value)
+      end
+    end
+
+    # Render a table row with cells
+    def render_table_row(row, records, metadata)
+      content_tag(:tr) do
+        row.each_with_index.map do |cell, cell_index|
+          column_name = records.columns[cell_index]
+          render_table_cell(cell, column_name, metadata)
+        end.join.html_safe
+      end
+    end
+
+    # Render the entire table body with rows
+    def render_table_body(records, metadata)
+      if records.nil? || records.rows.nil? || records.empty?
+        content_tag(:tbody) do
+          content_tag(:tr) do
+            content_tag(:td, "No records found or table is empty.", colspan: "100%", class: "text-center")
+          end
+        end
+      else
+        content_tag(:tbody) do
+          records.rows.map do |row|
+            render_table_row(row, records, metadata)
+          end.join.html_safe
+        end
       end
     end
   end
