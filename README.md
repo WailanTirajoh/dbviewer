@@ -1,3 +1,5 @@
+![dbviewer](https://github.com/user-attachments/assets/665c1a65-aab3-4a7e-aa54-b42e871cb3d0)
+
 # 👁️ DBViewer
 
 DBViewer is a powerful Rails engine that provides a comprehensive interface to view and explore database tables, records, and schema.
