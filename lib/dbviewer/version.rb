@@ -1,3 +1,3 @@
 module Dbviewer
-  VERSION = "0.3.16"
+  VERSION = "0.4.1"
 end
