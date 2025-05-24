@@ -87,9 +87,6 @@ module Dbviewer
       @columns = fetch_table_columns(@table_name)
       @tables = fetch_tables_with_stats  # Fetch tables for sidebar
 
-      # Set active table for sidebar highlighting
-      @active_table = @table_name
-
       prepare_query
       execute_query
 
@@ -142,7 +139,8 @@ module Dbviewer
 
     def set_table_name
       @table_name = params[:id]
-    end    # Handle global creation datetime filters across tables
+    end
+
     def set_global_filters
       # Store creation filter datetimes in session to persist between table navigation
       if params[:creation_filter_start].present?
