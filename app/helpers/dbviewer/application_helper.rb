@@ -367,16 +367,19 @@ module Dbviewer
       return content_tag(:tr) { content_tag(:th, "No columns available") } unless records&.columns
 
       content_tag(:tr) do
-        headers = records.columns.map do |column_name|
+        # Start with action column header (sticky first column)
+        headers = [
+          content_tag(:th, class: "px-3 py-2 text-center action-column action-column-header", width: "60px", rowspan: 2) do
+            content_tag(:span, "Actions")
+          end
+        ]
+
+        # Add all data columns
+        headers += records.columns.map do |column_name|
           is_sorted = order_by == column_name
           content_tag(:th, class: "px-3 py-2 sortable-column #{is_sorted ? 'sorted' : ''}") do
             sortable_column_header(column_name, order_by, order_direction, table_name, current_page, per_page, column_filters)
           end
-        end
-
-        # Add action column header
-        headers << content_tag(:th, class: "px-3 py-2 text-center", width: "60px") do
-          content_tag(:span, "Actions")
         end
 
         headers.join.html_safe
@@ -393,9 +396,6 @@ module Dbviewer
             render_column_filter(form, column_name, columns, column_filters)
           end
         end
-
-        # Add placeholder for action column
-        filters << content_tag(:th, "", class: "p-0")
 
         filters.join.html_safe
       end
@@ -425,13 +425,14 @@ module Dbviewer
     # Render a table row with cells
     def render_table_row(row, records, metadata)
       content_tag(:tr) do
-        cells = row.each_with_index.map do |cell, cell_index|
+        # Start with action column (sticky first column)
+        cells = [ render_action_cell(row, records.columns) ]
+
+        # Add all data cells
+        cells += row.each_with_index.map do |cell, cell_index|
           column_name = records.columns[cell_index]
           render_table_cell(cell, column_name, metadata)
         end
-
-        # Add action column
-        cells << render_action_cell(row, records.columns)
 
         cells.join.html_safe
       end
@@ -442,7 +443,9 @@ module Dbviewer
       if records.nil? || records.rows.nil? || records.empty?
         content_tag(:tbody) do
           content_tag(:tr) do
-            content_tag(:td, "No records found or table is empty.", colspan: "100%", class: "text-center")
+            # Adding +1 to account for the action column
+            total_columns = records&.columns&.size.to_i + 1
+            content_tag(:td, "No records found or table is empty.", colspan: total_columns, class: "text-center")
           end
         end
       else
@@ -466,7 +469,7 @@ module Dbviewer
       content_tag(:td, class: "text-center action-column") do
         button_tag(
           type: "button",
-          class: "btn btn-sm btn-outline-primary view-record-btn",
+          class: "btn btn-sm btn-primary view-record-btn",
           title: "View Record Details",
           data: {
             bs_toggle: "modal",
