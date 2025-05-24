@@ -16,8 +16,10 @@ Dbviewer::Engine.routes.draw do
     end
   end
 
-  # Homepage
+  # Homepage and API endpoints
   get "dashboard", to: "home#index", as: :dashboard
+  get "api/analytics", to: "home#analytics"
+  get "api/recent_queries", to: "home#recent_queries"
 
   root to: "home#index"
 end

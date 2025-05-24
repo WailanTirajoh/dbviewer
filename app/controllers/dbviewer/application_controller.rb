@@ -3,7 +3,7 @@ module Dbviewer
     include Dbviewer::DatabaseOperations
     include Dbviewer::ErrorHandling
 
-    before_action :authenticate_with_basic_auth
+    # before_action :authenticate_with_basic_auth
     before_action :set_tables
 
     private

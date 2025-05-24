@@ -8,7 +8,7 @@
     </div>
   </div>
 
-  <div class="row g-3 mb-4">
+  <div class="row g-3 mb-4" id="analytics-cards">
     <div class="col-md-3">
       <div class="card h-100 border-0 shadow-sm <%= stat_card_bg_class %>">
         <div class="card-body d-flex align-items-center">
@@ -17,7 +17,12 @@
           </div>
           <div class="text-start">
             <h5 class="mb-1">Tables</h5>
-            <h2 class="mb-0"><%= @analytics[:total_tables] %></h2>
+            <h2 class="mb-0">
+              <div class="spinner-border spinner-border-sm" role="status" id="tables-loading">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <span id="tables-count" class="d-none">0</span>
+            </h2>
           </div>
         </div>
       </div>
@@ -31,7 +36,12 @@
           </div>
           <div class="text-start">
             <h5 class="mb-1">Records</h5>
-            <h2 class="mb-0"><%= number_with_delimiter(@analytics[:total_records]) %></h2>
+            <h2 class="mb-0">
+              <div class="spinner-border spinner-border-sm" role="status" id="records-loading">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <span id="records-count" class="d-none">0</span>
+            </h2>
           </div>
         </div>
       </div>
@@ -45,7 +55,12 @@
           </div>
           <div class="text-start">
             <h5 class="mb-1">Relationships</h5>
-            <h2 class="mb-0"><%= @analytics[:total_relationships] %></h2>
+            <h2 class="mb-0">
+              <div class="spinner-border spinner-border-sm" role="status" id="relationships-loading">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <span id="relationships-count" class="d-none">0</span>
+            </h2>
             <small class="text-muted d-block">Foreign Key Connections</small>
           </div>
         </div>
@@ -60,7 +75,12 @@
           </div>
           <div class="text-start">
             <h5 class="mb-1">Database Size</h5>
-            <h2 class="mb-0"><%= number_to_human_size(@analytics[:schema_size]) %></h2>
+            <h2 class="mb-0">
+              <div class="spinner-border spinner-border-sm" role="status" id="size-loading">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <span id="size-count" class="d-none">0</span>
+            </h2>
           </div>
         </div>
       </div>
@@ -73,35 +93,13 @@
         <div class="card-header">
           <h5 class="card-title mb-0">Largest Tables</h5>
         </div>
-        <div class="card-body p-0">
-          <% if @analytics[:largest_tables].any? %>
-            <div class="table-responsive">
-              <table class="table table-sm table-hover">
-                <thead>
-                  <tr>
-                    <th>Table Name</th>
-                    <th class="text-end">Records</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% @analytics[:largest_tables].each do |table| %>
-                    <tr>
-                      <td>
-                        <a href="<%= dbviewer.table_path(table[:name]) %>">
-                          <%= table[:name] %>
-                        </a>
-                      </td>
-                      <td class="text-end"><%= number_with_delimiter(table[:record_count]) %></td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
+        <div class="card-body p-0" id="largest-tables-container">
+          <div class="text-center my-4">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
             </div>
-          <% else %>
-            <div class="text-center my-4 empty-data-message">
-              <p>No table data available</p>
-            </div>
-          <% end %>
+            <p class="mt-2">Loading table data...</p>
+          </div>
         </div>
       </div>
     </div>
@@ -110,55 +108,268 @@
       <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="card-title mb-0">Recent SQL Queries</h5>
-          <% if Dbviewer.configuration.enable_query_logging %>
-            <a href="<%= dbviewer.logs_path %>" class="btn btn-sm btn-primary">View All Logs</a>
-          <% end %>
+          <div id="queries-view-all-link" class="d-none">
+            <!-- Link will be added dynamically if query logging is enabled -->
+          </div>
         </div>
-        <div class="card-body p-0">
-          <% if Dbviewer.configuration.enable_query_logging %>
-            <% if @recent_queries.any? %>
-              <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0">
-
-                <thead>
-                  <tr>
-                    <th>Query</th>
-                    <th class="text-end" style="width: 120px">Duration</th>
-                    <th class="text-end" style="width: 180px">Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% @recent_queries.each do |query| %>
-                    <tr>
-                      <td class="text-truncate" style="max-width: 500px;">
-                        <code class="sql-query-code"><%= query[:sql] %></code>
-                      </td>
-                      <td class="text-end">
-                        <span class="<%= query[:duration_ms] > 100 ? 'query-duration-slow' : 'query-duration' %>">
-                          <%= query[:duration_ms] %> ms
-                        </span>
-                      </td>
-                      <td class="text-end query-timestamp">
-                        <small><%= query[:timestamp].strftime("%H:%M:%S") %></small>
-                      </td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
+        <div class="card-body p-0" id="recent-queries-container">
+          <div class="text-center my-4">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
             </div>
-            <% else %>
-              <div class="text-center my-4 empty-data-message">
-                <p>No queries recorded yet</p>
-              </div>
-            <% end %>
-          <% else %>
-            <div class="text-center my-4 empty-data-message">
-              <p>Query logging is disabled</p>
-              <small class="text-muted">Enable it in the configuration to see SQL queries here</small>
-            </div>
-          <% end %>
+            <p class="mt-2">Loading recent queries...</p>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Helper function to format numbers with commas
+  function numberWithDelimiter(number) {
+    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  // Helper function to format file sizes
+  function numberToHumanSize(bytes) {
+    if (bytes === null || bytes === undefined) return 'N/A';
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  // Function to update analytics cards
+  function updateAnalyticsCards(analytics) {
+    // Update tables count
+    document.getElementById('tables-loading').classList.add('d-none');
+    document.getElementById('tables-count').classList.remove('d-none');
+    document.getElementById('tables-count').textContent = analytics.total_tables || 0;
+
+    // Update records count
+    document.getElementById('records-loading').classList.add('d-none');
+    document.getElementById('records-count').classList.remove('d-none');
+    document.getElementById('records-count').textContent = numberWithDelimiter(analytics.total_records || 0);
+
+    // Update relationships count
+    document.getElementById('relationships-loading').classList.add('d-none');
+    document.getElementById('relationships-count').classList.remove('d-none');
+    document.getElementById('relationships-count').textContent = analytics.total_relationships || 0;
+
+    // Update database size
+    document.getElementById('size-loading').classList.add('d-none');
+    document.getElementById('size-count').classList.remove('d-none');
+    document.getElementById('size-count').textContent = numberToHumanSize(analytics.schema_size);
+  }
+
+  // Function to update largest tables
+  function updateLargestTables(analytics) {
+    const container = document.getElementById('largest-tables-container');
+    
+    if (analytics.largest_tables && analytics.largest_tables.length > 0) {
+      const tableHtml = `
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead>
+              <tr>
+                <th>Table Name</th>
+                <th class="text-end">Records</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${analytics.largest_tables.map(table => `
+                <tr>
+                  <td>
+                    <a href="${window.location.origin}${window.location.pathname.replace(/\/$/, '')}/tables/${table.name}">
+                      ${table.name}
+                    </a>
+                  </td>
+                  <td class="text-end">${numberWithDelimiter(table.record_count)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      container.innerHTML = tableHtml;
+    } else {
+      container.innerHTML = `
+        <div class="text-center my-4 empty-data-message">
+          <p>No table data available</p>
+        </div>
+      `;
+    }
+  }
+
+  // Function to update recent queries
+  function updateRecentQueries(data) {
+    const container = document.getElementById('recent-queries-container');
+    const linkContainer = document.getElementById('queries-view-all-link');
+    
+    if (data.enabled) {
+      // Show "View All Logs" link if query logging is enabled
+      linkContainer.innerHTML = `
+        <a href="${window.location.origin}${window.location.pathname.replace(/\/$/, '')}/logs" class="btn btn-sm btn-primary">View All Logs</a>
+      `;
+      linkContainer.classList.remove('d-none');
+      
+      if (data.queries && data.queries.length > 0) {
+        const tableHtml = `
+          <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Query</th>
+                  <th class="text-end" style="width: 120px">Duration</th>
+                  <th class="text-end" style="width: 180px">Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.queries.map(query => {
+                  const duration = query.duration_ms;
+                  const durationClass = duration > 100 ? 'query-duration-slow' : 'query-duration';
+                  const timestamp = new Date(query.timestamp);
+                  const timeString = timestamp.toLocaleTimeString();
+                  
+                  return `
+                    <tr>
+                      <td class="text-truncate" style="max-width: 500px;">
+                        <code class="sql-query-code">${query.sql}</code>
+                      </td>
+                      <td class="text-end">
+                        <span class="${durationClass}">
+                          ${duration} ms
+                        </span>
+                      </td>
+                      <td class="text-end query-timestamp">
+                        <small>${timeString}</small>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+        container.innerHTML = tableHtml;
+      } else {
+        container.innerHTML = `
+          <div class="text-center my-4 empty-data-message">
+            <p>No queries recorded yet</p>
+          </div>
+        `;
+      }
+    } else {
+      container.innerHTML = `
+        <div class="text-center my-4 empty-data-message">
+          <p>Query logging is disabled</p>
+          <small class="text-muted">Enable it in the configuration to see SQL queries here</small>
+        </div>
+      `;
+    }
+  }
+
+  // Function to show error state
+  function showError(containerId, message) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = `
+      <div class="text-center my-4 text-danger">
+        <i class="bi bi-exclamation-triangle fs-2 d-block mb-2"></i>
+        <p>Error loading data</p>
+        <small>${message}</small>
+      </div>
+    `;
+  }
+
+  // Load analytics data
+  fetch('<%= api_analytics_path %>', {
+    headers: {
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.json();
+  })
+  .then(analytics => {
+    updateAnalyticsCards(analytics);
+    updateLargestTables(analytics);
+  })
+  .catch(error => {
+    console.error('Error loading analytics:', error);
+    // Update cards with error state
+    ['tables-loading', 'records-loading', 'relationships-loading', 'size-loading'].forEach(id => {
+      const loading = document.getElementById(id);
+      const count = document.getElementById(id.replace('-loading', '-count'));
+      loading.classList.add('d-none');
+      count.classList.remove('d-none');
+      count.innerHTML = '<span class="text-danger">Error</span>';
+    });
+    
+    showError('largest-tables-container', error.message);
+  });
+
+  // Load recent queries data
+  fetch('<%= api_recent_queries_path %>', {
+    headers: {
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    updateRecentQueries(data);
+  })
+  .catch(error => {
+    console.error('Error loading recent queries:', error);
+    showError('recent-queries-container', error.message);
+  });
+});
+</script>
+
+<style>
+  .sql-query-code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.85rem;
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+  
+  .query-duration {
+    color: #28a745;
+    font-weight: 500;
+  }
+  
+  .query-duration-slow {
+    color: #dc3545;
+    font-weight: 600;
+  }
+  
+  .query-timestamp {
+    color: #6c757d;
+  }
+  
+  .empty-data-message {
+    color: #6c757d;
+  }
+  
+  /* Loading animations */
+  .spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+  }
+</style>
