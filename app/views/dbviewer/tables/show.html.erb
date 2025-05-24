@@ -230,23 +230,6 @@
           <%= @order_by %> (<%= @order_direction == "ASC" ? "ascending" : "descending" %>)
         </span>
       <% end %>
-      
-      <% 
-        clear_sort_params = {
-          page: 1, 
-          per_page: @per_page, 
-          column_filters: @column_filters
-        }
-        
-        # Add creation filters if they exist
-        clear_sort_params[:creation_filter_start] = @creation_filter_start if @creation_filter_start.present?
-        clear_sort_params[:creation_filter_end] = @creation_filter_end if @creation_filter_end.present?
-      %>
-        <%= link_to "×", table_path(@table_name, clear_sort_params), 
-            class: "text-light ms-2", 
-            style: "text-decoration: none;",
-            title: "Clear sorting" %>
-      </span>
       <span class="badge bg-secondary">Total: <%= @total_count %> records</span>
       <% active_filters = @column_filters.reject { |_, v| v.blank? }.size %>
       <% if active_filters > 0 %>
