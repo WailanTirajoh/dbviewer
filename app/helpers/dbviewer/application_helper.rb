@@ -392,16 +392,16 @@ module Dbviewer
     # Render a cell that may include a foreign key link
     def render_table_cell(cell, column_name, metadata)
       cell_value = format_cell_value(cell)
-      foreign_key = metadata && metadata[:foreign_keys] ? 
-                    metadata[:foreign_keys].find { |fk| fk[:column] == column_name } : 
+      foreign_key = metadata && metadata[:foreign_keys] ?
+                    metadata[:foreign_keys].find { |fk| fk[:column] == column_name } :
                     nil
 
       if foreign_key && !cell.nil?
         fk_params = { column_filters: { foreign_key[:primary_key] => cell } }
         fk_params = fk_params.merge(common_params.except(:column_filters))
-        
+
         content_tag(:td, title: "#{cell_value} (Click to view referenced record)") do
-          link_to(cell_value, table_path(foreign_key[:to_table], fk_params), 
+          link_to(cell_value, table_path(foreign_key[:to_table], fk_params),
                   class: "text-decoration-none foreign-key-link") +
           content_tag(:i, "", class: "bi bi-link-45deg text-muted small")
         end
