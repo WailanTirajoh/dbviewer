@@ -23,15 +23,31 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <!-- Google Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <!-- Chart.js for Data Visualization -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   
   <style>
+    /* Base styles and typography */
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      letter-spacing: -0.01em;
+    }
+
+    h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+    }
+    
     /* Core layout styles */
     .dbviewer-wrapper { display: flex; flex-direction: column; min-height: 100vh; }
-    .dbviewer-navbar { height: 56px; }
-    .dbviewer-navbar-spacer { height: 56px; } /* Creates space for the fixed navbar */
-    .dbviewer-content { display: flex; flex: 1; min-height: calc(100vh - 56px); padding-top: 0; }
+    .dbviewer-navbar { height: 60px; }
+    .dbviewer-navbar-spacer { height: 60px; } /* Creates space for the fixed navbar */
+    .dbviewer-content { display: flex; flex: 1; min-height: calc(100vh - 60px); padding-top: 0; }
     
     /* Smooth theme transitions */
     html {
@@ -51,47 +67,49 @@
       transition: color 0.2s ease, background-color 0.2s ease;
     }
 
-    /* Sidebar styles */
+    /* Sidebar styles - enhanced for elegance */
     .dbviewer-sidebar {
       width: 260px;
-      height: calc(100vh - 56px);
+      height: calc(100vh - 60px);
       position: fixed;
-      top: 56px; /* Positioned right below the fixed navbar */
+      top: 60px; /* Positioned right below the fixed navbar */
       left: 0;
       z-index: 1000;
       display: flex;
       flex-direction: column;
-      transition: transform 0.3s ease, background-color 0.2s ease, border-color 0.2s ease;
+      transition: transform 0.3s ease-in-out, background-color 0.2s ease, border-color 0.2s ease;
       overflow: hidden; /* Changed from overflow-y: auto */
+      box-shadow: 3px 0 20px rgba(0, 0, 0, 0.05);
     }
 
     /* Dark mode overrides */
     [data-bs-theme="light"] .dbviewer-sidebar {
-      background: #f8f9fa;
-      border-right: 1px solid #dee2e6;
+      background: #ffffff;
+      border-right: 1px solid rgba(222, 226, 230, 0.6);
     }
     
     [data-bs-theme="dark"] .dbviewer-sidebar {
-      background: #212529;
-      border-right: 1px solid #495057;
+      background: #1a1d20;
+      border-right: 1px solid rgba(73, 80, 87, 0.3);
     }
     
     .dbviewer-sidebar-header {
-      padding: 1rem 1.25rem;
-      font-weight: 500;
+      padding: 1.2rem 1.25rem;
+      font-weight: 600;
       align-items: center;
       justify-content: space-between;
       flex-shrink: 0;
+      display: flex;
     }
     
     [data-bs-theme="light"] .dbviewer-sidebar-header {
-      border-bottom: 1px solid #dee2e6;
-      background: #f1f3f5;
+      border-bottom: 1px solid rgba(222, 226, 230, 0.6);
+      background: linear-gradient(to right, #f8f9fa, #f1f3f5);
     }
     
     [data-bs-theme="dark"] .dbviewer-sidebar-header {
-      border-bottom: 1px solid #495057;
-      background: #343a40;
+      border-bottom: 1px solid rgba(73, 80, 87, 0.3);
+      background: linear-gradient(to right, #343a40, #2c3034);
     }
     
     .dbviewer-sidebar-header h5 {
@@ -132,15 +150,35 @@
     }
     
     [data-bs-theme="dark"] .dbviewer-sidebar-top {
-      background: #212529;
-      border-bottom: 1px solid #495057;
+      background: #1a1d20;
+      border-bottom: 1px solid rgba(73, 80, 87, 0.3);
     }
     
     .dbviewer-sidebar-content {
       flex: 1;
       overflow-y: auto;
-      padding: 0;
+      padding: 0.5rem 0;
       height: 100%;
+      /* Improved scrollbar */
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    }
+    
+    .dbviewer-sidebar-content::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    .dbviewer-sidebar-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .dbviewer-sidebar-content::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+    }
+    
+    [data-bs-theme="dark"] .dbviewer-sidebar-content::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.2);
     }
     
     .dbviewer-main {
@@ -149,39 +187,77 @@
       padding: 2rem 2.5rem;
       padding-top: 1.5rem; /* Adjusted for fixed header */
       min-width: 0;
+      animation: fadeIn 0.5s ease-in-out;
+      transition: all 0.3s ease;
+      background: var(--bs-body-bg);
     }
     
-    /* Mobile responsiveness */
+    @keyframes fadeIn {
+      from { opacity: 0.6; }
+      to { opacity: 1; }
+    }
+    
+    /* Enhanced mobile responsiveness with smooth animations */
     @media (max-width: 991.98px) {
-      .dbviewer-sidebar { transform: translateX(-100%); }
-      .dbviewer-sidebar.active { transform: translateX(0); box-shadow: 5px 0 15px rgba(0,0,0,0.1); }
-      .dbviewer-main { margin-left: 0; padding: 1rem; }
+      .dbviewer-sidebar { 
+        transform: translateX(-100%);
+        box-shadow: none;
+        transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+      }
       
-      /* Overlay for mobile sidebar */
+      .dbviewer-sidebar.active { 
+        transform: translateX(0); 
+        box-shadow: 5px 0 20px rgba(0, 0, 0, 0.15);
+      }
+      
+      .dbviewer-main { 
+        margin-left: 0; 
+        padding: 1.25rem; 
+        transition: padding 0.3s ease;
+      }
+      
+      /* Improved overlay for mobile sidebar */
       .dbviewer-sidebar-overlay {
         position: fixed;
-        top: 56px; /* Start below the fixed navbar */
+        top: 60px; /* Start below the fixed navbar */
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(2px);
         z-index: 999;
         opacity: 0;
         visibility: hidden;
-        transition: opacity 0.3s, visibility 0.3s;
+        transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
       }
 
       [data-bs-theme="light"] .dbviewer-sidebar-overlay {
-        background: rgba(0,0,0,0.5);
+        background: rgba(0,0,0,0.3);
       }
 
       [data-bs-theme="dark"] .dbviewer-sidebar-overlay {
-        background: rgba(0,0,0,0.7);
+        background: rgba(0,0,0,0.5);
       }
       
       .dbviewer-sidebar-overlay.active {
         opacity: 1;
         visibility: visible;
+      }
+      
+      /* Toggle button styling */
+      .dbviewer-sidebar-toggle {
+        border-radius: 8px;
+        padding: 0.4rem 0.8rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        border: none;
+        background: var(--bs-primary);
+        color: white;
+        font-weight: 500;
+        transition: all 0.2s ease;
+      }
+      
+      .dbviewer-sidebar-toggle:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
       }
       
       body.dbviewer-sidebar-open {
@@ -190,48 +266,219 @@
     }
     
     @media (max-width: 767.98px) {
-      .dbviewer-sidebar { width: 210px; }
-      .dbviewer-main { padding: 0.75rem; }
+      .dbviewer-sidebar { width: 230px; }
+      .dbviewer-main { padding: 1rem; }
       .dbviewer-sidebar-header h5 { max-width: 70%; font-size: 1rem; }
+      
+      /* Make tables more responsive */
+      .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      .stat-card-bg {
+        margin-bottom: 1rem;
+      }
     }
     
-    /* Table filter input */
-    .dbviewer-table-filter-container { position: relative; padding: 0.5rem 1rem; margin-bottom: 0.25rem; }
-    .dbviewer-table-filter-icon { position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: #6c757d; font-size: 0.85rem; padding: 0.25rem; width: 1.5rem; text-align: center; }
-    .dbviewer-table-filter { border-radius: 20px; padding-left: 2.5rem; margin-bottom: 1rem; }
+    /* Extra small screens */
+    @media (max-width: 575.98px) {
+      .dbviewer-main { padding: 0.75rem; }
+      h1, .h1 { font-size: 1.6rem; }
+      h2, .h2 { font-size: 1.4rem; }
+      h3, .h3 { font-size: 1.2rem; }
+      
+      .btn-sm {
+        font-size: 0.8rem;
+      }
+      
+      .card-body {
+        padding: 1rem;
+      }
+    }
+    
+    /* Table filter input - enhanced */
+    .dbviewer-table-filter-container { 
+      position: relative; 
+      padding: 0.75rem 1rem; 
+      margin-bottom: 0.5rem;
+      transition: background-color 0.2s ease;
+    }
+    
+    .dbviewer-table-filter-icon { 
+      position: absolute; 
+      left: 1.5rem; 
+      top: 50%; 
+      transform: translateY(-50%); 
+      color: #6c757d; 
+      font-size: 0.85rem; 
+      padding: 0.25rem; 
+      width: 1.5rem; 
+      text-align: center;
+      z-index: 2;
+      transition: color 0.2s ease;
+    }
+    
+    .dbviewer-table-filter { 
+      border-radius: 8px; 
+      padding: 0.65rem 0.85rem 0.65rem 2.5rem; 
+      margin-bottom: 1rem;
+      transition: all 0.2s ease;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      font-size: 0.9rem;
+    }
+    
+    .dbviewer-table-filter:focus {
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+      border-color: #86b7fe;
+    }
+    
+    [data-bs-theme="dark"] .dbviewer-table-filter {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    [data-bs-theme="dark"] .dbviewer-table-filter:focus {
+      border-color: rgba(134, 183, 254, 0.7);
+    }
     
     /* Table structure and visualization components */
-    .dbviewer-card { box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+    .dbviewer-card { 
+      border-radius: 0.5rem;
+      transition: all 0.2s ease;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.08); 
+      height: 100%;
+    }
+    
+    .dbviewer-card:hover {
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08), 0 1px 6px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+    
+    /* Improved card headers */
+    .dbviewer-card .card-header {
+      font-weight: 600;
+      padding: 1rem 1.25rem;
+      border-bottom-width: 1px;
+    }
+    
+    /* Card body padding */
+    .dbviewer-card .card-body {
+      padding: 1.25rem;
+    }
     
     [data-bs-theme="light"] .dbviewer-card {
-      border: 1px solid #eaeaea;
+      border: none;
+      background: #ffffff;
     }
     
     [data-bs-theme="dark"] .dbviewer-card {
-      border: 1px solid #495057;
+      border: none;
+      background: #212529;
     }
     
-    .dbviewer-scrollable { max-height: 700px; overflow-y: auto; }
-    .dbviewer-scrollable thead { position: sticky; top: 0; z-index: 1; }
+    .dbviewer-scrollable { 
+      max-height: 700px; 
+      overflow-y: auto;
+      border-radius: 0.5rem;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    }
     
-    /* Badge styling for dark mode */
+    .dbviewer-scrollable::-webkit-scrollbar {
+      width: 5px;
+      height: 8px;
+    }
+    
+    .dbviewer-scrollable::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .dbviewer-scrollable::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+    }
+    
+    [data-bs-theme="dark"] .dbviewer-scrollable::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .dbviewer-scrollable thead { 
+      position: sticky; 
+      top: 0; 
+      z-index: 1;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      width: 100%;
+    }
+    
+    /* Ensure the scrollable table headers have solid backgrounds */
+    [data-bs-theme="light"] .dbviewer-scrollable thead {
+      background-color: #f1f3f5;
+    }
+    
+    [data-bs-theme="dark"] .dbviewer-scrollable thead {
+      background-color: #343a40;
+    }
+    
+    /* Ensure individual th cells also have proper background */
+    .dbviewer-scrollable thead th {
+      background-color: transparent;
+    }
+    
+    /* Specific fix for sticky table headers to ensure solid backgrounds */
+    .table-responsive .table thead,
+    .dbviewer-scrollable .table thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    /* Additional specificity for table headers in dark mode */
+    [data-bs-theme="light"] .table-responsive .table thead th,
+    [data-bs-theme="light"] .dbviewer-scrollable .table thead th {
+      background-color: #f1f3f5;
+    }
+    
+    [data-bs-theme="dark"] .table-responsive .table thead th,
+    [data-bs-theme="dark"] .dbviewer-scrollable .table thead th {
+      background-color: #343a40;
+    }
+    
+    /* Ensure borders appear properly with sticky headers */
+    .table thead th {
+      box-shadow: inset 0 1px 0 var(--bs-border-color), 
+                 inset 0 -1px 0 var(--bs-border-color);
+    }
+    
+    /* Enhanced badge styling */
+    .badge {
+      font-weight: 500;
+      padding: 0.4em 0.6em;
+      border-radius: 6px;
+      letter-spacing: 0.01em;
+      font-size: 0.75em;
+      text-transform: none;
+    }
+    
     [data-bs-theme="dark"] .bg-secondary-subtle {
       background-color: rgba(255, 255, 255, 0.15) !important;
-      color: #e9ecef !important;
+      color: #f8f9fa !important;
     }
     
     [data-bs-theme="light"] .bg-secondary-subtle {
       background-color: #e9ecef !important;
-      color: #212529 !important;
+      color: #495057 !important;
     }
     
     /* Table header styling */
     .dbviewer-table-header {
-      background-color: rgba(0, 0, 0, 0.05);
+      background-color: #f1f3f5;
     }
     
     [data-bs-theme="dark"] .dbviewer-table-header {
-      background-color: rgba(255, 255, 255, 0.05);
+      background-color: #343a40;
     }
     
     /* List group styling for dark mode */
@@ -244,7 +491,7 @@
     [data-bs-theme="dark"] .dbviewer-table-header {
       position: sticky;
       top: 0;
-      background: #212529;
+      background: #343a40;
       z-index: 1;
     }
     
@@ -269,26 +516,32 @@
       box-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
     
-    /* Dark mode toggle */
+    /* Enhanced dark mode toggle */
     .theme-toggle {
       background: transparent;
       border: none;
-      padding: 0.25rem 0.5rem;
+      padding: 0.4rem 0.6rem;
+      margin-right: 0.25rem;
       cursor: pointer;
       display: flex;
       align-items: center;
+      justify-content: center;
       color: white;
-      opacity: 0.8;
-      transition: opacity 0.2s ease, transform 0.3s ease;
+      opacity: 0.85;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
     }
     
     .theme-toggle:hover {
       opacity: 1;
-      transform: rotate(12deg);
+      transform: rotate(15deg) scale(1.1);
+      background-color: rgba(255, 255, 255, 0.1);
     }
     
     .theme-toggle:active {
-      transform: rotate(24deg);
+      transform: rotate(30deg) scale(0.9);
     }
     
     .theme-toggle .bi-sun,
@@ -308,35 +561,103 @@
       font-size: 1.2rem;
     }
     
-    /* Header styles for dark mode */
+    /* Header styles for a more professional look */
     .navbar {
-      transition: background-color 0.3s ease, border-color 0.3s ease;
+      transition: all 0.3s ease;
+      padding: 0.5rem 1rem;
+      box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .navbar-brand {
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    
+    .nav-link {
+      font-weight: 500;
+      padding: 0.5rem 0.8rem !important;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      margin: 0 2px;
+    }
+    
+    .nav-link.active {
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+    
+    .nav-link:hover:not(.active) {
+      background-color: rgba(255, 255, 255, 0.1);
     }
     
     [data-bs-theme="light"] .navbar.bg-primary {
-      background-color: #0d6efd !important;
+      background: linear-gradient(to right, #0d6efd, #0b5ed7) !important;
     }
     
     [data-bs-theme="dark"] .navbar.bg-primary {
-      background-color: #212529 !important;
-      border-bottom: 1px solid #495057;
+      background: linear-gradient(to right, #212529, #1a1e21) !important;
+      border-bottom: 1px solid rgba(73, 80, 87, 0.5);
     }
     
-    /* Sidebar list group styling for dark mode */
+    /* Enhanced list group styling */
+    .list-group-item {
+      border-radius: 0;
+      border-left: 0;
+      border-right: 0;
+      padding: 0.75rem 1.25rem;
+      transition: all 0.15s ease-in-out;
+      position: relative;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    
+    .list-group-item:first-child {
+      border-top: 0;
+    }
+    
+    .list-group-item-action {
+      border-left: 3px solid transparent;
+    }
+    
+    .list-group-item-action:hover {
+      border-left-color: rgba(13, 110, 253, 0.3);
+    }
+    
+    .list-group-item.active {
+      border-left-color: #0d6efd;
+      font-weight: 600;
+      position: relative;
+    }
+    
+    [data-bs-theme="light"] .list-group-item {
+      background-color: transparent;
+      border-color: rgba(0, 0, 0, 0.08);
+    }
+    
+    [data-bs-theme="light"] .list-group-item.active {
+      background-color: rgba(13, 110, 253, 0.08);
+      color: #0d6efd;
+    }
+    
+    [data-bs-theme="light"] .list-group-item-action:hover,
+    [data-bs-theme="light"] .list-group-item-action:focus {
+      background-color: rgba(0, 0, 0, 0.03);
+    }
+    
     [data-bs-theme="dark"] .list-group-item {
-      background-color: #212529;
-      border-color: #495057;
+      background-color: transparent;
+      border-color: rgba(73, 80, 87, 0.3);
       color: #e9ecef;
     }
     
     [data-bs-theme="dark"] .list-group-item.active {
-      background-color: #0d6efd;
-      border-color: #0d6efd;
+      background-color: rgba(13, 110, 253, 0.15);
+      border-color: rgba(73, 80, 87, 0.3);
+      color: #6ea8fe;
     }
     
     [data-bs-theme="dark"] .list-group-item-action:hover,
     [data-bs-theme="dark"] .list-group-item-action:focus {
-      background-color: #343a40;
+      background-color: rgba(255, 255, 255, 0.03);
       color: #f8f9fa;
     }
     
@@ -357,6 +678,59 @@
     
     [data-bs-theme="dark"] .empty-data-message {
       color: #adb5bd;
+    }
+    
+    /* Enhanced button styling */
+    .btn {
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .btn-sm {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.85rem;
+    }
+    
+    .btn-lg {
+      padding: 0.65rem 1.2rem;
+      font-size: 1.05rem;
+    }
+    
+    .btn:active {
+      transform: translateY(1px);
+    }
+    
+    .btn-primary {
+      border: none;
+      background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+    }
+    
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0b5ed7, #0a58ca);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(13, 110, 253, 0.25);
+    }
+    
+    .btn-outline-primary {
+      border-width: 1px;
+    }
+    
+    .btn-outline-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(13, 110, 253, 0.15);
+    }
+    
+    [data-bs-theme="dark"] .btn-outline-primary {
+      border-color: rgba(13, 110, 253, 0.7);
+      color: #6ea8fe;
+    }
+    
+    [data-bs-theme="dark"] .btn-outline-primary:hover {
+      background-color: rgba(13, 110, 253, 0.2);
+      color: #6ea8fe;
     }
     
     /* Query timestamp */
@@ -387,6 +761,25 @@
       text-decoration: underline;
     }
     
+    /* Enhanced code blocks and SQL query styling */
+    pre, code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    
+    pre {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    code {
+      font-size: 0.875em;
+      padding: 0.2em 0.4em;
+    }
+    
     /* SQL query code in tables */
     code.sql-query-code {
       display: inline-block;
@@ -394,16 +787,38 @@
       max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
-      padding: 2px 4px;
-      border-radius: 3px;
+      padding: 3px 6px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    }
+    
+    [data-bs-theme="light"] pre {
+      background-color: #f8f9fa;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    [data-bs-theme="light"] code {
+      background-color: rgba(0, 0, 0, 0.05);
+      color: #d63384;
     }
     
     [data-bs-theme="light"] code.sql-query-code {
       background-color: rgba(0, 0, 0, 0.05);
+      color: #0550a0;
+    }
+    
+    [data-bs-theme="dark"] pre {
+      background-color: #2c3034;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    [data-bs-theme="dark"] code {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #ff8bd0;
     }
     
     [data-bs-theme="dark"] code.sql-query-code {
-      background-color: rgba(255, 255, 255, 0.1);
+      background-color: rgba(0, 123, 255, 0.1);
       color: #65cdff;
     }
     
@@ -427,29 +842,103 @@
       font-size: 0.875rem;
     }
     
-    /* Database name badge */
+    /* Enhanced database name badge */
     .database-name-badge {
-      font-size: 0.95rem;
-      font-weight: 500;
+      font-size: 0.9rem;
+      font-weight: 600;
       text-transform: lowercase;
       letter-spacing: 0.02em;
+      padding: 0.35em 0.65em;
+      border-radius: 6px;
+      box-shadow: 0 1px 5px rgba(13, 110, 253, 0.3);
+      transition: all 0.2s ease;
+    }
+    
+    .database-name-badge:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(13, 110, 253, 0.4);
     }
     
     [data-bs-theme="light"] .database-name-badge {
-      background-color: #0d6efd;
+      background: linear-gradient(135deg, #0d6efd, #0b5ed7);
       color: #ffffff;
     }
     
     [data-bs-theme="dark"] .database-name-badge {
-      background-color: #0d6efd;
+      background: linear-gradient(135deg, #0d6efd, #0a58ca);
       color: #ffffff;
     }
     
-    /* Table headings */
+    /* Enhanced table styling */
+    .table {
+      margin-bottom: 0;
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    
+    .table thead {
+      background-color: #f1f3f5;
+    }
+    
+    .table thead th {
+      padding: 1rem;
+      font-weight: 600;
+      border-top: 0;
+      vertical-align: middle;
+      letter-spacing: 0.01em;
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background-color: inherit; /* Ensure it inherits from parent thead */
+    }
+    
+    .table tbody td {
+      padding: 0.85rem 1rem;
+      vertical-align: middle;
+      border-color: var(--bs-border-color);
+      font-size: 0.92rem;
+    }
+    
+    .table tbody tr:hover {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    [data-bs-theme="light"] .table thead {
+      background-color: #f1f3f5;
+    }
+    
+    [data-bs-theme="light"] .table thead th {
+      color: #495057;
+      border-color: #dee2e6;
+      border-bottom: 2px solid #dee2e6;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+    
+    [data-bs-theme="dark"] .table thead {
+      background-color: #343a40;
+    }
+    
     [data-bs-theme="dark"] .table thead th {
       color: #e9ecef;
       border-color: #495057;
       border-bottom: 2px solid #495057;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+    
+    [data-bs-theme="dark"] .table tbody tr:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+    
+    /* Zebra striping */
+    .table-striped > tbody > tr:nth-of-type(odd) > * {
+      background-color: rgba(0, 0, 0, 0.015);
+    }
+    
+    [data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+      background-color: rgba(255, 255, 255, 0.02);
     }
     
     /* Card title colors */
@@ -472,11 +961,62 @@
       color: #000 !important;
     }
     
-    /* Alert styling in dark mode */
+    /* Enhanced alert styling */
+    .alert {
+      border-radius: 0.5rem;
+      border-width: 0;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+      position: relative;
+      border-left: 4px solid transparent;
+    }
+    
+    .alert-info {
+      background-color: rgba(13, 202, 240, 0.1);
+      border-left-color: #0dcaf0;
+      color: #087990;
+    }
+    
+    .alert-danger {
+      background-color: rgba(220, 53, 69, 0.1);
+      border-left-color: #dc3545;
+      color: #b02a37;
+    }
+    
+    .alert-success {
+      background-color: rgba(25, 135, 84, 0.1);
+      border-left-color: #198754;
+      color: #146c43;
+    }
+    
+    .alert-warning {
+      background-color: rgba(255, 193, 7, 0.1);
+      border-left-color: #ffc107;
+      color: #997404;
+    }
+    
     [data-bs-theme="dark"] .alert-info {
-      background-color: rgba(13, 202, 240, 0.2);
-      border-color: rgba(13, 202, 240, 0.3);
+      background-color: rgba(13, 202, 240, 0.15);
+      border-left-color: #0dcaf0;
       color: #9eeaf9;
+    }
+    
+    [data-bs-theme="dark"] .alert-danger {
+      background-color: rgba(220, 53, 69, 0.15);
+      border-left-color: #dc3545;
+      color: #ea868f;
+    }
+    
+    [data-bs-theme="dark"] .alert-success {
+      background-color: rgba(25, 135, 84, 0.15);
+      border-left-color: #198754;
+      color: #75b798;
+    }
+    
+    [data-bs-theme="dark"] .alert-warning {
+      background-color: rgba(255, 193, 7, 0.15);
+      border-left-color: #ffc107;
+      color: #ffda6a;
     }
     
     /* Background colors for card headers in dark mode */
@@ -552,23 +1092,142 @@
       background-color: var(--bs-light);
     }
     
-    /* Metric icon styling */
+    /* Enhanced stat cards and metric icons */
+    .stat-card-bg {
+      background: #ffffff;
+      border-radius: 0.75rem;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+      transition: all 0.3s ease;
+      border: none;
+    }
+    
+    .stat-card-bg:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    [data-bs-theme="dark"] .stat-card-bg {
+      background-color: #212529;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Enhanced metric icon styling */
     .metric-icon {
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 50%;
-      width: 60px;
-      height: 60px;
-      min-width: 60px;
+      border-radius: 14px;
+      width: 65px;
+      height: 65px;
+      min-width: 65px;
       text-align: center;
-      background-color: rgba(var(--bs-primary-rgb), 0.1);
+      background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.2) 0%, rgba(var(--bs-primary-rgb), 0.1) 100%);
       color: var(--bs-primary);
+      font-size: 1.6rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 3px 10px rgba(var(--bs-primary-rgb), 0.1);
+    }
+    
+    .stat-card-bg:hover .metric-icon {
+      transform: scale(1.05);
     }
     
     [data-bs-theme="dark"] .metric-icon {
-      background-color: rgba(13, 110, 253, 0.2);
+      background: linear-gradient(135deg, rgba(13, 110, 253, 0.3) 0%, rgba(13, 110, 253, 0.15) 100%);
       color: #6ea8fe;
+      box-shadow: 0 3px 10px rgba(13, 110, 253, 0.15);
+    }
+
+    /* Enhanced navbar toggler */
+    .navbar-toggler {
+      border: none;
+      padding: 0.25rem 0.5rem;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      margin-right: 0.5rem;
+    }
+    
+    .navbar-toggler:focus {
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
+    }
+    
+    .navbar-toggler:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+    
+    .navbar-toggler-icon {
+      width: 1.2em;
+      height: 1.2em;
+    }
+
+    /* Page transitions and animations */
+    .dbviewer-main-content {
+      animation: fadeInContent 0.4s ease-out;
+    }
+    
+    @keyframes fadeInContent {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    /* Subtle hover animations */
+    .nav-link, .list-group-item, .btn, .card, a {
+      transition: all 0.2s ease;
+    }
+    
+    /* Improved table hover effect */
+    .table-hover > tbody > tr:hover {
+      transition: all 0.15s ease;
+    }
+    
+    [data-bs-theme="light"] .table-hover > tbody > tr:hover {
+      background-color: rgba(13, 110, 253, 0.04);
+    }
+    
+    [data-bs-theme="dark"] .table-hover > tbody > tr:hover {
+      background-color: rgba(13, 110, 253, 0.07);
+    }
+    
+    /* Button press effect */
+    .btn:active, .nav-link:active, .list-group-item:active {
+      transform: scale(0.97);
+    }
+    
+    /* Focus styles for accessibility */
+    :focus-visible {
+      outline: 3px solid rgba(13, 110, 253, 0.25);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+    
+    /* Improved scrollbar for the entire app */
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    }
+    
+    html::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    html::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    html::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+    }
+    
+    [data-bs-theme="dark"] html::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.2);
     }
   </style>
 </head>
