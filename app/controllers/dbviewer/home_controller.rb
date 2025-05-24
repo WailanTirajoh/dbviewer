@@ -6,10 +6,30 @@ module Dbviewer
     end
 
     def analytics
-      @analytics = fetch_database_analytics
+      analytics_data = fetch_database_analytics
+      # Remove record data which will be served by the records endpoint
+      analytics_data.delete(:total_records)
+      analytics_data.delete(:largest_tables)
+      analytics_data.delete(:empty_tables)
+      analytics_data.delete(:avg_records_per_table)
 
       respond_to do |format|
-        format.json { render json: @analytics }
+        format.json { render json: analytics_data }
+      end
+    end
+
+    def records
+      tables = fetch_tables_with_stats(include_record_counts: true)
+
+      records_data = {
+        total_records: tables.sum { |t| t[:record_count] },
+        largest_tables: tables.sort_by { |t| -t[:record_count] }.first(10),
+        empty_tables: tables.select { |t| t[:record_count] == 0 },
+        avg_records_per_table: tables.any? ? (tables.sum { |t| t[:record_count] }.to_f / tables.size).round(1) : 0
+      }
+
+      respond_to do |format|
+        format.json { render json: records_data }
       end
     end
 

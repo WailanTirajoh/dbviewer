@@ -177,11 +177,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('tables-count').classList.remove('d-none');
     document.getElementById('tables-count').textContent = analytics.total_tables || 0;
 
-    // Update records count
-    document.getElementById('records-loading').classList.add('d-none');
-    document.getElementById('records-count').classList.remove('d-none');
-    document.getElementById('records-count').textContent = numberWithDelimiter(analytics.total_records || 0);
-
     // Update relationships count
     document.getElementById('relationships-loading').classList.add('d-none');
     document.getElementById('relationships-count').classList.remove('d-none');
@@ -192,12 +187,22 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('size-count').classList.remove('d-none');
     document.getElementById('size-count').textContent = numberToHumanSize(analytics.schema_size);
   }
+  
+  function updateRecordsData(recordsData) {
+    // Update records count
+    document.getElementById('records-loading').classList.add('d-none');
+    document.getElementById('records-count').classList.remove('d-none');
+    document.getElementById('records-count').textContent = numberWithDelimiter(recordsData.total_records || 0);
+    
+    // Update largest tables
+    updateLargestTables(recordsData);
+  }
 
   // Function to update largest tables
-  function updateLargestTables(analytics) {
+  function updateLargestTables(data) {
     const container = document.getElementById('largest-tables-container');
     
-    if (analytics.largest_tables && analytics.largest_tables.length > 0) {
+    if (data.largest_tables && data.largest_tables.length > 0) {
       const tableHtml = `
         <div class="table-responsive">
           <table class="table table-sm table-hover">
@@ -208,7 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </tr>
             </thead>
             <tbody>
-              ${analytics.largest_tables.map(table => `
+              ${data.largest_tables.map(table => `
                 <tr>
                   <td>
                     <a href="${window.location.origin}${window.location.pathname.replace(/\/$/, '')}/tables/${table.name}">
@@ -326,19 +331,45 @@ document.addEventListener('DOMContentLoaded', function() {
     return response.json();
   })
   .then(analytics => {
+    // Only update the non-record analytics cards
     updateAnalyticsCards(analytics);
-    updateLargestTables(analytics);
   })
   .catch(error => {
     console.error('Error loading analytics:', error);
     // Update cards with error state
-    ['tables-loading', 'records-loading', 'relationships-loading', 'size-loading'].forEach(id => {
+    ['tables-loading', 'relationships-loading', 'size-loading'].forEach(id => {
       const loading = document.getElementById(id);
       const count = document.getElementById(id.replace('-loading', '-count'));
       loading.classList.add('d-none');
       count.classList.remove('d-none');
       count.innerHTML = '<span class="text-danger">Error</span>';
     });
+  });
+  
+  // Load records data separately
+  fetch('<%= api_records_path %>', {
+    headers: {
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.json();
+  })
+  .then(recordsData => {
+    updateRecordsData(recordsData);
+  })
+  .catch(error => {
+    console.error('Error loading records data:', error);
+    // Update records-related UI with error state
+    const recordsLoading = document.getElementById('records-loading');
+    const recordsCount = document.getElementById('records-count');
+    recordsLoading.classList.add('d-none');
+    recordsCount.classList.remove('d-none');
+    recordsCount.innerHTML = '<span class="text-danger">Error</span>';
     
     showError('largest-tables-container', error.message);
   });
