@@ -1,8 +1,3 @@
-<%# sidebar content %>
-<% content_for :sidebar do %>
-  <%= render 'dbviewer/shared/sidebar' %>
-<% end %>
-
 <div class="container-fluid px-0">
   <div class="row mb-3">
     <div class="col">
@@ -78,7 +73,7 @@
         <div class="card-header">
           <h5 class="card-title mb-0">Largest Tables</h5>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
           <% if @analytics[:largest_tables].any? %>
             <div class="table-responsive">
               <table class="table table-sm table-hover">
@@ -111,7 +106,7 @@
       </div>
     </div>
 
-    <div class="col-6 mb-4">
+    <div class="col-md-6 mb-4">
       <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="card-title mb-0">Recent SQL Queries</h5>
@@ -120,55 +115,46 @@
           <% end %>
         </div>
         <div class="card-body p-0">
-          <% begin %>
-            <% require_dependency "dbviewer/logger" %>
-            <% if Dbviewer.configuration.enable_query_logging %>
-              <% queries = Dbviewer::Logger.instance.recent_queries(limit: 10) %>
-              
-              <% if queries.any? %>
-                <div class="table-responsive">
-                  <table class="table table-sm table-hover mb-0">
+          <% if Dbviewer.configuration.enable_query_logging %>
+            <% if @recent_queries.any? %>
+              <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
 
-                  <thead>
+                <thead>
+                  <tr>
+                    <th>Query</th>
+                    <th class="text-end" style="width: 120px">Duration</th>
+                    <th class="text-end" style="width: 180px">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @recent_queries.each do |query| %>
                     <tr>
-                      <th>Query</th>
-                      <th class="text-end" style="width: 120px">Duration</th>
-                      <th class="text-end" style="width: 180px">Time</th>
+                      <td class="text-truncate" style="max-width: 500px;">
+                        <code class="sql-query-code"><%= query[:sql] %></code>
+                      </td>
+                      <td class="text-end">
+                        <span class="<%= query[:duration_ms] > 100 ? 'query-duration-slow' : 'query-duration' %>">
+                          <%= query[:duration_ms] %> ms
+                        </span>
+                      </td>
+                      <td class="text-end query-timestamp">
+                        <small><%= query[:timestamp].strftime("%H:%M:%S") %></small>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    <% queries.each do |query| %>
-                      <tr>
-                        <td class="text-truncate" style="max-width: 500px;">
-                          <code class="sql-query-code"><%= query[:sql] %></code>
-                        </td>
-                        <td class="text-end">
-                          <span class="<%= query[:duration_ms] > 100 ? 'query-duration-slow' : 'query-duration' %>">
-                            <%= query[:duration_ms] %> ms
-                          </span>
-                        </td>
-                        <td class="text-end query-timestamp">
-                          <small><%= query[:timestamp].strftime("%H:%M:%S") %></small>
-                        </td>
-                      </tr>
-                    <% end %>
-                  </tbody>
-                </table>
-              </div>
-              <% else %>
-                <div class="text-center my-4 empty-data-message">
-                  <p>No queries recorded yet</p>
-                </div>
-              <% end %>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
             <% else %>
               <div class="text-center my-4 empty-data-message">
-                <p>Query logging is disabled</p>
-                <small class="text-muted">Enable it in the configuration to see SQL queries here</small>
+                <p>No queries recorded yet</p>
               </div>
             <% end %>
-          <% rescue => e %>
+          <% else %>
             <div class="text-center my-4 empty-data-message">
-              <p>Error loading query logs: <%= e.message %></p>
+              <p>Query logging is disabled</p>
+              <small class="text-muted">Enable it in the configuration to see SQL queries here</small>
             </div>
           <% end %>
         </div>
@@ -176,50 +162,3 @@
     </div>
   </div>
 </div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('tableSearch');
-    const tablesList = document.getElementById('tablesList');
-    const tables = tablesList ? tablesList.querySelectorAll('.list-group-item') : [];
-
-    if (searchInput) {
-      searchInput.addEventListener('keyup', function() {
-        const query = this.value.trim().toLowerCase();
-        
-        Array.from(tables).forEach(function(table) {
-          const tableName = table.textContent.trim().toLowerCase();
-          if (tableName.includes(query)) {
-            table.style.display = '';
-          } else {
-            table.style.display = 'none';
-          }
-        });
-      });
-    }
-    
-    // Update code blocks for the current theme
-    function updateCodeBlockTheme() {
-      const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-      const codeBlocks = document.querySelectorAll('code.sql-query-code');
-      
-      codeBlocks.forEach(codeBlock => {
-        if (isDarkMode) {
-          codeBlock.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-          codeBlock.style.color = '#65cdff';
-        } else {
-          codeBlock.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-          codeBlock.style.color = '';
-        }
-      });
-    }
-    
-    // Initial theme check
-    updateCodeBlockTheme();
-    
-    // Listen for theme changes
-    document.addEventListener('dbviewerThemeChanged', function(event) {
-      updateCodeBlockTheme();
-    });
-  });
-</script>
