@@ -9,7 +9,7 @@
   </div>
 
   <div class="row g-3 mb-4" id="analytics-cards">
-    <div class="col-md-3">
+    <div class="col-md-4">
       <div class="card h-100 border-0 shadow-sm <%= stat_card_bg_class %>">
         <div class="card-body d-flex align-items-center">
           <div class="metric-icon me-3">
@@ -28,7 +28,7 @@
       </div>
     </div>
     
-    <div class="col-md-3">
+    <div class="col-md-4">
       <div class="card h-100 border-0 shadow-sm <%= stat_card_bg_class %>">
         <div class="card-body d-flex align-items-center">
           <div class="metric-icon me-3">
@@ -47,27 +47,7 @@
       </div>
     </div>
     
-    <div class="col-md-3">
-      <div class="card h-100 border-0 shadow-sm <%= stat_card_bg_class %>">
-        <div class="card-body d-flex align-items-center">
-          <div class="metric-icon me-3">
-            <i class="bi bi-link-45deg fs-4"></i>
-          </div>
-          <div class="text-start">
-            <h5 class="mb-1">Relationships</h5>
-            <h2 class="mb-0">
-              <span class="skeleton-loader number-loader" id="relationships-loading">
-                &nbsp;&nbsp;
-              </span>
-              <span id="relationships-count" class="d-none">0</span>
-            </h2>
-            <small class="text-muted d-block">Foreign Key Connections</small>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-md-3">
+    <div class="col-md-4">
       <div class="card h-100 border-0 shadow-sm <%= stat_card_bg_class %>">
         <div class="card-body d-flex align-items-center">
           <div class="metric-icon me-3">
@@ -171,21 +151,22 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Function to update analytics cards
-  function updateAnalyticsCards(analytics) {
-    // Update tables count
+  function updateTablesCount(data) {
     document.getElementById('tables-loading').classList.add('d-none');
     document.getElementById('tables-count').classList.remove('d-none');
-    document.getElementById('tables-count').textContent = analytics.total_tables || 0;
-
-    // Update relationships count
+    document.getElementById('tables-count').textContent = data.total_tables || 0;
+  }
+  
+  function updateRelationshipsCount(data) {
     document.getElementById('relationships-loading').classList.add('d-none');
     document.getElementById('relationships-count').classList.remove('d-none');
-    document.getElementById('relationships-count').textContent = analytics.total_relationships || 0;
-
-    // Update database size
+    document.getElementById('relationships-count').textContent = data.total_relationships || 0;
+  }
+  
+  function updateDatabaseSize(data) {
     document.getElementById('size-loading').classList.add('d-none');
     document.getElementById('size-count').classList.remove('d-none');
-    document.getElementById('size-count').textContent = numberToHumanSize(analytics.schema_size);
+    document.getElementById('size-count').textContent = numberToHumanSize(data.schema_size);
   }
   
   function updateRecordsData(recordsData) {
@@ -317,8 +298,8 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
   }
 
-  // Load analytics data
-  fetch('<%= api_analytics_path %>', {
+  // Load tables count data
+  fetch('<%= api_tables_path %>', {
     headers: {
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest'
@@ -330,20 +311,41 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     return response.json();
   })
-  .then(analytics => {
-    // Only update the non-record analytics cards
-    updateAnalyticsCards(analytics);
+  .then(data => {
+    updateTablesCount(data);
   })
   .catch(error => {
-    console.error('Error loading analytics:', error);
-    // Update cards with error state
-    ['tables-loading', 'relationships-loading', 'size-loading'].forEach(id => {
-      const loading = document.getElementById(id);
-      const count = document.getElementById(id.replace('-loading', '-count'));
-      loading.classList.add('d-none');
-      count.classList.remove('d-none');
-      count.innerHTML = '<span class="text-danger">Error</span>';
-    });
+    console.error('Error loading tables count:', error);
+    const loading = document.getElementById('tables-loading');
+    const count = document.getElementById('tables-count');
+    loading.classList.add('d-none');
+    count.classList.remove('d-none');
+    count.innerHTML = '<span class="text-danger">Error</span>';
+  });
+
+  // Load database size data
+  fetch('<%= api_database_size_path %>', {
+    headers: {
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    updateDatabaseSize(data);
+  })
+  .catch(error => {
+    console.error('Error loading database size:', error);
+    const loading = document.getElementById('size-loading');
+    const count = document.getElementById('size-count');
+    loading.classList.add('d-none');
+    count.classList.remove('d-none');
+    count.innerHTML = '<span class="text-danger">Error</span>';
   });
   
   // Load records data separately
