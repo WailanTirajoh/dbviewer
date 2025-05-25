@@ -836,7 +836,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body p-0"> <!-- Removed padding for full width -->
-            <div id="mini-erd-container" class="w-100" style="min-height: 450px; height: 100%;"> <!-- Increased height -->
+            <div id="mini-erd-container" class="w-100 d-flex justify-content-center align-items-center" style="min-height: 450px; height: 100%;"> <!-- Increased height -->
               <div id="mini-erd-loading" class="d-flex justify-content-center align-items-center" style="height: 100%; min-height: 450px;">
                 <div class="text-center">
                   <div class="spinner-border text-primary mb-3" role="status">
@@ -977,53 +977,100 @@
               try {
                 const svgElement = container.querySelector('svg');
                 if (svgElement && typeof svgPanZoom !== 'undefined') {
-                  // Make SVG take the full container width
+                  // Make SVG take the full container width and ensure it has valid dimensions
                   svgElement.setAttribute('width', '100%');
                   svgElement.setAttribute('height', '100%');
                   
-                  // Initialize SVG Pan-Zoom
-                  const panZoomInstance = svgPanZoom(svgElement, {
-                    zoomEnabled: true,
-                    controlIconsEnabled: true,
-                    fit: true,
-                    center: true,
-                    minZoom: 0.5,
-                    maxZoom: 2.5
-                  });
-                  
-                  // Store the panZoom instance for resize handling
-                  container.panZoomInstance = panZoomInstance;
-                  
-                  // Setup resize observer to maintain full size
-                  const resizeObserver = new ResizeObserver(() => {
-                    if (container.panZoomInstance) {
-                      // Reset zoom and center when container is resized
-                      container.panZoomInstance.resize();
-                      container.panZoomInstance.fit();
-                      container.panZoomInstance.center();
+                  // Wait for SVG to be fully rendered with proper dimensions
+                  setTimeout(() => {
+                    try {
+                      // Get dimensions to ensure they're valid before initializing pan-zoom
+                      const clientRect = svgElement.getBoundingClientRect();
+                      
+                      // Only initialize if we have valid dimensions
+                      if (clientRect.width > 0 && clientRect.height > 0) {
+                        // Initialize SVG Pan-Zoom with more robust error handling
+                        const panZoomInstance = svgPanZoom(svgElement, {
+                          zoomEnabled: true,
+                          controlIconsEnabled: true,
+                          fit: false, // Don't automatically fit on init - can cause the matrix error
+                          center: false, // Don't automatically center - can cause the matrix error
+                          minZoom: 0.5,
+                          maxZoom: 2.5,
+                          beforeZoom: function() {
+                            // Check if the SVG is valid for zooming
+                            return svgElement.getBoundingClientRect().width > 0 && 
+                                  svgElement.getBoundingClientRect().height > 0;
+                          }
+                        });
+                        
+                        // Store the panZoom instance for resize handling
+                        container.panZoomInstance = panZoomInstance;
+                        
+                        // Manually fit and center after a slight delay
+                        setTimeout(() => {
+                          try {
+                            panZoomInstance.resize();
+                            panZoomInstance.fit();
+                            panZoomInstance.center();
+                          } catch(err) {
+                            console.warn("Error during fit/center operation:", err);
+                          }
+                        }, 300);
+                        
+                        // Setup resize observer to maintain full size
+                        const resizeObserver = new ResizeObserver(() => {
+                          if (container.panZoomInstance) {
+                            try {
+                              // Reset zoom and center when container is resized
+                              container.panZoomInstance.resize();
+                              // Only fit and center if the element is visible with valid dimensions
+                              if (svgElement.getBoundingClientRect().width > 0 && 
+                                  svgElement.getBoundingClientRect().height > 0) {
+                                container.panZoomInstance.fit();
+                                container.panZoomInstance.center();
+                              }
+                            } catch(err) {
+                              console.warn("Error during resize observer callback:", err);
+                            }
+                          }
+                        });
+                        
+                        // Observe the container for size changes
+                        resizeObserver.observe(container);
+                        
+                        // Also handle manual resize on modal resize
+                        miniErdModal.addEventListener('resize.bs.modal', function() {
+                          if (container.panZoomInstance) {
+                            setTimeout(() => {
+                              try {
+                                container.panZoomInstance.resize();
+                                // Only fit and center if the element is visible with valid dimensions
+                                if (svgElement.getBoundingClientRect().width > 0 && 
+                                    svgElement.getBoundingClientRect().height > 0) {
+                                  container.panZoomInstance.fit();
+                                  container.panZoomInstance.center();
+                                }
+                              } catch(err) {
+                                console.warn("Error during modal resize handler:", err);
+                              }
+                            }, 300);
+                          }
+                        });
+                      } else {
+                        console.warn("Cannot initialize SVG-Pan-Zoom: SVG has invalid dimensions", clientRect);
+                      }
+                    } catch(err) {
+                      console.warn("Error initializing SVG-Pan-Zoom:", err);
                     }
-                  });
-                  
-                  // Observe the container for size changes
-                  resizeObserver.observe(container);
-                  
-                  // Also handle manual resize on modal resize
-                  miniErdModal.addEventListener('resize.bs.modal', function() {
-                    if (container.panZoomInstance) {
-                      setTimeout(() => {
-                        container.panZoomInstance.resize();
-                        container.panZoomInstance.fit();
-                        container.panZoomInstance.center();
-                      }, 100);
-                    }
-                  });
+                  }, 500); // Increased delay to ensure SVG is fully rendered with proper dimensions
                 }
               } catch (e) {
                 console.warn('Failed to initialize svg-pan-zoom:', e);
                 // Not critical, continue without pan-zoom
               }
               
-              // Add highlighting for the current table
+              // Add highlighting for the current table after a delay to ensure SVG is fully processed
               setTimeout(function() {
                 try {
                   const cleanTableName = '<%= @table_name %>'.replace(/[^\w]/g, '_');
@@ -1100,10 +1147,22 @@
         const container = document.getElementById('mini-erd-container');
         if (container && container.panZoomInstance) {
           setTimeout(() => {
-            container.panZoomInstance.resize();
-            container.panZoomInstance.fit();
-            container.panZoomInstance.center();
-          }, 200); // Small delay to ensure modal is fully transitioned
+            try {
+              // Check if the SVG still has valid dimensions before operating on it
+              const svgElement = container.querySelector('svg');
+              if (svgElement && 
+                  svgElement.getBoundingClientRect().width > 0 && 
+                  svgElement.getBoundingClientRect().height > 0) {
+                container.panZoomInstance.resize();
+                container.panZoomInstance.fit();
+                container.panZoomInstance.center();
+              } else {
+                console.warn("Cannot perform pan-zoom operations: SVG has invalid dimensions");
+              }
+            } catch(err) {
+              console.warn("Error during modal shown handler:", err);
+            }
+          }, 500); // Increased delay to ensure modal is fully transitioned and SVG is rendered
         }
       });
       
