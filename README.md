@@ -5,7 +5,16 @@
 DBViewer is a powerful Rails engine that provides a comprehensive interface to view and explore database tables, records, and schema.
 It's designed for development, debugging, and database analysis, offering a clean and intuitive way to interact with your application's database.
 
-<img width="1470" alt="image" src="https://github.com/user-attachments/assets/c946a286-e80a-4cca-afa0-654052e4ef2c" />
+## 🎬 Demo Video
+
+See DBViewer in action:
+
+<video width="100%" controls>
+  <source src="https://github.com/WailanTirajoh/dbviewer/docs/dbviewer_demo.webm" type="video/webm">
+  Your browser does not support the video tag.
+</video>
+
+_This video demonstrates the key features of DBViewer including dashboard navigation, table browsing, and schema exploration._
 
 ## ✨ Features
 
