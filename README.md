@@ -136,37 +136,6 @@ This is necessary because API-only Rails applications don't include the Flash mi
 - **ERD View** (`/dbviewer/entity_relationship_diagrams`): Interactive Entity Relationship Diagram of your database
 - **SQL Query Logs** (`/dbviewer/logs`): View and analyze logged SQL queries with performance metrics
 
-## 🤝🏻 Extending DBViewer
-
-### Adding Custom Functionality
-
-You can extend the database manager with custom methods:
-
-```ruby
-# config/initializers/dbviewer_extensions.rb
-Rails.application.config.to_prepare do
-  Dbviewer::DatabaseManager.class_eval do
-    def table_statistics(table_name)
-      # Your custom code to generate table statistics
-      {
-        avg_row_size: calculate_avg_row_size(table_name),
-        last_updated: last_updated_timestamp(table_name)
-      }
-    end
-
-    private
-
-    def calculate_avg_row_size(table_name)
-      # Implementation...
-    end
-
-    def last_updated_timestamp(table_name)
-      # Implementation...
-    end
-  end
-end
-```
-
 ## ⚙️ Configuration Options
 
 You can configure DBViewer by using our generator to create an initializer in your application:
