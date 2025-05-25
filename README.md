@@ -96,19 +96,7 @@ Rails.application.routes.draw do
 end
 ```
 
-Configure Basic Authentication in an initializer to secure access (strongly recommended):
-
-```ruby
-# config/initializers/dbviewer.rb
-Dbviewer.configure do |config|
-  config.admin_credentials = {
-    username: "your_username",
-    password: "your_secure_password"
-  }
-end
-```
-
-Then, visit `/dbviewer` in your browser to access the database viewer. You'll be prompted for your username and password.
+Then, visit `/dbviewer` in your browser to access the database viewer.
 
 ### Rails API-only Applications
 
