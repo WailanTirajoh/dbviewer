@@ -31,16 +31,22 @@
           </div>
         </div>
         <div class="card-body p-0">
-          <div id="erd-container" class="w-100 h-100">
-            <div id="erd-loading" class="d-flex justify-content-center align-items-center h-100">
+          <div id="erd-container" class="w-100 h-100" style="min-height: 450px;">
+            <div id="erd-loading" class="d-flex justify-content-center align-items-center h-100" style="min-height: 450px;">
               <div class="text-center">
                 <div class="spinner-border text-primary mb-3" role="status">
                   <span class="visually-hidden">Loading...</span>
                 </div>
                 <p>Generating Entity Relationship Diagram...</p>
+                <small class="text-muted">This may take a moment for databases with many tables</small>
               </div>
             </div>
             <!-- The ERD will be rendered here -->
+            <div id="erd-error" class="alert alert-danger m-3 d-none">
+              <h5>Error generating diagram</h5>
+              <p id="erd-error-message">There was an error rendering the entity relationship diagram.</p>
+              <pre id="erd-error-details" class="bg-light p-2 small mt-2 d-none"></pre>
+            </div>
           </div>
         </div>
       </div>
@@ -55,10 +61,17 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Initialize mermaid
+    // Check if mermaid is loaded first
+    if (typeof mermaid === 'undefined') {
+      console.error('Mermaid library not loaded!');
+      showError('Mermaid library not loaded', 'The diagram library could not be loaded. Please check your internet connection and try again.');
+      return;
+    }
+    
+    // Initialize mermaid with theme detection like mini ERD
     mermaid.initialize({
       startOnLoad: true,
-      theme: 'neutral',
+      theme: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'dark' : 'default',
       securityLevel: 'loose',
       er: {
         diagramPadding: 20,
@@ -71,6 +84,34 @@
         fontSize: 20
       }
     });
+    
+    // Function to show error messages
+    function showError(title, message, details = '') {
+      const errorContainer = document.getElementById('erd-error');
+      const errorMessage = document.getElementById('erd-error-message');
+      const errorDetails = document.getElementById('erd-error-details');
+      const loadingIndicator = document.getElementById('erd-loading');
+      
+      if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+      }
+      
+      if (errorContainer && errorMessage) {
+        // Set error message
+        errorMessage.textContent = message;
+        
+        // Set error details if provided
+        if (details && errorDetails) {
+          errorDetails.textContent = details;
+          errorDetails.classList.remove('d-none');
+        } else if (errorDetails) {
+          errorDetails.classList.add('d-none');
+        }
+        
+        // Show the error container
+        errorContainer.classList.remove('d-none');
+      }
+    }
     
     // ER Diagram download functionality
     let diagramReady = false;
@@ -235,6 +276,7 @@
           console.error('Error rendering updated diagram:', error);
           document.body.removeChild(tempContainer);
           isUpdatingDiagram = false;
+          showError('Error rendering diagram', 'There was an error updating the diagram with complete data.', error.message);
         });
       }
     }
@@ -291,8 +333,7 @@
     }).catch(function(error) {
       console.error('Error rendering diagram:', error);
       document.body.removeChild(tempInitContainer);
-      document.getElementById('erd-loading').innerHTML = 
-        '<div class="alert alert-danger">Error generating diagram. Please try again or check console for details.</div>';
+      showError('Error generating diagram', 'There was an error generating the entity relationship diagram.', error.message);
     });
     
     // SVG Pan Zoom instance
@@ -504,7 +545,6 @@
     overflow: auto;
     height: calc(100vh - 125px);
     padding: 20px;
-    /* background-color: #fafafa; */
     position: relative;
   }
   
@@ -512,6 +552,37 @@
     display: flex;
     justify-content: center;
     min-width: 100%;
+  }
+  
+  /* Loading state styling */
+  #erd-loading {
+    background-color: var(--bs-body-bg);
+  }
+  
+  #erd-loading .text-center p {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+  
+  #erd-loading .text-center small {
+    font-size: 0.875rem;
+  }
+  
+  /* Error state styling */
+  #erd-error {
+    max-width: 600px;
+    margin: 2rem auto;
+  }
+  
+  #erd-error h5 {
+    color: var(--bs-danger);
+    margin-bottom: 0.75rem;
+  }
+  
+  #erd-error-details {
+    font-size: 0.8rem;
+    max-height: 150px;
+    overflow-y: auto;
   }
   
   /* SVG Pan Zoom styles */
@@ -539,10 +610,67 @@
     font-size: 20px !important;
   }
   
+  /* Dark mode overrides - comprehensive styling like mini ERD */
+  [data-bs-theme="dark"] .entityBox {
+    fill: #2D3748;
+    stroke: #6ea8fe;
+  }
+  
+  [data-bs-theme="dark"] .entityLabel, 
+  [data-bs-theme="dark"] .mermaid .label {
+    color: #f8f9fa;
+  }
+  
+  [data-bs-theme="dark"] #erd-error-details {
+    background-color: var(--bs-dark) !important;
+    color: var(--bs-light);
+    border-color: var(--bs-border-color);
+  }
+  
+  /* Dark mode: Update mermaid diagram elements */
+  [data-bs-theme="dark"] .mermaid .er .entityBox {
+    fill: #2D3748 !important;
+    stroke: #6ea8fe !important;
+    stroke-width: 1.5px !important;
+  }
+  
+  [data-bs-theme="dark"] .mermaid .er .entityLabel {
+    fill: #f8f9fa !important;
+    color: #f8f9fa !important;
+  }
+  
+  [data-bs-theme="dark"] .mermaid .er .relationshipLine {
+    stroke: #6ea8fe !important;
+    stroke-width: 2px !important;
+  }
+  
+  [data-bs-theme="dark"] .mermaid .er .relationshipLabel {
+    fill: #f8f9fa !important;
+    color: #f8f9fa !important;
+  }
+  
+  [data-bs-theme="dark"] .mermaid .er .attributeBoxEven,
+  [data-bs-theme="dark"] .mermaid .er .attributeBoxOdd {
+    fill: #374151 !important;
+  }
+  
+  [data-bs-theme="dark"] .mermaid text {
+    fill: #f8f9fa !important;
+  }
+  
+  /* Loading indicator dark mode */
+  [data-bs-theme="dark"] #erd-loading {
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
+  }
+  
+  [data-bs-theme="dark"] #erd-loading .spinner-border {
+    color: #6ea8fe;
+  }
+  
   /* Zoom percentage display styling */
   #zoomPercentage {
     font-size: 0.9rem;
-    /* color: #495057; */
     font-weight: 500;
     width: 45px;
     display: inline-block;
@@ -556,5 +684,18 @@
   
   .mermaid .er.relationshipLabel {
     font-size: 20px !important;
+  }
+  
+  /* Enhanced table highlighting for current table */
+  .current-table-highlight rect {
+    fill: var(--bs-primary-bg-subtle) !important;
+    stroke: var(--bs-primary) !important;
+    stroke-width: 2px !important;
+  }
+  
+  [data-bs-theme="dark"] .current-table-highlight rect {
+    fill: #2c3034 !important;
+    stroke: #6ea8fe !important;
+    stroke-width: 2px !important;
   }
 </style>
