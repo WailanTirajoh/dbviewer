@@ -433,11 +433,30 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /* Skeleton loader styles */
+  :root {
+    --skeleton-base-color: #f0f0f0;
+    --skeleton-highlight-color: #e0e0e0;
+  }
+
+  /* Dark mode skeleton colors */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --skeleton-base-color: #2a2a2a;
+      --skeleton-highlight-color: #404040;
+    }
+  }
+
+  /* Bootstrap dark mode support */
+  [data-bs-theme="dark"] {
+    --skeleton-base-color: #2a2a2a;
+    --skeleton-highlight-color: #404040;
+  }
+
   .skeleton-loader {
     display: inline-block;
     height: 1.2em;
     width: 100%;
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%);
+    background: linear-gradient(90deg, var(--skeleton-base-color) 25%, var(--skeleton-highlight-color) 37%, var(--skeleton-base-color) 63%);
     background-size: 400% 100%;
     animation: skeleton-loading 1.2s ease-in-out infinite;
     border-radius: 4px;
