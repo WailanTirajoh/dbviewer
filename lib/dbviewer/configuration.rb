@@ -38,6 +38,9 @@ module Dbviewer
     # @example { username: 'admin', password: 'secret' }
     attr_accessor :admin_credentials
 
+    # Default column to order table details by (e.g., 'updated_at')
+    attr_accessor :default_order_column
+
     def initialize
       @per_page_options = [ 10, 20, 50, 100 ]
       @default_per_page = 20
@@ -51,6 +54,7 @@ module Dbviewer
       @max_memory_queries = 1000
       @enable_query_logging = true
       @admin_credentials = nil
+      @default_order_column = "updated_at"
     end
   end
 end

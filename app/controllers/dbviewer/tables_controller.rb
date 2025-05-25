@@ -103,11 +103,9 @@ module Dbviewer
       @current_page = [ 1, params[:page].to_i ].max
       @per_page = params[:per_page] ? params[:per_page].to_i : self.class.default_per_page
       @per_page = self.class.default_per_page unless self.class.per_page_options.include?(@per_page)
-      @order_by = params[:order_by].presence ||
-                  database_manager.primary_key(@table_name).presence ||
-                  (@columns.first ? @columns.first[:name] : nil)
+      @order_by = params[:order_by].presence || determine_default_order_column
       @order_direction = params[:order_direction].upcase if params[:order_direction].present?
-      @order_direction = "ASC" unless self.class::VALID_SORT_DIRECTIONS.include?(@order_direction)
+      @order_direction = "DESC" unless self.class::VALID_SORT_DIRECTIONS.include?(@order_direction)
       @column_filters = params[:column_filters].presence ? params[:column_filters].to_enum.to_h : {}
     end
 
@@ -157,6 +155,24 @@ module Dbviewer
           })
         end
       end
+    end
+
+    # Determine the default order column using configurable ordering logic
+    def determine_default_order_column
+      # Get the table columns to check what's available
+      columns = @columns || fetch_table_columns(@table_name)
+      column_names = columns.map { |col| col[:name] }
+
+      # Try the configured default order column first
+      default_column = Dbviewer.configuration.default_order_column
+      return default_column if default_column && column_names.include?(default_column)
+
+      # Fall back to primary key
+      primary_key = database_manager.primary_key(@table_name)
+      return primary_key if primary_key.present?
+
+      # Final fallback to first column
+      columns.first ? columns.first[:name] : nil
     end
   end
 end

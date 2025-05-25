@@ -15,4 +15,7 @@ Dbviewer.configure do |config|
 
   # Authentication options
   # config.admin_credentials = { username: "admin", password: "your_secure_password" } # Basic HTTP auth credentials
+
+  # Default table ordering options
+  config.default_order_column = "updated_at"  # Primary column to order by
 end
