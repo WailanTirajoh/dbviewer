@@ -169,7 +169,13 @@ end
 
 ## ⚙️ Configuration Options
 
-You can configure DBViewer by creating an initializer in your application:
+You can configure DBViewer by using our generator to create an initializer in your application:
+
+```bash
+rails generate dbviewer:initializer
+```
+
+This will create a file at `config/initializers/dbviewer.rb` with the default configuration:
 
 ```ruby
 # config/initializers/dbviewer.rb
@@ -183,15 +189,17 @@ Dbviewer.configure do |config|
   config.query_timeout = 30                          # SQL query timeout in seconds
 
   # Query logging options
-  config.enable_query_logging = true                 # Enable or disable query logging completely (default: true)
+  config.enable_query_logging = false                # Enable or disable query logging completely (default: true)
   config.query_logging_mode = :memory                # Storage mode for SQL queries (:memory or :file)
   config.query_log_path = "log/dbviewer.log"         # Path for query log file when in :file mode
   config.max_memory_queries = 1000                   # Maximum number of queries to store in memory
 
   # Authentication options
-  config.admin_credentials = { username: "admin", password: "your_secure_password" } # Basic HTTP auth credentials
+  # config.admin_credentials = { username: "admin", password: "your_secure_password" } # Basic HTTP auth credentials
 end
 ```
+
+You can also create this file manually if you prefer.
 
 The configuration is accessed through `Dbviewer.configuration` throughout the codebase. You can also access it via `Dbviewer.config` which is an alias for backward compatibility.
 
@@ -302,13 +310,13 @@ The simplest way to update is using Bundler:
 
 - Update your Gemfile with the desired version:
 
-   ```ruby
-   # For the latest version
-   gem "dbviewer", group: :development
-   
-   # Or specify a version
-   gem "dbviewer", "~> 0.3.2", group: :development
-   ```
+  ```ruby
+  # For the latest version
+  gem "dbviewer", group: :development
+
+  # Or specify a version
+  gem "dbviewer", "~> 0.3.2", group: :development
+  ```
 
 - Run bundle update:
 

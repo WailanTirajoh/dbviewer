@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.5] - 2025-05-25
+
+### Added
+
+- Added Rails generator `dbviewer:initializer` to create configuration file
+- Updated documentation to include the new generator usage information
+- Enhanced engine to properly load generators
+
 ## [0.3.15] - 2025-05-22
 
 ### Enhanced
