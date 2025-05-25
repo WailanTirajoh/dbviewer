@@ -92,7 +92,6 @@ Rails.application.routes.draw do
 
   # Mount the DBViewer engine
   mount Dbviewer::Engine, at: "/dbviewer"
-  # The engine can be mounted in any environment when using Basic Authentication
 end
 ```
 
