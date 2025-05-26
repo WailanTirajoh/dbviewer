@@ -93,6 +93,7 @@ GEM
       reline (>= 0.3.8)
     diff-lcs (1.6.2)
     drb (2.2.1)
+    erb (5.0.1)
     erubi (1.13.1)
     globalid (1.2.1)
       activesupport (>= 6.1)
@@ -202,7 +203,8 @@ GEM
       zeitwerk (~> 2.6)
     rainbow (3.1.1)
     rake (13.2.1)
-    rdoc (6.13.1)
+    rdoc (6.14.0)
+      erb
       psych (>= 4.0.0)
     regexp_parser (2.10.0)
     reline (0.6.1)
