@@ -393,7 +393,7 @@
 </div>
 
 <!-- Records Section -->
-<div class="dbviewer-card card mb-4">
+<div class="dbviewer-card card mb-4" id="table-section">
   <div class="card-header d-flex justify-content-between align-items-center">
     <h5 class="mb-0">
       <select id="per-page-select" class="form-select form-select-sm" onchange="window.location.href='<%= table_path(@table_name) %>?<%= per_page_url_params(@table_name) %>'">
@@ -414,6 +414,9 @@
       <% if active_filters > 0 %>
         <span class="badge bg-info ms-2" title="Active filters"><i class="bi bi-funnel-fill me-1"></i><%= active_filters %></span>
       <% end %>
+      <button type="button" class="btn btn-outline-secondary btn-sm ms-2" id="fullscreen-toggle" title="Toggle fullscreen">
+        <i class="bi bi-fullscreen" id="fullscreen-icon"></i>
+      </button>
     </div>
   </div>
     <div class="card-body p-0">
@@ -1311,6 +1314,71 @@
   [data-bs-theme="dark"] .record-detail-table .code-block {
     background-color: var(--bs-dark);
   }
+
+  /* Fullscreen table styles */
+  .table-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    background: var(--bs-body-bg) !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .table-fullscreen .card-body {
+    flex: 1 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .table-fullscreen .table-responsive {
+    flex: 1 !important;
+    overflow: auto !important;
+  }
+
+  .table-fullscreen .card-header {
+    flex-shrink: 0 !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10000 !important;
+    background: var(--bs-body-bg) !important;
+    border-bottom: 1px solid var(--bs-border-color) !important;
+  }
+
+  /* Hide pagination in fullscreen mode */
+  .table-fullscreen .pagination-container {
+    display: none !important;
+  }
+
+  /* Adjust table header in fullscreen */
+  .table-fullscreen .dbviewer-table-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+  }
+
+  /* Ensure body doesn't scroll when table is fullscreen */
+  body.table-fullscreen-active {
+    overflow: hidden !important;
+  }
+
+  /* Fullscreen button hover effect */
+  #fullscreen-toggle:hover {
+    background-color: var(--bs-secondary-bg) !important;
+    border-color: var(--bs-secondary-border-subtle) !important;
+  }
+
+  /* Smooth transitions */
+  #table-section {
+    transition: all 0.3s ease-in-out;
+  }
 </style>
 
 <% if @timestamp_data.present? %>
@@ -1516,5 +1584,70 @@
     
     return section;
   }
+
+  // Table fullscreen functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    const fullscreenToggle = document.getElementById('fullscreen-toggle');
+    const fullscreenIcon = document.getElementById('fullscreen-icon');
+    const tableSection = document.getElementById('table-section');
+    
+    if (fullscreenToggle && tableSection) {
+      // Key for storing fullscreen state in localStorage
+      const fullscreenStateKey = 'dbviewer-table-fullscreen-<%= @table_name %>';
+      
+      // Function to apply fullscreen state
+      function applyFullscreenState(isFullscreen) {
+        if (isFullscreen) {
+          // Enter fullscreen
+          tableSection.classList.add('table-fullscreen');
+          document.body.classList.add('table-fullscreen-active');
+          fullscreenIcon.classList.remove('bi-fullscreen');
+          fullscreenIcon.classList.add('bi-fullscreen-exit');
+          fullscreenToggle.setAttribute('title', 'Exit fullscreen');
+        } else {
+          // Exit fullscreen
+          tableSection.classList.remove('table-fullscreen');
+          document.body.classList.remove('table-fullscreen-active');
+          fullscreenIcon.classList.remove('bi-fullscreen-exit');
+          fullscreenIcon.classList.add('bi-fullscreen');
+          fullscreenToggle.setAttribute('title', 'Toggle fullscreen');
+        }
+      }
+      
+      // Restore fullscreen state from localStorage on page load
+      try {
+        const savedState = localStorage.getItem(fullscreenStateKey);
+        if (savedState === 'true') {
+          applyFullscreenState(true);
+        }
+      } catch (e) {
+        // Handle localStorage not available (private browsing, etc.)
+        console.warn('Could not restore fullscreen state:', e);
+      }
+      
+      fullscreenToggle.addEventListener('click', function() {
+        const isFullscreen = tableSection.classList.contains('table-fullscreen');
+        const newState = !isFullscreen;
+        
+        // Apply the new state
+        applyFullscreenState(newState);
+        
+        // Save state to localStorage
+        try {
+          localStorage.setItem(fullscreenStateKey, newState.toString());
+        } catch (e) {
+          // Handle localStorage not available (private browsing, etc.)
+          console.warn('Could not save fullscreen state:', e);
+        }
+      });
+      
+      // Exit fullscreen with Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && tableSection.classList.contains('table-fullscreen')) {
+          fullscreenToggle.click();
+        }
+      });
+    }
+  });
 </script>
 <% end %>
