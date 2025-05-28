@@ -19,7 +19,7 @@ module Dbviewer
     end
 
     def set_tables
-      @tables = fetch_tables_with_stats
+      @tables = fetch_tables
     end
   end
 end

@@ -19,11 +19,11 @@ module Dbviewer
       private
 
       def fetch_tables_count
-        fetch_tables_with_stats(include_record_counts: false).size
+        fetch_tables(include_record_counts: false).size
       end
 
       def fetch_tables_stats
-        tables = fetch_tables_with_stats(include_record_counts: true)
+        tables = fetch_tables(include_record_counts: true)
 
         {
           total_records: calculate_total_records(tables),
@@ -34,7 +34,7 @@ module Dbviewer
       end
 
       def calculate_total_relationships
-        tables = fetch_tables_with_stats(include_record_counts: false)
+        tables = fetch_tables(include_record_counts: false)
 
         tables.sum do |table|
           metadata = fetch_table_metadata(table[:name])

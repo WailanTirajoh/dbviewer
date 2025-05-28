@@ -46,7 +46,7 @@ module Dbviewer
 
     # Fetch all tables with their stats
     # By default, don't include record counts for better performance on sidebar
-    def fetch_tables_with_stats(include_record_counts = false)
+    def fetch_tables(include_record_counts = false)
       database_manager.tables.map do |table_name|
         table_stats = {
           name: table_name
@@ -62,7 +62,7 @@ module Dbviewer
     # Gather database analytics information
     def fetch_database_analytics
       # For analytics, we do need record counts
-      tables = fetch_tables_with_stats(include_record_counts: true)
+      tables = fetch_tables(include_record_counts: true)
 
       # Calculate overall statistics
       analytics = {

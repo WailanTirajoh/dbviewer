@@ -7,7 +7,7 @@ module Dbviewer
     before_action :set_global_filters, only: [ :show, :export_csv ]
 
     def index
-      @tables = fetch_tables_with_stats(include_record_counts: true)
+      @tables = fetch_tables(include_record_counts: true)
     end
 
     def show
@@ -60,7 +60,7 @@ module Dbviewer
     def query
       @read_only_mode = true # Flag to indicate we're in read-only mode
       @columns = fetch_table_columns(@table_name)
-      @tables = fetch_tables_with_stats  # Fetch tables for sidebar
+      @tables = fetch_tables  # Fetch tables for sidebar
 
       prepare_query
       execute_query

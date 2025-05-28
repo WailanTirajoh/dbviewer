@@ -6,7 +6,7 @@ module Dbviewer
     private
 
     def set_tables
-      @tables = fetch_tables_with_stats(include_record_counts: true)
+      @tables = fetch_tables(include_record_counts: true)
     end
   end
 end
