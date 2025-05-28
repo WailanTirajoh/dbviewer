@@ -68,15 +68,5 @@ module Dbviewer
     rescue
       []
     end
-
-    # Determine if a query should be skipped based on content
-    def self.should_skip_query?(event)
-      event.payload[:name] == "SCHEMA" ||
-      event.payload[:sql].include?("SHOW TABLES") ||
-      event.payload[:sql].include?("sqlite_master") ||
-      event.payload[:sql].include?("information_schema") ||
-      event.payload[:sql].include?("pg_catalog") ||
-      from_dbviewer?(event)
-    end
   end
 end

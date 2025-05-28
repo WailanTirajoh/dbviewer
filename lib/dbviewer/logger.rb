@@ -12,7 +12,6 @@ module Dbviewer
     def add(event)
       # Return early if query logging is disabled
       return unless Dbviewer.configuration.enable_query_logging
-      return if QueryParser.should_skip_query?(event)
 
       current_time = Time.now
       @storage.add({

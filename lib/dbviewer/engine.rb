@@ -20,8 +20,23 @@ module Dbviewer
     initializer "dbviewer.notifications" do
       ActiveSupport::Notifications.subscribe("sql.active_record") do |*args|
         event = ActiveSupport::Notifications::Event.new(*args)
+
+        next if skip_internal_query?(event)
+
         Logger.instance.add(event)
       end
+    end
+
+    private
+
+    def skip_internal_query?(event)
+      caller_locations = caller_locations(1)
+      return false unless caller_locations
+
+      # Look for dbviewer in the call stack
+      caller_locations.any? { |l| l.path.include?("dbviewer") }
+    rescue
+      false
     end
   end
 end
