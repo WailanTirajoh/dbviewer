@@ -8,7 +8,7 @@
     </div>
   </div>
 
-  <div class="row g-3 mb-4" id="analytics-cards">
+  <div class="row g-3 mb-4 dashboard-analytics-cards">
     <div class="col-md-4">
       <div class="card h-100 border-0 shadow-sm <%= stat_card_bg_class %>">
         <div class="card-body d-flex align-items-center">
@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Load tables count data
-  fetch('<%= api_tables_path %>', {
+  fetch('<%= dbviewer.api_tables_path %>', {
     headers: {
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest'
@@ -324,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Load database size data
-  fetch('<%= api_database_size_path %>', {
+  fetch('<%= dbviewer.size_api_database_path %>', {
     headers: {
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest'
@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   // Load records data separately
-  fetch('<%= api_records_path %>', {
+  fetch('<%= dbviewer.records_api_tables_path %>', {
     headers: {
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest'
@@ -377,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Load recent queries data
-  fetch('<%= api_recent_queries_path %>', {
+  fetch('<%= dbviewer.recent_api_queries_path %>', {
     headers: {
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest'

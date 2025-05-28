@@ -19,13 +19,24 @@ Dbviewer::Engine.routes.draw do
   # Homepage and API endpoints
   get "dashboard", to: "home#index", as: :dashboard
 
-  # Analytics API endpoints
-  get "api/analytics", to: "home#analytics" # Legacy/combined endpoint
-  get "api/records", to: "home#records"
-  get "api/tables", to: "home#tables_count"
-  get "api/relationships", to: "home#relationships_count"
-  get "api/database_size", to: "home#database_size"
-  get "api/recent_queries", to: "home#recent_queries"
+  namespace :api do
+    resources :tables, only: [ :index ] do
+      collection do
+        get "records"
+        get "relationships_count"
+      end
+    end
+
+    resource :database, only: [], controller: "database" do
+      get "size"
+    end
+
+    resources :queries, only: [] do
+      collection do
+        get "recent"
+      end
+    end
+  end
 
   root to: "home#index"
 end

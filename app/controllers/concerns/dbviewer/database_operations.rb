@@ -50,7 +50,6 @@ module Dbviewer
       database_manager.tables.map do |table_name|
         table_stats = {
           name: table_name
-          # columns_count: database_manager.column_count(table_name)
         }
 
         # Only fetch record counts if explicitly requested
@@ -72,36 +71,8 @@ module Dbviewer
         largest_tables: tables.sort_by { |t| -t[:record_count] }.first(10),
         empty_tables: tables.select { |t| t[:record_count] == 0 }
       }
-
-      # Calculate total foreign key relationships
-      begin
-        total_relationships = 0
-        tables.each do |table|
-          metadata = fetch_table_metadata(table[:name])
-          total_relationships += metadata[:foreign_keys].size if metadata && metadata[:foreign_keys]
-        end
-        analytics[:total_relationships] = total_relationships
-      rescue => e
-        Rails.logger.error("Error calculating relationship count: #{e.message}")
-        analytics[:total_relationships] = 0
-      end
-
       # Calculate schema size if possible
-      begin
-        analytics[:schema_size] = calculate_schema_size
-      rescue => e
-        Rails.logger.error("Error calculating schema size: #{e.message}")
-        analytics[:schema_size] = nil
-      end
-
-      # Calculate average rows per table
-      if tables.any?
-        analytics[:avg_records_per_table] = (analytics[:total_records].to_f / tables.size).round(1)
-        analytics[:avg_columns_per_table] = (analytics[:total_columns].to_f / tables.size).round(1)
-      else
-        analytics[:avg_records_per_table] = 0
-        analytics[:avg_columns_per_table] = 0
-      end
+      analytics[:schema_size] = calculate_schema_size
 
       analytics
     end
