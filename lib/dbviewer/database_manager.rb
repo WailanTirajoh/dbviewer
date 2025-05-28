@@ -180,7 +180,47 @@ module Dbviewer
       @cache_manager.clear_all
     end
 
+    # Calculate the total size of the database schema
+    # @return [Integer, nil] Database size in bytes or nil if unsupported
+    def fetch_schema_size
+      case adapter_name
+      when /mysql/
+        fetch_mysql_size
+      when /postgres/
+        fetch_postgres_size
+      when /sqlite/
+        fetch_sqlite_size
+      else
+        nil # Unsupported database type for size calculation
+      end
+    end
+
     private
+
+    def fetch_mysql_size
+      query = "SELECT SUM(data_length + index_length) AS size FROM information_schema.TABLES WHERE table_schema = DATABASE()"
+      fetch_size_from_query(query)
+    end
+
+    def fetch_postgres_size
+      query = "SELECT pg_database_size(current_database()) AS size"
+      fetch_size_from_query(query)
+    end
+
+    def fetch_sqlite_size
+      page_count = fetch_sqlite_pragma_value("page_count")
+      page_size = fetch_sqlite_pragma_value("page_size")
+      page_count * page_size
+    end
+
+    def fetch_sqlite_pragma_value(pragma_name)
+      execute_sqlite_pragma(pragma_name).first.values.first.to_i
+    end
+
+    def fetch_size_from_query(query)
+      result = execute_query(query).first
+      result ? result["size"].to_i : nil
+    end
 
     # Ensure we have a valid database connection
     # @return [ActiveRecord::ConnectionAdapters::AbstractAdapter] The database connection

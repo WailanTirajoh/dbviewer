@@ -2,16 +2,26 @@ module Dbviewer
   module Api
     class QueriesController < BaseController
       def recent
-        @recent_queries = if Dbviewer.configuration.enable_query_logging
-          Dbviewer::Logger.instance.recent_queries(limit: 10)
-        else
-          []
-        end
-
         render_success({
-          enabled: Dbviewer.configuration.enable_query_logging,
-          queries: @recent_queries
+          enabled: query_logging_enabled?,
+          queries: fetch_recent_queries
         })
+      end
+
+      private
+
+      def fetch_recent_queries
+        return [] unless query_logging_enabled?
+
+        Dbviewer::Logger.instance.recent_queries(limit: queries_limit)
+      end
+
+      def query_logging_enabled?
+        Dbviewer.configuration.enable_query_logging
+      end
+
+      def queries_limit
+        10
       end
     end
   end

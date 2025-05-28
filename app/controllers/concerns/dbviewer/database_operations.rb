@@ -77,48 +77,6 @@ module Dbviewer
       analytics
     end
 
-    # Calculate approximate schema size
-    def calculate_schema_size
-      adapter = database_manager.connection.adapter_name.downcase
-
-      case adapter
-      when /mysql/
-        query = <<-SQL
-          SELECT
-            SUM(data_length + index_length) AS size
-          FROM
-            information_schema.TABLES
-          WHERE
-            table_schema = DATABASE()
-        SQL
-        result = database_manager.execute_query(query).first
-        result ? result["size"].to_i : nil
-      when /postgres/
-        query = <<-SQL
-          SELECT pg_database_size(current_database()) AS size
-        SQL
-        result = database_manager.execute_query(query).first
-        result ? result["size"].to_i : nil
-      when /sqlite/
-        # For SQLite, we need to use the special PRAGMA method without LIMIT
-        # Get page count
-        page_count_result = database_manager.execute_sqlite_pragma("page_count")
-        page_count = page_count_result.first.values.first.to_i
-
-        # Get page size
-        page_size_result = database_manager.execute_sqlite_pragma("page_size")
-        page_size = page_size_result.first.values.first.to_i
-
-        # Calculate total size
-        page_count * page_size
-      else
-        nil # Unsupported database type for size calculation
-      end
-    rescue => e
-      Rails.logger.error("Error calculating database size: #{e.message}")
-      nil
-    end
-
     # Get column information for a specific table
     def fetch_table_columns(table_name)
       database_manager.table_columns(table_name)
