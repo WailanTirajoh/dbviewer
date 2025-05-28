@@ -5,7 +5,8 @@
 DBViewer is a powerful Rails engine that provides a comprehensive interface to view and explore database tables, records, and schema.
 It's designed for development, debugging, and database analysis, offering a clean and intuitive way to interact with your application's database.
 
-<img width="1470" alt="image" src="https://github.com/user-attachments/assets/c946a286-e80a-4cca-afa0-654052e4ef2c" />
+<img width="1470" alt="image" src="https://github.com/user-attachments/assets/0d2719ad-f5b4-4818-891d-5bff7be6c5c3" />
+
 
 ## ✨ Features
 
@@ -45,27 +46,10 @@ It's designed for development, debugging, and database analysis, offering a clea
 
 <details>
   <summary>Click to see more screenshots</summary>
-  
-#### Dashboard Overview
 
-  <img width="1470" alt="image" src="https://github.com/user-attachments/assets/4e803d51-9a5b-4c80-bb4c-a761dba15a40" />
+  <img width="1470" alt="image" src="https://github.com/user-attachments/assets/7d708c14-5f78-42c4-b769-2167546b3aad" />
+  <img width="1470" alt="image" src="https://github.com/user-attachments/assets/f6d9a39a-a571-4328-908a-d96b3148f707" />
 
-#### Table Details
-
-  <img width="1470" alt="image" src="https://github.com/user-attachments/assets/fe425ab4-5b22-4839-87bc-050b80ad4cf0" />
-
-#### Query Editor
-
-  <img width="1470" alt="image" src="https://github.com/user-attachments/assets/392c73c7-0724-4a39-8ffa-8ff5115c5d5f" />
-
-#### Query Logs
-
-  <img width="1470" alt="image" src="https://github.com/user-attachments/assets/7fcf3355-be3c-4d6a-9ab0-811333be5bbc" />
-
-#### ERD
-
-  <img width="1470" alt="image" src="https://github.com/user-attachments/assets/0a2f838f-4ca6-4592-b939-7c7f8ac40f48" />
-  
 </details>
 
 ## 📥 Installation
