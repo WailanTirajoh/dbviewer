@@ -5,7 +5,7 @@ module Dbviewer
     extend ActiveSupport::Concern
 
     included do
-      helper_method :current_table?, :get_database_name if respond_to?(:helper_method)
+      helper_method :current_table?, :get_database_name, :get_adapter_name if respond_to?(:helper_method)
     end
 
     # Initialize the database manager
@@ -42,6 +42,30 @@ module Dbviewer
     rescue => e
       Rails.logger.error("Error retrieving database name: #{e.message}")
       "Database"
+    end
+
+    # Get the name of the current database adapter
+    def get_adapter_name
+      adapter = database_manager.connection.adapter_name
+
+      # Format the adapter name for better display
+      case adapter.downcase
+      when /mysql/
+        "MySQL"
+      when /postgres/
+        "PostgreSQL"
+      when /sqlite/
+        "SQLite"
+      when /oracle/
+        "Oracle"
+      when /sqlserver/, /mssql/
+        "SQL Server"
+      else
+        adapter.titleize # Fallback to titleized version
+      end
+    rescue => e
+      Rails.logger.error("Error retrieving adapter name: #{e.message}")
+      "Unknown"
     end
 
     # Fetch all tables with their stats
