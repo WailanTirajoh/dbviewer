@@ -1,0 +1,60 @@
+#!/usr/bin/env ruby
+require "fileutils"
+
+# path to your application root.
+APP_ROOT = File.expand_path("..", __dir__)
+
+def system!(*args)
+  system(*args) || abort("\n== Command #{args} failed ==")
+end
+
+def system_quietly(*args)
+  system(*args, out: File::NULL, err: File::NULL)
+end
+
+FileUtils.chdir APP_ROOT do
+  # This script is a way to set up or update your development environment automatically.
+  # This script is idempotent, so that you can run it at any time and get an expectable outcome.
+  # Add necessary setup steps to this file.
+
+  puts "== Installing dependencies =="
+  system! "gem install bundler --conservative"
+  system("bundle check") || system!("bundle install")
+
+  puts "\n== Setting up test dummy app =="
+  FileUtils.chdir "test/dummy" do
+    puts "== Creating storage directory =="
+    FileUtils.mkdir_p("storage")
+
+    puts "== Preparing database =="
+    system! "bin/rails db:prepare"
+
+    puts "== Running migrations =="
+    system! "bin/rails db:migrate"
+
+    puts "== Seeding database =="
+    system! "bin/rails db:seed"
+  end
+
+  puts "\n== Removing old logs and tempfiles =="
+  FileUtils.chdir "test/dummy" do
+    system_quietly "bin/rails log:clear tmp:clear"
+  end
+
+  puts "\n== Setting up test environment =="
+  FileUtils.chdir "test/dummy" do
+    system! "bin/rails db:test:prepare"
+  end
+
+  puts "\n== Setup complete! =="
+  puts "\nTo start the development server:"
+  puts "  cd test/dummy && bin/rails server"
+  puts "\nTo run tests:"
+  puts "  bundle exec rspec"
+  puts "\nTo run rubocop:"
+  puts "  bin/rubocop"
+  puts "\nTo access DBViewer in dummy app:"
+  puts "  http://localhost:3000/dbviewer"
+  puts "\nTo build the gem:"
+  puts "  gem build dbviewer.gemspec"
+end

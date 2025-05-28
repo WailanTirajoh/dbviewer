@@ -7,7 +7,6 @@ It's designed for development, debugging, and database analysis, offering a clea
 
 <img width="1470" alt="image" src="https://github.com/user-attachments/assets/0d2719ad-f5b4-4818-891d-5bff7be6c5c3" />
 
-
 ## ✨ Features
 
 - **Dashboard**: View a comprehensive dashboard with database analytics, largest tables, most complex tables, and recent SQL queries
@@ -269,6 +268,70 @@ The simplest way to update is using Bundler:
   ```ruby
   rails server
   ```
+
+## 🛠️ Development Setup
+
+To set up the development environment for contributing to DBViewer:
+
+### Quick Setup
+
+Run the setup script to automatically configure your development environment:
+
+```bash
+bin/setup
+```
+
+This script will:
+
+- Install bundler and gem dependencies
+- Set up the test dummy Rails application
+- Create and seed the development database
+- Prepare the test environment
+- Clean up old logs and temporary files
+
+### Manual Setup
+
+If you prefer to set up manually:
+
+```bash
+# Install dependencies
+bundle install
+
+# Set up the dummy app database
+cd test/dummy
+bin/rails db:prepare
+bin/rails db:migrate
+bin/rails db:seed
+cd ../..
+
+# Prepare test environment
+cd test/dummy && bin/rails db:test:prepare && cd ../..
+```
+
+### Development Commands
+
+```bash
+# Start the development server
+cd test/dummy && bin/rails server
+
+# Run tests
+bundle exec rspec
+
+# Run code quality checks
+bin/rubocop
+
+# Open an interactive console
+bin/console
+
+# Build the gem
+gem build dbviewer.gemspec
+```
+
+### Testing Your Changes
+
+1. Start the dummy Rails application: `cd test/dummy && bin/rails server`
+2. Visit `http://localhost:3000/dbviewer` to test your changes
+3. The dummy app includes sample data across multiple tables to test various DBViewer features
 
 ## 🤌🏻 Contributing
 
