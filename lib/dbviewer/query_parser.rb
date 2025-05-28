@@ -22,36 +22,6 @@ module Dbviewer
          .gsub(/"[^"]*"/, '"X"')
     end
 
-    # Check if the query is from the DBViewer library
-    def self.from_dbviewer?(event)
-      # Check if the SQL itself references DBViewer tables
-      if event.payload[:sql].match(/\b(from|join|update|into)\s+["`']?dbviewer_/i)
-        return true
-      end
-
-      # Check the caller information if available
-      caller = event.payload[:caller]
-      if caller.is_a?(String) && caller.include?("/dbviewer/")
-        return true
-      end
-
-      # Check if query name indicates it's from DBViewer
-      if event.payload[:name].is_a?(String) &&
-         (event.payload[:name].include?("Dbviewer") || event.payload[:name].include?("DBViewer") || event.payload[:name] == "SQL")
-        return true
-      end
-
-      # Check for common DBViewer operations
-      sql = event.payload[:sql].downcase
-      if sql.include?("table_structure") ||
-         sql.include?("schema_migrations") ||
-         sql.include?("database_analytics")
-        return true
-      end
-
-      false
-    end
-
     # Format bind parameters for storage
     def self.format_binds(binds)
       return [] unless binds.respond_to?(:map)
@@ -67,6 +37,16 @@ module Dbviewer
       end
     rescue
       []
+    end
+
+    # Determine if a query should be skipped based on content
+    # Rails and ActiveRecord often run internal queries that are not useful for logging
+    def self.should_skip_query?(event)
+      event.payload[:name] == "SCHEMA" ||
+      event.payload[:sql].include?("SHOW TABLES") ||
+      event.payload[:sql].include?("sqlite_master") ||
+      event.payload[:sql].include?("information_schema") ||
+      event.payload[:sql].include?("pg_catalog")
     end
   end
 end

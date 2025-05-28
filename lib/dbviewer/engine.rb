@@ -33,8 +33,10 @@ module Dbviewer
       caller_locations = caller_locations(1)
       return false unless caller_locations
 
-      # Look for dbviewer in the call stack
-      caller_locations.any? { |l| l.path.include?("dbviewer") }
+      excluded_caller_locations = caller_locations.filter do |caller_location|
+        !caller_location.path.include?("lib/dbviewer/engine.rb")
+      end
+      excluded_caller_locations.any? { |l| l.path.include?("dbviewer") }
     rescue
       false
     end

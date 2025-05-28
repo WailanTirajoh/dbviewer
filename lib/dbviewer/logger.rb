@@ -12,6 +12,7 @@ module Dbviewer
     def add(event)
       # Return early if query logging is disabled
       return unless Dbviewer.configuration.enable_query_logging
+      return if QueryParser.should_skip_query?(event)
 
       current_time = Time.now
       @storage.add({
@@ -20,7 +21,7 @@ module Dbviewer
         timestamp: current_time,
         duration_ms: event.duration.round(2),
         binds: QueryParser.format_binds(event.payload[:binds]),
-        request_id: event.transaction_id || current_time.to_i,
+        request_id: ActiveSupport::Notifications.instrumenter.id,
         thread_id: Thread.current.object_id.to_s,
         caller: event.payload[:caller]
       })
