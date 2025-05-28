@@ -46,6 +46,7 @@ module Dbviewer
       event.payload[:sql].include?("SHOW TABLES") ||
       event.payload[:sql].include?("sqlite_master") ||
       event.payload[:sql].include?("information_schema") ||
+      event.payload[:sql].include?("schema_migrations") ||
       event.payload[:sql].include?("pg_catalog")
     end
   end

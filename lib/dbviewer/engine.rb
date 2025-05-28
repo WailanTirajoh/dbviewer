@@ -2,9 +2,10 @@ module Dbviewer
   class Engine < ::Rails::Engine
     isolate_namespace Dbviewer
 
-    # Ensure lib directory is in the autoload path
-    config.autoload_paths << File.expand_path("../../", __FILE__)
-    config.eager_load_paths << File.expand_path("../../", __FILE__)
+    # Autoload lib directory
+    lib_path = File.expand_path("..", __dir__)
+    config.autoload_paths << lib_path
+    config.eager_load_paths << lib_path
 
     # Register generators
     config.app_generators do |g|
@@ -18,12 +19,14 @@ module Dbviewer
     end
 
     initializer "dbviewer.notifications" do
+      return unless Rails.env.development?
+
       ActiveSupport::Notifications.subscribe("sql.active_record") do |*args|
         event = ActiveSupport::Notifications::Event.new(*args)
 
         next if skip_internal_query?(event)
 
-        Logger.instance.add(event)
+        Dbviewer::Logger.instance.add(event)
       end
     end
 
@@ -37,8 +40,6 @@ module Dbviewer
         !caller_location.path.include?("lib/dbviewer/engine.rb")
       end
       excluded_caller_locations.any? { |l| l.path.include?("dbviewer") }
-    rescue
-      false
     end
   end
 end
