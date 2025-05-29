@@ -181,7 +181,7 @@ module Dbviewer
         tables = Hash.new(0)
 
         queries.each do |query|
-          extracted = ::Dbviewer::QueryParser.extract_tables(query[:sql])
+          extracted = ::Dbviewer::Query::Parser.extract_tables(query[:sql])
           extracted.each { |table| tables[table] += 1 }
         end
 
@@ -220,7 +220,7 @@ module Dbviewer
 
         request_queries.each do |query|
           # Normalize the query to detect patterns
-          normalized = ::Dbviewer::QueryParser.normalize(query[:sql])
+          normalized = ::Dbviewer::Query::Parser.normalize(query[:sql])
           patterns[normalized] ||= []
           patterns[normalized] << query
         end
@@ -230,7 +230,7 @@ module Dbviewer
           next if pattern_queries.size < 5  # Only interested in repeated patterns
 
           # Check if these queries target the same table
-          tables = ::Dbviewer::QueryParser.extract_tables(pattern_queries.first[:sql])
+          tables = ::Dbviewer::Query::Parser.extract_tables(pattern_queries.first[:sql])
           target_table = tables.size == 1 ? tables.first : nil
 
           # Add to potential issues

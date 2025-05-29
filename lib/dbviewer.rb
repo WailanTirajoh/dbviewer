@@ -3,7 +3,10 @@ require "dbviewer/configuration"
 require "dbviewer/engine"
 require "dbviewer/sql_validator"
 
-# Require namespaced modules
+require "dbviewer/storage/base"
+require "dbviewer/storage/in_memory_storage"
+require "dbviewer/storage/file_storage"
+
 require "dbviewer/query/executor"
 require "dbviewer/query/analyzer"
 require "dbviewer/query/collection"
@@ -17,9 +20,6 @@ require "dbviewer/database/manager"
 require "dbviewer/datatable/metadata_manager"
 require "dbviewer/datatable/query_operations"
 require "dbviewer/datatable/query_params"
-
-require "dbviewer/storage/file_storage"
-require "dbviewer/storage/in_memory_storage"
 
 module Dbviewer
   # Main module for the database viewer
