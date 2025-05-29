@@ -333,6 +333,98 @@ gem build dbviewer.gemspec
 2. Visit `http://localhost:3000/dbviewer` to test your changes
 3. The dummy app includes sample data across multiple tables to test various DBViewer features
 
+### Architecture Diagram
+```mermaid
+graph TB
+    subgraph "DBViewer Engine"
+        Engine[Engine<br/>Rails::Engine]
+        Config[Configuration<br/>Settings & Defaults]
+        SqlValidator[SqlValidator<br/>Query Validation]
+    end
+
+    subgraph "Controllers Layer"
+        HomeController[HomeController<br/>Dashboard & Overview]
+        TablesController[TablesController<br/>Table Operations]
+        LogsController[LogsController<br/>Query Logs]
+        ERDController[ERDController<br/>Entity Relationships]
+        APIController[API Controllers<br/>JSON Endpoints]
+    end
+
+    subgraph "Database Namespace"
+        Manager[Manager<br/>Database Operations]
+        CacheManager[CacheManager<br/>Caching Layer]
+        MetadataManager[MetadataManager<br/>Schema Information]
+        DynamicModelFactory[DynamicModelFactory<br/>ActiveRecord Models]
+    end
+
+    subgraph "Query Namespace"
+        QueryExecutor[Executor<br/>SQL Execution]
+        QueryLogger[Logger<br/>Query Logging]
+        QueryAnalyzer[Analyzer<br/>Performance Analysis]
+        QueryParser[Parser<br/>SQL Parsing]
+    end
+
+    subgraph "Datatable Namespace"
+        QueryOperations[QueryOperations<br/>Table Queries]
+        QueryParams[QueryParams<br/>Parameter Handling]
+    end
+
+    subgraph "Storage Namespace"
+        StorageBase[Base<br/>Storage Interface]
+        InMemoryStorage[InMemoryStorage<br/>Memory Storage]
+        FileStorage[FileStorage<br/>File Storage]
+    end
+
+    %% Configuration Dependencies (Decoupled)
+    Config -.->|"Dependency Injection"| Manager
+    Manager -->|"cache_expiry"| CacheManager
+    Manager -->|"config object"| QueryExecutor
+
+    %% Main Dependencies
+    Engine --> HomeController
+    Engine --> TablesController
+    Engine --> LogsController
+    Engine --> ERDController
+
+    Manager --> CacheManager
+    Manager --> MetadataManager
+    Manager --> DynamicModelFactory
+    Manager --> QueryOperations
+
+    CacheManager --> DynamicModelFactory
+    CacheManager --> MetadataManager
+
+    QueryOperations --> DynamicModelFactory
+    QueryOperations --> QueryExecutor
+    QueryOperations --> MetadataManager
+
+    QueryLogger --> StorageBase
+    StorageBase --> InMemoryStorage
+    StorageBase --> FileStorage
+
+    TablesController --> Manager
+    HomeController --> Manager
+    LogsController --> QueryLogger
+    APIController --> Manager
+    APIController --> QueryLogger
+
+    %% Decoupled Configuration Flow
+    Engine -.->|"setup()"| QueryLogger
+    Config -.->|"logging settings"| QueryLogger
+
+    classDef decoupled fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef controller fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef database fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef query fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef storage fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+
+    class CacheManager,QueryLogger decoupled
+    class HomeController,TablesController,LogsController,ERDController,APIController controller
+    class Manager,MetadataManager,DynamicModelFactory database
+    class QueryExecutor,QueryAnalyzer,QueryParser query
+    class StorageBase,InMemoryStorage,FileStorage storage
+```
+
 ## 🤌🏻 Contributing
 
 Bug reports and pull requests are welcome.
