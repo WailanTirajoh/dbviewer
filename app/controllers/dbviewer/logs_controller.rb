@@ -45,7 +45,7 @@ module Dbviewer
     end
 
     def dbviewer_logger
-      @dbviewer_logger ||= Dbviewer::QueryLogger.instance
+      @dbviewer_logger ||= Dbviewer::Query::Logger.instance
     end
   end
 end

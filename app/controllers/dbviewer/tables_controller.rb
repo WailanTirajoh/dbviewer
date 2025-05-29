@@ -11,7 +11,7 @@ module Dbviewer
     end
 
     def show
-      query_params = Dbviewer::TableQueryParams.new(
+      query_params = Dbviewer::Datatable::QueryParams.new(
         page: @current_page,
         per_page: @per_page,
         order_by: @order_by,
@@ -76,7 +76,7 @@ module Dbviewer
       end
 
       include_headers = params[:include_headers] != "0"
-      query_params = Dbviewer::TableQueryParams.new(
+      query_params = Dbviewer::Datatable::QueryParams.new(
         page: @current_page,
         per_page: (params[:limit] || 10000).to_i,
         order_by: @order_by,

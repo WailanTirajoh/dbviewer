@@ -1,13 +1,25 @@
 require "dbviewer/version"
 require "dbviewer/configuration"
 require "dbviewer/engine"
-require "dbviewer/cache_manager"
-require "dbviewer/table_metadata_manager"
-require "dbviewer/dynamic_model_factory"
-require "dbviewer/query_executor"
-require "dbviewer/table_query_operations"
-require "dbviewer/database_manager"
 require "dbviewer/sql_validator"
+
+# Require namespaced modules
+require "dbviewer/query/executor"
+require "dbviewer/query/analyzer"
+require "dbviewer/query/collection"
+require "dbviewer/query/logger"
+require "dbviewer/query/parser"
+
+require "dbviewer/database/cache_manager"
+require "dbviewer/database/dynamic_model_factory"
+require "dbviewer/database/manager"
+
+require "dbviewer/datatable/metadata_manager"
+require "dbviewer/datatable/query_operations"
+require "dbviewer/datatable/query_params"
+
+require "dbviewer/storage/file_storage"
+require "dbviewer/storage/in_memory_storage"
 
 module Dbviewer
   # Main module for the database viewer

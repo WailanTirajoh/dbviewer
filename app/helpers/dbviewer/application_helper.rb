@@ -11,7 +11,7 @@ module Dbviewer
 
     # Helper to access the database manager
     def get_database_manager
-      @database_manager ||= ::Dbviewer::DatabaseManager.new
+      @database_manager ||= ::Dbviewer::Database::Manager.new
     end
 
     # Extract column type from columns info

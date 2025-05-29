@@ -6,7 +6,7 @@ module Dbviewer
   class GlobalCreationFilterTest < ActiveSupport::TestCase
     setup do
       # Ensure we have a database manager
-      @database_manager = Dbviewer::DatabaseManager.new
+      @database_manager = Dbviewer::Database::Manager.new
       @query_operations = @database_manager.query_operations
 
       # Store adapter name for conditional testing
@@ -35,7 +35,7 @@ module Dbviewer
       # Get one record to extract its created_at value
       records = @query_operations.table_records(
         test_table,
-        Dbviewer::TableQueryParams.new(page: 1, per_page: 1, column_filters: {})
+        Dbviewer::Datatable::QueryParams.new(page: 1, per_page: 1, column_filters: {})
       )
 
       created_at = nil
@@ -71,7 +71,7 @@ module Dbviewer
       # Get filtered records
       filtered_records = @query_operations.table_records(
         test_table,
-        Dbviewer::TableQueryParams.new(page: 1, per_page: 10, column_filters: column_filters)
+        Dbviewer::Datatable::QueryParams.new(page: 1, per_page: 10, column_filters: column_filters)
       )
 
       # For each row, verify that created_at is within range

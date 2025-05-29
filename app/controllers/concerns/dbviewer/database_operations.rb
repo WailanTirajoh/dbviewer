@@ -10,7 +10,7 @@ module Dbviewer
 
     # Initialize the database manager
     def database_manager
-      @database_manager ||= ::Dbviewer::DatabaseManager.new
+      @database_manager ||= ::Dbviewer::Database::Manager.new
     end
 
     # Initialize the table query operations manager
