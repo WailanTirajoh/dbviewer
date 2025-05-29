@@ -9,7 +9,7 @@ module Dbviewer
       # @param connection [ActiveRecord::ConnectionAdapters::AbstractAdapter] The database connection
       # @param dynamic_model_factory [Dbviewer::Database::DynamicModelFactory] Factory for creating dynamic AR models
       # @param query_executor [Dbviewer::Query::Executor] Executor for raw SQL queries
-      # @param table_metadata_manager [Dbviewer::Datatable::MetadataManager] Manager for table metadata
+      # @param table_metadata_manager [Dbviewer::Database::MetadataManager] Manager for table metadata
       def initialize(connection, dynamic_model_factory, query_executor, table_metadata_manager)
         @connection = connection
         @adapter_name = connection.adapter_name.downcase

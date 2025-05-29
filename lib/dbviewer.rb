@@ -16,8 +16,8 @@ require "dbviewer/query/parser"
 require "dbviewer/database/cache_manager"
 require "dbviewer/database/dynamic_model_factory"
 require "dbviewer/database/manager"
+require "dbviewer/database/metadata_manager"
 
-require "dbviewer/datatable/metadata_manager"
 require "dbviewer/datatable/query_operations"
 require "dbviewer/datatable/query_params"
 

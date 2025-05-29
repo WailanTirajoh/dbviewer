@@ -1,5 +1,5 @@
 module Dbviewer
-  module Datatable
+  module Database
     # MetadataManager handles retrieving and managing table structure information
     class MetadataManager
       # Initialize with a connection and cache manager
