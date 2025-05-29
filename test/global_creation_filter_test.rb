@@ -7,7 +7,7 @@ module Dbviewer
     setup do
       # Ensure we have a database manager
       @database_manager = Dbviewer::Database::Manager.new
-      @query_operations = @database_manager.query_operations
+      @query_operations = @database_manager.table_query_operations
 
       # Store adapter name for conditional testing
       @adapter_name = @database_manager.connection.adapter_name.downcase

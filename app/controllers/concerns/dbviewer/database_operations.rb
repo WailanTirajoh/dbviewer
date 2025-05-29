@@ -328,7 +328,7 @@ module Dbviewer
 
     # Export table data to CSV
     def export_table_to_csv(table_name, query_params = nil, include_headers = true)
-      records = database_manager.query_operations.table_records(table_name, query_params)
+      records = database_manager.table_query_operations.table_records(table_name, query_params)
 
       csv_data = CSV.generate do |csv|
         # Add headers if requested
