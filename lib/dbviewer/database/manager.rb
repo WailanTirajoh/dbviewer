@@ -8,10 +8,10 @@ module Dbviewer
       # Initialize the database manager
       def initialize
         ensure_connection
-        @cache_manager = ::Dbviewer::Database::CacheManager.new(self.class.configuration)
+        @cache_manager = ::Dbviewer::Database::CacheManager.new(configuration.cache_expiry)
         @table_metadata_manager = ::Dbviewer::Database::MetadataManager.new(@connection, @cache_manager)
         @dynamic_model_factory = ::Dbviewer::Database::DynamicModelFactory.new(@connection, @cache_manager)
-        @query_executor = ::Dbviewer::Query::Executor.new(@connection, self.class.configuration)
+        @query_executor = ::Dbviewer::Query::Executor.new(@connection, configuration)
         @table_query_operations = ::Dbviewer::Datatable::QueryOperations.new(
           @connection,
           @dynamic_model_factory,
@@ -22,23 +22,8 @@ module Dbviewer
       end
 
       # Get configuration from class method or Dbviewer
-      def self.configuration
-        Dbviewer.configuration
-      end
-
-      # Get default per page from configuration
-      def self.default_per_page
-        configuration.default_per_page
-      end
-
-      # Get max records from configuration
-      def self.max_records
-        configuration.max_records
-      end
-
-      # Get cache expiry from configuration
-      def self.cache_expiry
-        configuration.cache_expiry
+      def configuration
+        @configuration ||= Dbviewer.configuration
       end
 
       # Returns a sorted list of all tables in the database

@@ -51,6 +51,12 @@ module Dbviewer
 
     # This class method will be called by the engine when it's appropriate
     def setup
+      # Configure the query logger with current configuration settings
+      Dbviewer::Query::Logger.configure(
+        enable_query_logging: configuration.enable_query_logging,
+        query_logging_mode: configuration.query_logging_mode
+      )
+
       ActiveRecord::Base.connection
       Rails.logger.info "DBViewer successfully connected to database"
     rescue => e

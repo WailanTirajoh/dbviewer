@@ -4,9 +4,9 @@ module Dbviewer
     # It provides an abstraction layer for managing caches efficiently
     class CacheManager
       # Initialize the cache manager
-      # @param config [Dbviewer::Configuration] Configuration object
-      def initialize(config = nil)
-        @config = config || Dbviewer.configuration
+      # @param cache_expiry [Integer] Cache expiration time in seconds (default: 300)
+      def initialize(cache_expiry = 300)
+        @cache_expiry = cache_expiry
         @dynamic_models = {}
         @table_columns_cache = {}
         @table_metadata_cache = {}
@@ -57,13 +57,11 @@ module Dbviewer
 
       # Reset caches if they've been around too long
       def reset_if_needed
-        cache_expiry = @config.cache_expiry || 300
-
-        if Time.now - @cache_last_reset > cache_expiry
+        if Time.now - @cache_last_reset > @cache_expiry
           @table_columns_cache = {}
           @table_metadata_cache = {}
           @cache_last_reset = Time.now
-          Rails.logger.debug("[DBViewer] Cache reset due to expiry after #{cache_expiry} seconds")
+          Rails.logger.debug("[DBViewer] Cache reset due to expiry after #{@cache_expiry} seconds")
         end
       end
 

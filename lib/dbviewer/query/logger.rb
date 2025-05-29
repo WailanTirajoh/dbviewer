@@ -8,14 +8,30 @@ module Dbviewer
       include Singleton
 
       def initialize
+        # Initialize with default values, will be configured later
+        @enable_query_logging = true
+        @query_logging_mode = :memory
         set_storage
         Rails.logger.info("[DBViewer] QueryLogger initialized with #{mode} storage mode")
+      end
+
+      # Configure the logger with settings
+      # @param enable_query_logging [Boolean] Whether query logging is enabled
+      # @param query_logging_mode [Symbol] Storage mode (:memory or :file)
+      def configure(enable_query_logging: true, query_logging_mode: :memory)
+        @enable_query_logging = enable_query_logging
+        @query_logging_mode = query_logging_mode
+        # Reinitialize storage if mode changed
+        @storage = nil
+        @mode = nil
+        set_storage
+        Rails.logger.info("[DBViewer] QueryLogger configured with #{mode} storage mode")
       end
 
       # Add a new SQL event query to the logger
       def add(event)
         # Return early if query logging is disabled
-        return unless Dbviewer.configuration.enable_query_logging
+        return unless @enable_query_logging
         return if ::Dbviewer::Query::Parser.should_skip_query?(event)
 
         current_time = Time.now
@@ -61,12 +77,22 @@ module Dbviewer
 
         # Delegate add method to the singleton instance so that it can be called directly on sql events
         def_delegators :instance, :add
+
+        # Configure the singleton instance
+        # @param enable_query_logging [Boolean] Whether query logging is enabled
+        # @param query_logging_mode [Symbol] Storage mode (:memory or :file)
+        def configure(enable_query_logging: true, query_logging_mode: :memory)
+          instance.configure(
+            enable_query_logging: enable_query_logging,
+            query_logging_mode: query_logging_mode
+          )
+        end
       end
 
       private
 
       def mode
-        @mode ||= Dbviewer.configuration.query_logging_mode || :memory
+        @mode ||= @query_logging_mode || :memory
       end
 
       def set_storage
