@@ -1,10 +1,3 @@
-require "dbviewer/cache_manager"
-require "dbviewer/table_metadata_manager"
-require "dbviewer/dynamic_model_factory"
-require "dbviewer/query_executor"
-require "dbviewer/table_query_operations"
-require "dbviewer/error_handler"
-
 module Dbviewer
   # DatabaseManager handles all database interactions for the DBViewer engine
   # It provides methods to access database structure and data
@@ -141,26 +134,6 @@ module Dbviewer
       @table_query_operations.execute_sqlite_pragma(pragma)
     end
 
-    # Query a table with more granular control using ActiveRecord
-    # @param table_name [String] Name of the table
-    # @param select [String, Array] Columns to select
-    # @param order [String, Hash] Order by clause
-    # @param limit [Integer] Maximum number of records to return
-    # @param offset [Integer] Offset from which to start returning records
-    # @param where [String, Hash] Where conditions
-    # @return [ActiveRecord::Result] Result set with columns and rows
-    def query_table(table_name, select: nil, order: nil, limit: nil, offset: nil, where: nil)
-      @table_query_operations.query_table(
-        table_name,
-        select: select,
-        order: order,
-        limit: limit,
-        offset: offset,
-        where: where,
-        max_records: self.class.max_records
-      )
-    end
-
     # Get table indexes
     # @param table_name [String] Name of the table
     # @return [Array<Hash>] List of indexes with details
@@ -227,11 +200,9 @@ module Dbviewer
     def ensure_connection
       return @connection if @connection
 
-      ErrorHandler.with_error_handling("establishing database connection") do
-        @connection = ActiveRecord::Base.connection
-        @adapter_name = @connection.adapter_name.downcase
-        @connection
-      end
+      @connection = ActiveRecord::Base.connection
+      @adapter_name = @connection.adapter_name.downcase
+      @connection
     end
 
     # Reset caches if they've been around too long

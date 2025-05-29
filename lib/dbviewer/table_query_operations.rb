@@ -1,7 +1,3 @@
-require "dbviewer/error_handler"
-require "dbviewer/table_query_params"
-require "dbviewer/query_analyzer"
-
 module Dbviewer
   # TableQueryOperations handles CRUD operations and data querying for database tables
   # It provides methods to fetch, filter and manipulate data in tables
@@ -100,38 +96,6 @@ module Dbviewer
       @query_executor.execute_sqlite_pragma(pragma)
     end
 
-    # Query a table with more granular control using ActiveRecord
-    # @param table_name [String] Name of the table
-    # @param select [String, Array] Columns to select
-    # @param order [String, Hash] Order by clause
-    # @param limit [Integer] Maximum number of records to return
-    # @param offset [Integer] Offset from which to start returning records
-    # @param where [String, Hash] Where conditions
-    # @return [ActiveRecord::Result] Result set with columns and rows
-    def query_table(table_name, select: nil, order: nil, limit: nil, offset: nil, where: nil, max_records: 1000)
-      model = get_model_for(table_name)
-      query = model.all
-
-      query = query.select(select) if select.present?
-      query = query.where(where) if where.present?
-      query = query.order(order) if order.present?
-
-      # Apply safety limit
-      query = query.limit([ limit || max_records, max_records ].min)
-      query = query.offset(offset) if offset.present?
-
-      # Get column names for the result set
-      column_names = if select.is_a?(Array)
-        select
-      elsif select.is_a?(String) && !select.include?("*")
-        select.split(",").map(&:strip)
-      else
-        table_columns(table_name).map { |c| c[:name] }
-      end
-
-      @query_executor.to_result_set(query, column_names)
-    end
-
     # Fetch timestamp data for visualization
     # @param table_name [String] Name of the table
     # @param grouping [String] Grouping type (hourly, daily, weekly, monthly)
@@ -198,14 +162,6 @@ module Dbviewer
         Rails.logger.error("Error fetching timestamp data: #{e.message}")
         []
       end
-    end
-
-    # Analyze query performance for a table with given filters
-    # @param table_name [String] Name of the table
-    # @param params [TableQueryParams] Query parameters object
-    # @return [Hash] Performance analysis and recommendations
-    def analyze_query_performance(table_name, params)
-      @query_analyzer.analyze_query(table_name, params)
     end
 
     private

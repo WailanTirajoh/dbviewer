@@ -1,6 +1,3 @@
-require "json"
-require "time"
-
 module Dbviewer
   module Storage
     # FileStorage implements QueryStorage for storing queries in a log file

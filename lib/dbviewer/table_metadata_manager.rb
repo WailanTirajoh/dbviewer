@@ -106,16 +106,13 @@ module Dbviewer
     # @param table_name [String] Name of the table
     # @return [Array<Hash>] List of reverse foreign keys with details
     def fetch_reverse_foreign_keys(table_name)
-      reverse_fks = []
-
-      # Get all tables and check their foreign keys
-      tables.each do |other_table|
-        next if other_table == table_name
-
-        begin
-          @connection.foreign_keys(other_table).each do |fk|
-            if fk.to_table == table_name
-              reverse_fks << {
+      tables
+        .reject { |other_table| other_table == table_name }
+        .flat_map do |other_table|
+          @connection.foreign_keys(other_table)
+            .select { |fk| fk.to_table == table_name }
+            .map do |fk|
+              {
                 name: fk.name,
                 from_table: fk.from_table,
                 to_table: fk.to_table,
@@ -124,13 +121,7 @@ module Dbviewer
                 relationship_type: "has_many"
               }
             end
-          end
-        rescue => e
-          Rails.logger.error("[DBViewer] Error retrieving foreign keys for table #{other_table}: #{e.message}")
         end
-      end
-
-      reverse_fks
     end
   end
 end

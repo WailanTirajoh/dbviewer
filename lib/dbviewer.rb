@@ -1,7 +1,6 @@
 require "dbviewer/version"
 require "dbviewer/configuration"
 require "dbviewer/engine"
-require "dbviewer/error_handler"
 require "dbviewer/cache_manager"
 require "dbviewer/table_metadata_manager"
 require "dbviewer/dynamic_model_factory"
