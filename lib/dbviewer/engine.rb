@@ -26,7 +26,7 @@ module Dbviewer
 
         next if skip_internal_query?(event)
 
-        Dbviewer::Logger.instance.add(event)
+        Dbviewer::QueryLogger.instance.add(event)
       end
     end
 

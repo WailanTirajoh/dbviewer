@@ -1,11 +1,11 @@
 module Dbviewer
-  # Logger captures and analyzes SQL queries for debugging and performance monitoring
-  class Logger
+  # QueryLogger captures and analyzes SQL queries for debugging and performance monitoring
+  class QueryLogger
     include Singleton
 
     def initialize
       set_storage
-      Rails.logger.info("[DBViewer] Query Logger initialized with #{mode} storage mode")
+      Rails.logger.info("[DBViewer] QueryLogger initialized with #{mode} storage mode")
     end
 
     # Add a new SQL event query to the logger
