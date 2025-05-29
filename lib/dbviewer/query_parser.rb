@@ -47,6 +47,7 @@ module Dbviewer
       event.payload[:sql].include?("sqlite_master") ||
       event.payload[:sql].include?("information_schema") ||
       event.payload[:sql].include?("schema_migrations") ||
+      event.payload[:sql].include?("ar_internal_metadata") ||
       event.payload[:sql].include?("pg_catalog")
     end
   end
