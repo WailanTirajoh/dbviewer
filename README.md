@@ -172,7 +172,7 @@ config.query_logging_mode = :file         # Store queries in a log file
 config.query_log_path = "log/dbviewer.log" # Path where query log file will be stored
 ```
 
-The file format uses one JSON entry per line, making it easy to analyze with standard tools.
+The file format uses one JSON entry per line, making it easy to analyze with standard tools. Query Log collector are disabled by default on non development environtment.
 
 ## 🔒 Security Features
 
@@ -226,7 +226,7 @@ With the addition of Basic Authentication, DBViewer can now be used in any envir
 3. Access the tool through your regular application URL:
 
    ```
-   https://yourdomain.com/dbviewer?override_env_check=your_secure_random_key
+   https://yourdomain.com/dbviewer
    ```
 
 ## 📝 Security Note
@@ -334,6 +334,7 @@ gem build dbviewer.gemspec
 3. The dummy app includes sample data across multiple tables to test various DBViewer features
 
 ### Architecture Diagram
+
 ```mermaid
 graph TB
     subgraph "DBViewer Engine"
