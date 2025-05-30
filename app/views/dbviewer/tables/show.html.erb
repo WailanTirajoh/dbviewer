@@ -120,6 +120,15 @@
       background-color: var(--bs-tertiary-bg, #f8f9fa);
     }
     
+    /* Styling for disabled input fields (IS NULL, IS NOT NULL) */
+    .column-filter:disabled, .disabled-filter {
+      background-color: var(--bs-tertiary-bg, #f0f0f0);
+      border-color: var(--bs-border-color, #dee2e6);
+      color: var(--bs-secondary-color, #6c757d);
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
     /* Action column styling */
     .action-column {
       width: 60px;
@@ -818,10 +827,60 @@
       };
     }
     
+    // Function to handle operator changes for IS NULL and IS NOT NULL operators
+    function setupNullOperators() {
+      operatorSelects.forEach(select => {
+        // Initial setup for existing null operators
+        if (select.value === 'is_null' || select.value === 'is_not_null') {
+          const columnName = select.name.match(/\[(.*?)_operator\]/)[1];
+          const inputContainer = select.closest('.filter-input-group');
+          // Check for display field (the visible disabled field)
+          const displayField = inputContainer.querySelector(`[data-column="${columnName}_display"]`);
+          if (displayField) {
+            displayField.classList.add('disabled-filter');
+          }
+          
+          // Make sure the value field properly reflects the null operator
+          const valueField = inputContainer.querySelector(`[data-column="${columnName}"]`);
+          if (valueField) {
+            valueField.value = select.value;
+          }
+        }
+        
+        // Handle operator changes
+        select.addEventListener('change', function() {
+          const columnName = this.name.match(/\[(.*?)_operator\]/)[1];
+          const filterForm = this.closest('form');
+          const inputContainer = this.closest('.filter-input-group');
+          const hiddenField = inputContainer.querySelector(`[data-column="${columnName}"]`);
+          const displayField = inputContainer.querySelector(`[data-column="${columnName}_display"]`);
+          const wasNullOperator = hiddenField && (hiddenField.value === 'is_null' || hiddenField.value === 'is_not_null');
+          const isNullOperator = this.value === 'is_null' || this.value === 'is_not_null';
+          
+          if (isNullOperator) {
+            // Configure for null operator
+            if (hiddenField) {
+              hiddenField.value = this.value;
+            }
+            // Submit immediately
+            filterForm.submit();
+          } else if (wasNullOperator) {
+            // Clear value when switching from null operator to regular operator
+            if (hiddenField) {
+              hiddenField.value = '';
+            }
+          }
+        });
+      });
+    }
+    
     // Function to submit the form
     const submitForm = debounce(function() {
       filterForm.submit();
     }, 500);
+    
+    // Initialize the null operators handling
+    setupNullOperators();
     
     // Add event listeners to all filter inputs
     columnFilters.forEach(function(filter) {

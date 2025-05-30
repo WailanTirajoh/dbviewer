@@ -273,9 +273,29 @@ module Dbviewer
         # Apply remaining simple column filters
         filters.each do |column, value|
           next unless column_exists?(table_name, column)
-          next if value.blank?
+
+          # Check if this is a column operator field
+          if column.end_with?("_operator")
+            next  # Skip operator fields - they're processed with their column
+          end
 
           column_sym = column.to_sym
+          operator = filters["#{column}_operator"]
+
+          # Special handling for is_null and is_not_null operators that don't need a value
+          if operator == "is_null" || value == "is_null"
+            Rails.logger.debug("[DBViewer] Applying null filter: #{column} IS NULL")
+            query = query.where("#{column} IS NULL")
+            next
+          elsif operator == "is_not_null" || value == "is_not_null"
+            Rails.logger.debug("[DBViewer] Applying not null filter: #{column} IS NOT NULL")
+            query = query.where("#{column} IS NOT NULL")
+            next
+          end
+
+          # Skip if no value and we're not using a special operator
+          next if value.blank? || value == "is_null" || value == "is_not_null"
+
           Rails.logger.debug("[DBViewer] Applying filter: #{column} = #{value}")
 
           # Handle different types of filtering
