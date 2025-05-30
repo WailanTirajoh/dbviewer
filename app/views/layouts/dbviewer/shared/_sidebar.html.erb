@@ -199,6 +199,11 @@
   <span id="table-count"><%= @tables.size %></span> tables found
 </div>
 
+<div class="px-3 py-1 text-muted small border-top">
+  <i class="bi bi-gem me-1"></i>
+  DBViewer v<%= Dbviewer::VERSION %>
+</div>
+
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('tableSearch');
