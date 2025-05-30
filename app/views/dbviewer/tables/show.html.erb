@@ -318,6 +318,9 @@
     <h1>Table: <%= @table_name %></h1>
   </div>
   <div class="d-flex gap-2">
+    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#tableStructureModal">
+      <i class="bi bi-table me-1"></i> Table Structure
+    </button>
     <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#miniErdModal">
       <i class="bi bi-diagram-3 me-1"></i> View Relationships
     </button>
@@ -442,59 +445,6 @@
   </div>
 </div>
 
-<!-- Two-column layout for Timeline and Structure -->
-<div class="row two-column-layout">
-  <!-- Timeline Column -->
-  <div class="col-md-6 mb-4">
-    <% if @timestamp_data.present? %>
-      <div class="dbviewer-card card h-100">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Record Creation Timeline</h5>
-          <div>
-            <%= time_grouping_links(@table_name, @time_grouping) %>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="chart-container">
-            <canvas id="timestampChart"></canvas>
-          </div>
-          <div class="mt-3 text-center">
-            <small class="text-muted">
-              <i class="bi bi-info-circle"></i> 
-              Timeline shows <%= @time_grouping %> record creation patterns based on <code>created_at</code> column.
-            </small>
-          </div>
-        </div>
-      </div>
-    <% else %>
-      <div class="dbviewer-card card h-100">
-        <div class="card-header">
-          <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Creation Timeline</h5>
-        </div>
-        <div class="card-body d-flex justify-content-center align-items-center text-center text-muted">
-          <div>
-            <i class="bi bi-calendar-x display-4 mb-3"></i>
-            <p>No creation timestamp data available for this table.</p>
-            <small>Timeline visualization is only available for tables with a <code>created_at</code> column.</small>
-          </div>
-        </div>
-      </div>
-    <% end %>
-  </div>
-  
-  <!-- Structure Column -->
-  <div class="col-md-6 mb-4">
-    <div class="dbviewer-card card h-100">
-      <div class="card-header">
-        <h5 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Table Structure</h5>
-      </div>
-      <div class="card-body structure-container">
-        <%= render 'table_structure' %>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- Record Detail Modal -->
 <div class="modal fade" id="recordDetailModal" tabindex="-1" aria-labelledby="recordDetailModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -535,6 +485,194 @@
     </div>
   </div>
 </div>
+
+<!-- Table Structure Modal -->
+<div class="modal fade" id="tableStructureModal" tabindex="-1" aria-labelledby="tableStructureModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="tableStructureModalLabel"><%= @table_name %> Structure</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <%= render 'table_structure' %>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Column filter styling */
+  .column-filters td {
+    padding: 0.5rem;
+    background-color: var(--bs-tertiary-bg, #f8f9fa);
+  }
+  
+  /* Action column styling */
+  .action-column {
+    width: 60px;
+    min-width: 60px; /* Ensure minimum width */
+    white-space: nowrap;
+    position: sticky;
+    left: 0;
+    z-index: 30; /* Increased z-index to ensure it stays on top */
+    background-color: var(--bs-body-bg, #fff); /* Use body background color */
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+    border-right: 1px solid var(--bs-border-color);
+  }
+  
+  /* Ensure proper background color for actions column in dark mode */
+  [data-bs-theme="dark"] .action-column {
+    background-color: var(--bs-body-bg, #212529); /* Use body background in dark mode */
+  }
+
+  /* Maintain zebra striping with sticky action column */
+  .table-striped > tbody > tr:nth-of-type(odd) > .action-column {
+    background-color: var(--bs-tertiary-bg, #f8f9fa);
+  }
+  
+  .table-striped > tbody > tr:nth-of-type(even) > .action-column {
+    background-color: var(--bs-body-bg, #fff);
+  }
+
+  [data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > .action-column {
+    background-color: var(--bs-tertiary-bg, #2b3035);
+  }
+  
+  [data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(even) > .action-column {
+    background-color: var(--bs-body-bg, #212529);
+  }
+  
+  .view-record-btn {
+    padding: 0.1rem 0.4rem;
+    width: 32px;
+  }
+  
+  .view-record-btn:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+  }
+  
+  /* Record detail modal styling */
+  .record-detail-table tr:first-child th,
+  .record-detail-table tr:first-child td {
+    border-top: none;
+  }
+  
+  .record-detail-table .code-block {
+    background-color: var(--bs-light);
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    overflow-x: auto;
+    max-height: 200px;
+  }
+  
+  /* Relationships section styling */
+  #relationshipsSection {
+    border-top: 1px solid var(--bs-border-color);
+    padding-top: 1rem;
+  }
+  
+  #relationshipsSection h6 {
+    color: var(--bs-emphasis-color);
+    margin-bottom: 1rem;
+  }
+  
+  [data-bs-theme="dark"] #relationshipsSection {
+    border-top-color: #495057;
+  }
+  
+  .relationships-table .btn-outline-primary {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .relationships-table code {
+    background-color: var(--bs-gray-100);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.125rem;
+    font-size: 0.875rem;
+  }
+  
+  [data-bs-theme="dark"] .relationships-table code {
+    background-color: var(--bs-gray-800);
+    color: var(--bs-gray-100);
+  }
+    margin-bottom: 0;
+  }
+  
+  [data-bs-theme="dark"] .record-detail-table .code-block {
+    background-color: var(--bs-dark);
+  }
+
+  /* Fullscreen table styles */
+  .table-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    background: var(--bs-body-bg) !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .table-fullscreen .card-body {
+    flex: 1 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .table-fullscreen .table-responsive {
+    flex: 1 !important;
+    overflow: auto !important;
+  }
+
+  .table-fullscreen .card-header {
+    flex-shrink: 0 !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10000 !important;
+    background: var(--bs-body-bg) !important;
+    border-bottom: 1px solid var(--bs-border-color) !important;
+  }
+
+  /* Hide pagination in fullscreen mode */
+  .table-fullscreen .pagination-container {
+    display: none !important;
+  }
+
+  /* Adjust table header in fullscreen */
+  .table-fullscreen .dbviewer-table-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+  }
+
+  /* Ensure body doesn't scroll when table is fullscreen */
+  body.table-fullscreen-active {
+    overflow: hidden !important;
+  }
+
+  /* Fullscreen button hover effect */
+  #fullscreen-toggle:hover {
+    background-color: var(--bs-secondary-bg) !important;
+    border-color: var(--bs-secondary-border-subtle) !important;
+  }
+
+  /* Smooth transitions */
+  #table-section {
+    transition: all 0.3s ease-in-out;
+  }
+</style>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -768,19 +906,7 @@
         const cacheBuster = new Date().getTime();
         const fetchUrl = `<%= dbviewer.mini_erd_table_path(@table_name, format: :json) %>?_=${cacheBuster}`;
         
-        // Log loading message
-        console.log('Loading fresh Mini ERD data from:', fetchUrl);
-        
-        // Set a timeout to handle long-running requests
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Request timeout after 10 seconds')), 10000)
-        );
-        
-        // Race the fetch against a timeout
-        Promise.race([
-          fetch(fetchUrl),
-          timeoutPromise
-        ])
+        fetch(fetchUrl)
           .then(response => {
             if (!response.ok) {
               throw new Error(`Server returned ${response.status} ${response.statusText}`);
@@ -1208,255 +1334,6 @@
       // Retry fetching data
       fetchErdData();
     }
-  });
-</script>
-
-<style>
-  /* Column filter styling */
-  .column-filters td {
-    padding: 0.5rem;
-    background-color: var(--bs-tertiary-bg, #f8f9fa);
-  }
-  
-  /* Action column styling */
-  .action-column {
-    width: 60px;
-    min-width: 60px; /* Ensure minimum width */
-    white-space: nowrap;
-    position: sticky;
-    left: 0;
-    z-index: 30; /* Increased z-index to ensure it stays on top */
-    background-color: var(--bs-body-bg, #fff); /* Use body background color */
-    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
-    border-right: 1px solid var(--bs-border-color);
-  }
-  
-  /* Ensure proper background color for actions column in dark mode */
-  [data-bs-theme="dark"] .action-column {
-    background-color: var(--bs-body-bg, #212529); /* Use body background in dark mode */
-  }
-
-  /* Maintain zebra striping with sticky action column */
-  .table-striped > tbody > tr:nth-of-type(odd) > .action-column {
-    background-color: var(--bs-tertiary-bg, #f8f9fa);
-  }
-  
-  .table-striped > tbody > tr:nth-of-type(even) > .action-column {
-    background-color: var(--bs-body-bg, #fff);
-  }
-
-  [data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > .action-column {
-    background-color: var(--bs-tertiary-bg, #2b3035);
-  }
-  
-  [data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(even) > .action-column {
-    background-color: var(--bs-body-bg, #212529);
-  }
-  
-  .view-record-btn {
-    padding: 0.1rem 0.4rem;
-    width: 32px;
-  }
-  
-  .view-record-btn:hover {
-    opacity: 0.85;
-    transform: translateY(-1px);
-  }
-  
-  /* Record detail modal styling */
-  .record-detail-table tr:first-child th,
-  .record-detail-table tr:first-child td {
-    border-top: none;
-  }
-  
-  .record-detail-table .code-block {
-    background-color: var(--bs-light);
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-    overflow-x: auto;
-    max-height: 200px;
-  }
-  
-  /* Relationships section styling */
-  #relationshipsSection {
-    border-top: 1px solid var(--bs-border-color);
-    padding-top: 1rem;
-  }
-  
-  #relationshipsSection h6 {
-    color: var(--bs-emphasis-color);
-    margin-bottom: 1rem;
-  }
-  
-  [data-bs-theme="dark"] #relationshipsSection {
-    border-top-color: #495057;
-  }
-  
-  .relationships-table .btn-outline-primary {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-  }
-  
-  .relationships-table code {
-    background-color: var(--bs-gray-100);
-    padding: 0.125rem 0.25rem;
-    border-radius: 0.125rem;
-    font-size: 0.875rem;
-  }
-  
-  [data-bs-theme="dark"] .relationships-table code {
-    background-color: var(--bs-gray-800);
-    color: var(--bs-gray-100);
-  }
-    margin-bottom: 0;
-  }
-  
-  [data-bs-theme="dark"] .record-detail-table .code-block {
-    background-color: var(--bs-dark);
-  }
-
-  /* Fullscreen table styles */
-  .table-fullscreen {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    z-index: 9999 !important;
-    background: var(--bs-body-bg) !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-  }
-
-  .table-fullscreen .card-body {
-    flex: 1 !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-  }
-
-  .table-fullscreen .table-responsive {
-    flex: 1 !important;
-    overflow: auto !important;
-  }
-
-  .table-fullscreen .card-header {
-    flex-shrink: 0 !important;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 10000 !important;
-    background: var(--bs-body-bg) !important;
-    border-bottom: 1px solid var(--bs-border-color) !important;
-  }
-
-  /* Hide pagination in fullscreen mode */
-  .table-fullscreen .pagination-container {
-    display: none !important;
-  }
-
-  /* Adjust table header in fullscreen */
-  .table-fullscreen .dbviewer-table-header {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 100 !important;
-  }
-
-  /* Ensure body doesn't scroll when table is fullscreen */
-  body.table-fullscreen-active {
-    overflow: hidden !important;
-  }
-
-  /* Fullscreen button hover effect */
-  #fullscreen-toggle:hover {
-    background-color: var(--bs-secondary-bg) !important;
-    border-color: var(--bs-secondary-border-subtle) !important;
-  }
-
-  /* Smooth transitions */
-  #table-section {
-    transition: all 0.3s ease-in-out;
-  }
-</style>
-
-<% if @timestamp_data.present? %>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const timeGrouping = '<%= @time_grouping %>';
-    const chartData = <%= raw @timestamp_data.to_json %>;
-    
-    // Reverse the data so it's chronological
-    const labels = chartData.map(item => item.label).reverse();
-    const values = chartData.map(item => item.value).reverse();
-    
-    // Chart colors based on time grouping
-    let chartColor;
-    let chartTitle;
-    
-    switch(timeGrouping) {
-      case 'hourly':
-        chartColor = 'rgba(75, 192, 192, 0.7)';
-        chartTitle = 'Hourly Record Creation';
-        break;
-      case 'weekly':
-        chartColor = 'rgba(153, 102, 255, 0.7)';
-        chartTitle = 'Weekly Record Creation';
-        break;
-      default:
-        chartColor = 'rgba(54, 162, 235, 0.7)';
-        chartTitle = 'Daily Record Creation';
-    }
-    
-    const ctx = document.getElementById('timestampChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Records Created',
-          data: values,
-          backgroundColor: chartColor,
-          borderColor: chartColor.replace('0.7', '1.0'),
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          },
-          title: {
-            display: true,
-            text: chartTitle,
-            font: {
-              size: 16
-            }
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Number of Records'
-            },
-            ticks: {
-              precision: 0
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: timeGrouping.charAt(0).toUpperCase() + timeGrouping.slice(1)
-            }
-          }
-        }
-      }
-    });
     
     // Column sorting enhancement
     const sortableColumns = document.querySelectorAll('.sortable-column');
@@ -1490,6 +1367,69 @@
         });
       }
     });
+
+    // Table fullscreen functionality
+    const fullscreenToggle = document.getElementById('fullscreen-toggle');
+    const fullscreenIcon = document.getElementById('fullscreen-icon');
+    const tableSection = document.getElementById('table-section');
+    
+    if (fullscreenToggle && tableSection) {
+      // Key for storing fullscreen state in localStorage
+      const fullscreenStateKey = 'dbviewer-table-fullscreen-<%= @table_name %>';
+      
+      // Function to apply fullscreen state
+      function applyFullscreenState(isFullscreen) {
+        if (isFullscreen) {
+          // Enter fullscreen
+          tableSection.classList.add('table-fullscreen');
+          document.body.classList.add('table-fullscreen-active');
+          fullscreenIcon.classList.remove('bi-fullscreen');
+          fullscreenIcon.classList.add('bi-fullscreen-exit');
+          fullscreenToggle.setAttribute('title', 'Exit fullscreen');
+        } else {
+          // Exit fullscreen
+          tableSection.classList.remove('table-fullscreen');
+          document.body.classList.remove('table-fullscreen-active');
+          fullscreenIcon.classList.remove('bi-fullscreen-exit');
+          fullscreenIcon.classList.add('bi-fullscreen');
+          fullscreenToggle.setAttribute('title', 'Toggle fullscreen');
+        }
+      }
+      
+      // Restore fullscreen state from localStorage on page load
+      try {
+        const savedState = localStorage.getItem(fullscreenStateKey);
+        if (savedState === 'true') {
+          applyFullscreenState(true);
+        }
+      } catch (e) {
+        // Handle localStorage not available (private browsing, etc.)
+        console.warn('Could not restore fullscreen state:', e);
+      }
+      
+      fullscreenToggle.addEventListener('click', function() {
+        const isFullscreen = tableSection.classList.contains('table-fullscreen');
+        const newState = !isFullscreen;
+        
+        // Apply the new state
+        applyFullscreenState(newState);
+        
+        // Save state to localStorage
+        try {
+          localStorage.setItem(fullscreenStateKey, newState.toString());
+        } catch (e) {
+          // Handle localStorage not available (private browsing, etc.)
+          console.warn('Could not save fullscreen state:', e);
+        }
+      });
+      
+      // Exit fullscreen with Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && tableSection.classList.contains('table-fullscreen')) {
+          fullscreenToggle.click();
+        }
+      });
+    }
   });
   
   // Helper function to create relationship sections
@@ -1584,70 +1524,4 @@
     
     return section;
   }
-
-  // Table fullscreen functionality
-  document.addEventListener('DOMContentLoaded', function() {
-    const fullscreenToggle = document.getElementById('fullscreen-toggle');
-    const fullscreenIcon = document.getElementById('fullscreen-icon');
-    const tableSection = document.getElementById('table-section');
-    
-    if (fullscreenToggle && tableSection) {
-      // Key for storing fullscreen state in localStorage
-      const fullscreenStateKey = 'dbviewer-table-fullscreen-<%= @table_name %>';
-      
-      // Function to apply fullscreen state
-      function applyFullscreenState(isFullscreen) {
-        if (isFullscreen) {
-          // Enter fullscreen
-          tableSection.classList.add('table-fullscreen');
-          document.body.classList.add('table-fullscreen-active');
-          fullscreenIcon.classList.remove('bi-fullscreen');
-          fullscreenIcon.classList.add('bi-fullscreen-exit');
-          fullscreenToggle.setAttribute('title', 'Exit fullscreen');
-        } else {
-          // Exit fullscreen
-          tableSection.classList.remove('table-fullscreen');
-          document.body.classList.remove('table-fullscreen-active');
-          fullscreenIcon.classList.remove('bi-fullscreen-exit');
-          fullscreenIcon.classList.add('bi-fullscreen');
-          fullscreenToggle.setAttribute('title', 'Toggle fullscreen');
-        }
-      }
-      
-      // Restore fullscreen state from localStorage on page load
-      try {
-        const savedState = localStorage.getItem(fullscreenStateKey);
-        if (savedState === 'true') {
-          applyFullscreenState(true);
-        }
-      } catch (e) {
-        // Handle localStorage not available (private browsing, etc.)
-        console.warn('Could not restore fullscreen state:', e);
-      }
-      
-      fullscreenToggle.addEventListener('click', function() {
-        const isFullscreen = tableSection.classList.contains('table-fullscreen');
-        const newState = !isFullscreen;
-        
-        // Apply the new state
-        applyFullscreenState(newState);
-        
-        // Save state to localStorage
-        try {
-          localStorage.setItem(fullscreenStateKey, newState.toString());
-        } catch (e) {
-          // Handle localStorage not available (private browsing, etc.)
-          console.warn('Could not save fullscreen state:', e);
-        }
-      });
-      
-      // Exit fullscreen with Escape key
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && tableSection.classList.contains('table-fullscreen')) {
-          fullscreenToggle.click();
-        }
-      });
-    }
-  });
 </script>
-<% end %>

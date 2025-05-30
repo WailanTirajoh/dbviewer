@@ -29,12 +29,6 @@ module Dbviewer
         @records = ActiveRecord::Result.new(column_names, [])
       end
 
-      # Fetch timestamp visualization data if the table has a created_at column
-      if has_timestamp_column?(@table_name)
-        @time_grouping = params[:time_group] || "daily"
-        @timestamp_data = fetch_timestamp_data(@table_name, @time_grouping)
-      end
-
       respond_to do |format|
         format.html # Default HTML response
         format.json do
