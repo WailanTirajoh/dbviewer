@@ -25,6 +25,9 @@ Dbviewer::Engine.routes.draw do
         get "records"
         get "relationships_count"
       end
+      member do
+        get "relationship_counts"
+      end
     end
 
     resources :entity_relationship_diagrams, only: [] do
