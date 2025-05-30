@@ -46,23 +46,15 @@ module Dbviewer
 
     # Get the name of the current database adapter
     def get_adapter_name
-      adapter = database_manager.connection.adapter_name
-
-      # Format the adapter name for better display
-      case adapter.downcase
-      when /mysql/
-        "MySQL"
-      when /postgres/
-        "PostgreSQL"
-      when /sqlite/
-        "SQLite"
-      when /oracle/
-        "Oracle"
-      when /sqlserver/, /mssql/
-        "SQL Server"
-      else
-        adapter.titleize # Fallback to titleized version
-      end
+      adapter_name = database_manager.connection.adapter_name.downcase
+      adapter_mappings = {
+        /mysql/i => "MySQL",
+        /postgres/i => "PostgreSQL",
+        /sqlite/i => "SQLite",
+        /oracle/i => "Oracle",
+        /sqlserver|mssql/i => "SQL Server"
+      }
+      adapter_mappings.find { |pattern, _| adapter_name =~ pattern }&.last || adapter_name.titleize
     rescue => e
       Rails.logger.error("Error retrieving adapter name: #{e.message}")
       "Unknown"
