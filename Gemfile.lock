@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    dbviewer (0.5.4)
+    dbviewer (0.5.5)
       activerecord (>= 7.0.0)
       rails (>= 7.0.0)
 
