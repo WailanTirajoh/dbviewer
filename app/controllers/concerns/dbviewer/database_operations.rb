@@ -5,7 +5,7 @@ module Dbviewer
     extend ActiveSupport::Concern
 
     included do
-      helper_method :current_table?, :get_database_name, :get_adapter_name, 
+      helper_method :current_table?, :get_database_name, :get_adapter_name,
                     :current_connection_key, :available_connections if respond_to?(:helper_method)
     end
 
@@ -13,19 +13,19 @@ module Dbviewer
     def current_connection_key
       # Get the connection key from the session or fall back to the default
       key = session[:dbviewer_connection] || Dbviewer.configuration.current_connection
-      
+
       # Ensure the key actually exists in our configured connections
       if key && Dbviewer.configuration.database_connections.key?(key.to_sym)
         return key.to_sym
       end
-      
+
       # If the key doesn't exist, fall back to any available connection
       first_key = Dbviewer.configuration.database_connections.keys.first
       if first_key
         session[:dbviewer_connection] = first_key # Update the session
         return first_key
       end
-      
+
       # If there are no connections configured, use a default key
       # This should never happen in normal operation, but it's a safety measure
       :default
@@ -34,7 +34,7 @@ module Dbviewer
     # Set the current connection to use
     def switch_connection(connection_key)
       connection_key = connection_key.to_sym if connection_key.respond_to?(:to_sym)
-      
+
       if connection_key && Dbviewer.configuration.database_connections.key?(connection_key)
         session[:dbviewer_connection] = connection_key
         # Clear the database manager to force it to be recreated with the new connection
@@ -56,7 +56,7 @@ module Dbviewer
           end
         end
       end
-      
+
       false # Return false if we couldn't set a valid connection
     end
 
@@ -74,15 +74,15 @@ module Dbviewer
             Rails.logger.error("Error getting adapter name: #{e.message}")
           end
         end
-        
-        { 
+
+        {
           key: key,
           name: config[:name] || key.to_s.humanize,
           adapter_name: adapter_name,
           current: key.to_sym == current_connection_key.to_sym
         }
       end
-      
+
       # Ensure at least one connection is marked as current
       unless connections.any? { |c| c[:current] }
         # If no connection is current, mark the first one as current
@@ -92,13 +92,13 @@ module Dbviewer
           session[:dbviewer_connection] = connections.first[:key]
         end
       end
-      
+
       connections
     end
 
     # Initialize the database manager with the current connection
     def database_manager
-      @database_manager ||= ::Dbviewer::Database::Manager.new(current_connection_key)
+      @database_manager = ::Dbviewer::Database::Manager.new(current_connection_key)
     end
 
     # Initialize the table query operations manager
@@ -114,7 +114,7 @@ module Dbviewer
       if current_conn_config && current_conn_config[:name].present?
         return current_conn_config[:name]
       end
-      
+
       adapter = database_manager.connection.adapter_name.downcase
 
       case adapter
@@ -161,7 +161,7 @@ module Dbviewer
         table_stats = {
           name: table_name
         }
-        
+
         # Only fetch record count if specifically requested
         if include_record_counts
           begin
@@ -171,7 +171,7 @@ module Dbviewer
             table_stats[:record_count] = 0
           end
         end
-        
+
         table_stats
       end
     rescue => e

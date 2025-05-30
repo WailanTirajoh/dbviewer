@@ -6,10 +6,10 @@ class CreateSecondaryComments < ActiveRecord::Migration[8.0]
       t.references :user, null: false, foreign_key: true
       t.boolean :approved, default: false
       t.integer :parent_id
-      
+
       t.timestamps
     end
-    
+
     add_index :comments, :parent_id
     add_index :comments, :approved
   end

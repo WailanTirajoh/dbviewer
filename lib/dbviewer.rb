@@ -62,7 +62,7 @@ module Dbviewer
       configuration.database_connections.each do |key, config|
         begin
           connection_class = nil
-          
+
           if config[:connection]
             connection_class = config[:connection]
           elsif config[:connection_class].is_a?(String)
@@ -74,12 +74,12 @@ module Dbviewer
               next
             end
           end
-          
+
           if connection_class
             connection = connection_class.connection
             adapter_name = connection.adapter_name
             Rails.logger.info "DBViewer successfully connected to #{config[:name] || key.to_s} database (#{adapter_name})"
-            
+
             # Store the resolved connection class back in the config
             config[:connection] = connection_class
           else
@@ -90,7 +90,7 @@ module Dbviewer
           Rails.logger.error "DBViewer could not connect to #{config[:name] || key.to_s} database: #{e.message}"
         end
       end
-      
+
       if connection_errors.length == configuration.database_connections.length
         raise "DBViewer could not connect to any configured database"
       end

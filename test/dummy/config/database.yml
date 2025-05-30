@@ -12,7 +12,7 @@ default: &default
 development:
   <<: *default
   database: storage/development.sqlite3
-  
+
 secondary:
   <<: *default
   database: storage/secondary.sqlite3
@@ -23,7 +23,6 @@ secondary:
 test:
   <<: *default
   database: storage/test.sqlite3
-
 
 # SQLite3 write its data on the local filesystem, as such it requires
 # persistent disks. If you are deploying to a managed service, you should

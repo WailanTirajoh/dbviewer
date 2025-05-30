@@ -158,16 +158,16 @@ To configure multiple database connections, set them up in your initializer:
 Dbviewer.configure do |config|
   # Multiple database connections configuration
   config.database_connections = {
-    primary: { 
+    primary: {
       connection_class: "ActiveRecord::Base",
-      name: "Primary Database" 
+      name: "Primary Database"
     },
-    secondary: { 
+    secondary: {
       connection_class: "SecondaryDatabase",
-      name: "Blog Database" 
+      name: "Blog Database"
     }
   }
-  
+
   # Set the default active connection
   config.current_connection = :primary
 end

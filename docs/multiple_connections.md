@@ -10,22 +10,23 @@ Configure multiple database connections in your initializer:
 # config/initializers/dbviewer.rb
 Dbviewer.configure do |config|
   config.database_connections = {
-    primary: { 
+    primary: {
       connection_class: "ActiveRecord::Base",
-      name: "Primary Database" 
+      name: "Primary Database"
     },
-    secondary: { 
+    secondary: {
       connection_class: "SecondaryDatabase",
-      name: "Secondary Database" 
+      name: "Secondary Database"
     }
   }
-  
+
   # Set the default active connection
   config.current_connection = :primary
 end
 ```
 
 Each connection requires:
+
 - A unique key (symbol)
 - A `connection_class` (string) that defines the ActiveRecord class handling the connection
 - A human-readable `name` that will be displayed in the UI
@@ -44,6 +45,7 @@ DBViewer also supports adding connections at runtime through the user interface:
 ## Connection Management
 
 You can:
+
 - Switch between connections using the dropdown in the navigation bar
 - View and manage all connections from the Connections page
 - Test connections to verify they're working
@@ -82,13 +84,13 @@ secondary_database:
 # config/initializers/dbviewer.rb
 Dbviewer.configure do |config|
   config.database_connections = {
-    primary: { 
+    primary: {
       connection_class: "ActiveRecord::Base",
-      name: "Main Database" 
+      name: "Main Database"
     },
-    blog: { 
+    blog: {
       connection_class: "SecondaryDatabase",
-      name: "Blog Database" 
+      name: "Blog Database"
     }
   }
 end

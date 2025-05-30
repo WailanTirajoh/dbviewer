@@ -183,18 +183,16 @@ module Dbviewer
       # Ensure we have a valid database connection
       # @return [ActiveRecord::ConnectionAdapters::AbstractAdapter] The database connection
       def ensure_connection
-        return @connection if @connection      # Get the connection based on the connection_key from configuration
-      connection_config = Dbviewer.configuration.database_connections[@connection_key]
-      
-      if connection_config && connection_config[:connection]
-        # Connection class has been resolved in the setup method
-        @connection = connection_config[:connection].connection
-      else
-        # Fallback to the default connection
-        Rails.logger.warn "DBViewer: Using default connection for key: #{@connection_key}"
-        @connection = ActiveRecord::Base.connection
-      end
-        
+        return @connection if @connection
+        connection_config = Dbviewer.configuration.database_connections[@connection_key]
+
+        if connection_config && connection_config[:connection_class]
+          @connection = connection_config[:connection_class].constantize.connection
+        else
+          Rails.logger.warn "DBViewer: Using default connection for key: #{@connection_key}"
+          @connection = ActiveRecord::Base.connection
+        end
+
         @adapter_name = @connection.adapter_name.downcase
         @connection
       end

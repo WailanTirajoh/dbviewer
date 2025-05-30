@@ -52,7 +52,7 @@ Dbviewer::Engine.routes.draw do
         get "recent"
       end
     end
-    
+
     resources :connections, only: [] do
       member do
         get "test"
