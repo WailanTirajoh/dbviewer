@@ -111,7 +111,7 @@ This is necessary because API-only Rails applications don't include the Flash mi
 You can configure DBViewer by using our generator to create an initializer in your application:
 
 ```bash
-rails generate dbviewer:initializer
+rails generate dbviewer:install
 ```
 
 This will create a file at `config/initializers/dbviewer.rb` with the default configuration:

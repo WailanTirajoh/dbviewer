@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added Rails generator `dbviewer:initializer` to create configuration file
+- Added Rails generator `dbviewer:install` to create configuration file
 - Updated documentation to include the new generator usage information
 - Enhanced engine to properly load generators
 
