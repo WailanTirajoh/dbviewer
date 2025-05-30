@@ -8,12 +8,7 @@ Dbviewer::Engine.routes.draw do
     end
   end
 
-  resources :entity_relationship_diagrams, only: [ :index ] do
-    collection do
-      get "relationships"
-      get "table_relationships"
-    end
-  end
+  resources :entity_relationship_diagrams, only: [ :index ]
 
   resources :logs, only: [ :index ] do
     collection do
@@ -29,6 +24,13 @@ Dbviewer::Engine.routes.draw do
       collection do
         get "records"
         get "relationships_count"
+      end
+    end
+
+    resources :entity_relationship_diagrams, only: [] do
+      collection do
+        get "relationships"
+        get "table_relationships"
       end
     end
 
