@@ -8,7 +8,12 @@ Dbviewer::Engine.routes.draw do
     end
   end
 
-  resources :entity_relationship_diagrams, only: [ :index ]
+  resources :entity_relationship_diagrams, only: [ :index ] do
+    collection do
+      get "relationships"
+      get "table_relationships"
+    end
+  end
 
   resources :logs, only: [ :index ] do
     collection do

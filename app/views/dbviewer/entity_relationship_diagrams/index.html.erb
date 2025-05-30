@@ -150,9 +150,48 @@
     
     // Generate the ERD diagram
     const tables = <%= raw @tables.to_json %>;
-    const relationships = <%= raw @table_relationships.to_json %>;
-
-    console.log(tables, relationships)
+    
+    console.log('Tables:', tables);
+    
+    // Initialize empty relationships - will be loaded asynchronously
+    let relationships = [];
+    let relationshipsLoaded = false;
+    
+    // Function to fetch relationships asynchronously
+    function fetchRelationships() {
+      return fetch('<%= dbviewer.relationships_entity_relationship_diagrams_path %>', {
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Relationships loaded:', data);
+        relationships = data.relationships || [];
+        relationshipsLoaded = true;
+        return relationships;
+      })
+      .catch(error => {
+        console.error('Error fetching relationships:', error);
+        relationshipsLoaded = true; // Mark as loaded even on error to prevent infinite loading
+        return [];
+      });
+    }
+    
+    // Function to update loading status
+    function updateLoadingStatus(message) {
+      const loadingElement = document.getElementById('erd-loading');
+      const loadingText = loadingElement.querySelector('p');
+      if (loadingText) {
+        loadingText.textContent = message;
+      }
+    }
     
     // Create the ER diagram definition in Mermaid syntax
     let mermaidDefinition = 'erDiagram\n';
@@ -160,7 +199,15 @@
     // We'll store table column data here as we fetch it
     const tableColumns = {};
     
-    // First pass: add all tables with minimal info
+    // Track loading progress
+    let columnsLoadedCount = 0;
+    const totalTables = tables.length;
+    
+    // Start fetching relationships immediately
+    updateLoadingStatus('Loading database relationships...');
+    const relationshipsPromise = fetchRelationships();
+    
+    // First pass: add all tables with minimal info and start loading columns
     tables.forEach(function(table) {
       const tableName = table.name;
       mermaidDefinition += `  ${tableName} {\n`;
@@ -178,121 +225,134 @@
       .then(data => {
         if (data && data.columns) {
           tableColumns[tableName] = data.columns;
-          updateDiagramWithColumns();
+          columnsLoadedCount++;
+          
+          // Update loading status
+          updateLoadingStatus(`Loading table details... (${columnsLoadedCount}/${totalTables} tables)`);
+          
+          checkIfReadyToUpdate();
         }
       })
       .catch(error => {
         console.error(`Error fetching columns for table ${tableName}:`, error);
+        columnsLoadedCount++;
+        checkIfReadyToUpdate();
       });
+    });
+    
+    // Function to check if we're ready to update the diagram with full data
+    function checkIfReadyToUpdate() {
+      if (columnsLoadedCount === totalTables && relationshipsLoaded) {
+        updateDiagramWithFullData();
+      }
+    }
+    
+    // Wait for relationships to load and check if ready
+    relationshipsPromise.finally(() => {
+      checkIfReadyToUpdate();
     });
     
     // Track if we're currently updating the diagram
     let isUpdatingDiagram = false;
     
-    // Function to update the diagram once we have columns
-    function updateDiagramWithColumns() {
+    // Function to update the diagram once we have all data
+    function updateDiagramWithFullData() {
       // Prevent multiple simultaneous updates
       if (isUpdatingDiagram) return;
       
-      // Check if we have all the tables loaded
-      if (Object.keys(tableColumns).length === tables.length) {
-        isUpdatingDiagram = true;
-        console.log('Updating diagram with full column data');
+      isUpdatingDiagram = true;
+      console.log('Updating diagram with full column and relationship data');
+      
+      updateLoadingStatus('Generating diagram...');
+      
+      // Regenerate the diagram with complete data
+      let updatedDefinition = 'erDiagram\n';
+      
+      tables.forEach(function(table) {
+        const tableName = table.name;
+        updatedDefinition += `  ${tableName} {\n`;
         
-        // Regenerate the diagram with complete column data
-        let updatedDefinition = 'erDiagram\n';
-        
-        tables.forEach(function(table) {
-          const tableName = table.name;
-          updatedDefinition += `  ${tableName} {\n`;
-          
-          const columns = tableColumns[tableName] || [];
-          columns.forEach(column => {
-            updatedDefinition += `    ${column.type || 'string'} ${column.name}\n`;
-          });
-          
-          updatedDefinition += '  }\n';
+        const columns = tableColumns[tableName] || [];
+        columns.forEach(column => {
+          updatedDefinition += `    ${column.type || 'string'} ${column.name}\n`;
         });
         
-        // Add relationships
-        if (relationships && relationships.length > 0) {
-          relationships.forEach(function(rel) {
-            updatedDefinition += `  ${rel.from_table} }|--|| ${rel.to_table} : "${rel.from_column} → ${rel.to_column}"\n`;
-          });
-        } else {
-          updatedDefinition += '  %% No relationships found in the database schema\n';
-        }
-        
-        // Create a new diagram element
-        const updatedErdDiv = document.createElement('div');
-        updatedErdDiv.className = 'mermaid';
-        updatedErdDiv.innerHTML = updatedDefinition;
-        
-        // Get the container but don't clear it yet
-        const container = document.getElementById('erd-container');
-        
-        // First, clean up any previous zoom instance
-        if (panZoomInstance) {
-          panZoomInstance.destroy();
-          panZoomInstance = null;
-        }
-        
-        // Create a temporary container
-        const tempContainer = document.createElement('div');
-        tempContainer.style.visibility = 'hidden';
-        tempContainer.style.position = 'absolute';
-        tempContainer.style.width = '100%';
-        tempContainer.appendChild(updatedErdDiv);
-        document.body.appendChild(tempContainer);
-        
-        // Render in the temporary container first
-        mermaid.init(undefined, updatedErdDiv).then(function() {
-          console.log('Diagram fully updated with column data');
-          
-          // Clear original container and move the rendered content
-          try {
-            // Remove from temp container without destroying
-            tempContainer.removeChild(updatedErdDiv);
-            
-            // Clear main container and add the diagram
-            container.innerHTML = '';
-            container.appendChild(updatedErdDiv);
-            
-            // Remove temp container
-            document.body.removeChild(tempContainer);
-            
-            // Wait a bit for the DOM to stabilize before initializing pan-zoom
-            setTimeout(() => {
-              setupZoomControls();
-              // Mark diagram as ready for download
-              diagramReady = true;
-              isUpdatingDiagram = false;
-            }, 100);
-          } catch(err) {
-            console.error('Error moving diagram to container:', err);
-            isUpdatingDiagram = false;
-          }
-        }).catch(function(error) {
-          console.error('Error rendering updated diagram:', error);
-          document.body.removeChild(tempContainer);
-          isUpdatingDiagram = false;
-          showError('Error rendering diagram', 'There was an error updating the diagram with complete data.', error.message);
-        });
-      }
-    }
-    
-    // Add relationships
-    if (relationships && relationships.length > 0) {
-      relationships.forEach(function(rel) {
-        // Format: "Customer ||--o{ Order : places"
-        mermaidDefinition += `  ${rel.from_table} }|--|| ${rel.to_table} : "${rel.from_column} → ${rel.to_column}"\n`;
+        updatedDefinition += '  }\n';
       });
-    } else {
-      // Add a note if no relationships are found
-      mermaidDefinition += '  %% No relationships found in the database schema\n';
+      
+      // Add relationships
+      if (relationships && relationships.length > 0) {
+        relationships.forEach(function(rel) {
+          updatedDefinition += `  ${rel.from_table} }|--|| ${rel.to_table} : "${rel.from_column} → ${rel.to_column}"\n`;
+        });
+      } else {
+        updatedDefinition += '  %% No relationships found in the database schema\n';
+      }
+      
+      // Create a new diagram element
+      const updatedErdDiv = document.createElement('div');
+      updatedErdDiv.className = 'mermaid';
+      updatedErdDiv.innerHTML = updatedDefinition;
+      
+      // Get the container but don't clear it yet
+      const container = document.getElementById('erd-container');
+      
+      // First, clean up any previous zoom instance
+      if (panZoomInstance) {
+        panZoomInstance.destroy();
+        panZoomInstance = null;
+      }
+      
+      // Create a temporary container
+      const tempContainer = document.createElement('div');
+      tempContainer.style.visibility = 'hidden';
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.width = '100%';
+      tempContainer.appendChild(updatedErdDiv);
+      document.body.appendChild(tempContainer);
+      
+      // Render in the temporary container first
+      mermaid.init(undefined, updatedErdDiv).then(function() {
+        console.log('Diagram fully updated with all data');
+        
+        // Clear original container and move the rendered content
+        try {
+          // Remove from temp container without destroying
+          tempContainer.removeChild(updatedErdDiv);
+          
+          // Hide loading indicator
+          document.getElementById('erd-loading').style.display = 'none';
+          
+          // Clear main container and add the diagram
+          container.innerHTML = '';
+          container.appendChild(updatedErdDiv);
+          
+          // Remove temp container
+          document.body.removeChild(tempContainer);
+          
+          // Wait a bit for the DOM to stabilize before initializing pan-zoom
+          setTimeout(() => {
+            setupZoomControls();
+            // Mark diagram as ready for download
+            diagramReady = true;
+            isUpdatingDiagram = false;
+          }, 100);
+        } catch(err) {
+          console.error('Error moving diagram to container:', err);
+          isUpdatingDiagram = false;
+        }
+      }).catch(function(error) {
+        console.error('Error rendering updated diagram:', error);
+        document.body.removeChild(tempContainer);
+        isUpdatingDiagram = false;
+        showError('Error rendering diagram', 'There was an error updating the diagram with complete data.', error.message);
+      });
     }
     
-    // Create a div for the initial diagram
+    // Add initial relationships placeholder (empty)
+    mermaidDefinition += '  %% Relationships loading...\n';
+    
+    // Create a div for the initial diagram (shows immediately with table names only)
     const erdDiv = document.createElement('div');
     erdDiv.className = 'mermaid';
     erdDiv.innerHTML = mermaidDefinition;
@@ -308,13 +368,16 @@
     tempInitContainer.appendChild(erdDiv);
     document.body.appendChild(tempInitContainer);
     
+    // Update loading status for initial render
+    updateLoadingStatus('Rendering initial diagram...');
+    
     // Render the initial diagram in the temporary container
     mermaid.init(undefined, erdDiv).then(function() {
       try {
         // Remove from temp container without destroying
         tempInitContainer.removeChild(erdDiv);
         
-        // Hide the loading indicator
+        // Hide the loading indicator temporarily (will show updated loading for data fetching)
         document.getElementById('erd-loading').style.display = 'none';
         
         // Add the rendered diagram to the main container
@@ -323,18 +386,56 @@
         // Remove temp container
         document.body.removeChild(tempInitContainer);
         
-        // Setup zoom controls after diagram is rendered
+        // Setup initial zoom controls
         setTimeout(() => {
           setupZoomControls();
+          // Show a subtle loading indicator that data is still loading
+          showDataLoadingIndicator();
         }, 100);
       } catch(err) {
         console.error('Error moving initial diagram to container:', err);
       }
     }).catch(function(error) {
-      console.error('Error rendering diagram:', error);
+      console.error('Error rendering initial diagram:', error);
       document.body.removeChild(tempInitContainer);
-      showError('Error generating diagram', 'There was an error generating the entity relationship diagram.', error.message);
+      showError('Error generating diagram', 'There was an error generating the initial entity relationship diagram.', error.message);
     });
+    
+    // Function to show a subtle loading indicator for data loading
+    function showDataLoadingIndicator() {
+      // Create a small loading badge in the top-right corner
+      const loadingBadge = document.createElement('div');
+      loadingBadge.id = 'data-loading-badge';
+      loadingBadge.className = 'position-absolute top-0 end-0 m-3';
+      loadingBadge.style.zIndex = '1000';
+      loadingBadge.innerHTML = `
+        <div class="badge bg-info d-flex align-items-center">
+          <div class="spinner-border spinner-border-sm me-2" role="status" style="width: 0.8rem; height: 0.8rem;">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          Loading details...
+        </div>
+      `;
+      
+      container.style.position = 'relative';
+      container.appendChild(loadingBadge);
+      
+      // Remove the badge when data loading is complete
+      const checkComplete = () => {
+        if (columnsLoadedCount === totalTables && relationshipsLoaded) {
+          setTimeout(() => {
+            const badge = document.getElementById('data-loading-badge');
+            if (badge) {
+              badge.remove();
+            }
+          }, 500); // Small delay to show completion
+        } else {
+          setTimeout(checkComplete, 500);
+        }
+      };
+      
+      setTimeout(checkComplete, 1000);
+    }
     
     // SVG Pan Zoom instance
     let panZoomInstance = null;
@@ -675,6 +776,22 @@
     width: 45px;
     display: inline-block;
     text-align: center;
+  }
+  
+  /* Data loading badge styling */
+  #data-loading-badge {
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+  }
+  
+  #data-loading-badge .badge {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
   }
   
   /* Mermaid override for text size */
