@@ -33,12 +33,35 @@
         <div class="card-body p-0">
           <div id="erd-container" class="w-100 h-100" style="min-height: 450px;">
             <div id="erd-loading" class="d-flex justify-content-center align-items-center h-100" style="min-height: 450px;">
-              <div class="text-center">
-                <div class="spinner-border text-primary mb-3" role="status">
-                  <span class="visually-hidden">Loading...</span>
+              <div class="text-center" style="width: 100%; max-width: 500px;">
+                <div class="mb-4">
+                  <i class="bi bi-diagram-3 text-primary" style="font-size: 3rem;"></i>
                 </div>
-                <p>Generating Entity Relationship Diagram...</p>
-                <small class="text-muted">This may take a moment for databases with many tables</small>
+                <h5 class="mb-3">Generating Entity Relationship Diagram</h5>
+                <p id="loading-phase" class="mb-3">Initializing...</p>
+                
+                <!-- Progress bar for table loading -->
+                <div class="progress mb-3" style="height: 8px;">
+                  <div id="table-progress-bar" class="progress-bar bg-primary" role="progressbar" 
+                       style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                  </div>
+                </div>
+                
+                <!-- Progress text -->
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <small class="text-muted">Table Details</small>
+                  <small id="table-progress-text" class="text-muted">0 / 0</small>
+                </div>
+                
+                <!-- Relationships loading indicator -->
+                <div id="relationships-status" class="d-flex align-items-center justify-content-center mt-3">
+                  <div class="spinner-border spinner-border-sm text-secondary me-2" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <small class="text-muted">Loading relationships...</small>
+                </div>
+                
+                <small class="text-muted d-block mt-3">This may take a moment for databases with many tables</small>
               </div>
             </div>
             <!-- The ERD will be rendered here -->
@@ -175,11 +198,13 @@
         console.log('Relationships loaded:', data);
         relationships = data.relationships || [];
         relationshipsLoaded = true;
+        updateRelationshipsStatus(true);
         return relationships;
       })
       .catch(error => {
         console.error('Error fetching relationships:', error);
         relationshipsLoaded = true; // Mark as loaded even on error to prevent infinite loading
+        updateRelationshipsStatus(true);
         return [];
       });
     }
@@ -187,9 +212,48 @@
     // Function to update loading status
     function updateLoadingStatus(message) {
       const loadingElement = document.getElementById('erd-loading');
-      const loadingText = loadingElement.querySelector('p');
-      if (loadingText) {
-        loadingText.textContent = message;
+      const loadingPhase = document.getElementById('loading-phase');
+      if (loadingPhase) {
+        loadingPhase.textContent = message;
+      }
+    }
+    
+    // Function to update table loading progress
+    function updateTableProgress(loaded, total) {
+      const progressBar = document.getElementById('table-progress-bar');
+      const progressText = document.getElementById('table-progress-text');
+      
+      if (progressBar && progressText) {
+        const percentage = total > 0 ? Math.round((loaded / total) * 100) : 0;
+        progressBar.style.width = percentage + '%';
+        progressBar.setAttribute('aria-valuenow', percentage);
+        progressText.textContent = `${loaded} / ${total}`;
+        
+        // Update progress bar color based on completion
+        if (percentage === 100) {
+          progressBar.classList.remove('bg-primary');
+          progressBar.classList.add('bg-success');
+        }
+      }
+    }
+    
+    // Function to update relationships status
+    function updateRelationshipsStatus(loaded) {
+      const relationshipsStatus = document.getElementById('relationships-status');
+      if (relationshipsStatus) {
+        if (loaded) {
+          relationshipsStatus.innerHTML = `
+            <i class="bi bi-check-circle text-success me-2"></i>
+            <small class="text-success">Relationships loaded</small>
+          `;
+        } else {
+          relationshipsStatus.innerHTML = `
+            <div class="spinner-border spinner-border-sm text-secondary me-2" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <small class="text-muted">Loading relationships...</small>
+          `;
+        }
       }
     }
     
@@ -203,8 +267,12 @@
     let columnsLoadedCount = 0;
     const totalTables = tables.length;
     
+    // Initialize progress bar
+    updateTableProgress(0, totalTables);
+    updateLoadingStatus('Loading table details...');
+    
     // Start fetching relationships immediately
-    updateLoadingStatus('Loading database relationships...');
+    updateRelationshipsStatus(false);
     const relationshipsPromise = fetchRelationships();
     
     // First pass: add all tables with minimal info and start loading columns
@@ -227,8 +295,8 @@
           tableColumns[tableName] = data.columns;
           columnsLoadedCount++;
           
-          // Update loading status
-          updateLoadingStatus(`Loading table details... (${columnsLoadedCount}/${totalTables} tables)`);
+          // Update progress bar
+          updateTableProgress(columnsLoadedCount, totalTables);
           
           checkIfReadyToUpdate();
         }
@@ -236,6 +304,7 @@
       .catch(error => {
         console.error(`Error fetching columns for table ${tableName}:`, error);
         columnsLoadedCount++;
+        updateTableProgress(columnsLoadedCount, totalTables);
         checkIfReadyToUpdate();
       });
     });
@@ -261,9 +330,9 @@
       if (isUpdatingDiagram) return;
       
       isUpdatingDiagram = true;
-      console.log('Updating diagram with full column and relationship data');
+      console.log('Rendering diagram with full column and relationship data');
       
-      updateLoadingStatus('Generating diagram...');
+      updateLoadingStatus('Generating final diagram...');
       
       // Regenerate the diagram with complete data
       let updatedDefinition = 'erDiagram\n';
@@ -289,43 +358,33 @@
         updatedDefinition += '  %% No relationships found in the database schema\n';
       }
       
-      // Create a new diagram element
-      const updatedErdDiv = document.createElement('div');
-      updatedErdDiv.className = 'mermaid';
-      updatedErdDiv.innerHTML = updatedDefinition;
+      // Create the diagram element
+      const erdDiv = document.createElement('div');
+      erdDiv.className = 'mermaid';
+      erdDiv.innerHTML = updatedDefinition;
       
-      // Get the container but don't clear it yet
-      const container = document.getElementById('erd-container');
-      
-      // First, clean up any previous zoom instance
-      if (panZoomInstance) {
-        panZoomInstance.destroy();
-        panZoomInstance = null;
-      }
-      
-      // Create a temporary container
+      // Create a temporary container for rendering
       const tempContainer = document.createElement('div');
       tempContainer.style.visibility = 'hidden';
       tempContainer.style.position = 'absolute';
       tempContainer.style.width = '100%';
-      tempContainer.appendChild(updatedErdDiv);
+      tempContainer.appendChild(erdDiv);
       document.body.appendChild(tempContainer);
       
-      // Render in the temporary container first
-      mermaid.init(undefined, updatedErdDiv).then(function() {
-        console.log('Diagram fully updated with all data');
+      // Render the diagram in the temporary container
+      mermaid.init(undefined, erdDiv).then(function() {
+        console.log('Diagram fully rendered with all data');
         
-        // Clear original container and move the rendered content
         try {
           // Remove from temp container without destroying
-          tempContainer.removeChild(updatedErdDiv);
+          tempContainer.removeChild(erdDiv);
           
           // Hide loading indicator
           document.getElementById('erd-loading').style.display = 'none';
           
           // Clear main container and add the diagram
           container.innerHTML = '';
-          container.appendChild(updatedErdDiv);
+          container.appendChild(erdDiv);
           
           // Remove temp container
           document.body.removeChild(tempContainer);
@@ -342,100 +401,15 @@
           isUpdatingDiagram = false;
         }
       }).catch(function(error) {
-        console.error('Error rendering updated diagram:', error);
+        console.error('Error rendering diagram:', error);
         document.body.removeChild(tempContainer);
         isUpdatingDiagram = false;
-        showError('Error rendering diagram', 'There was an error updating the diagram with complete data.', error.message);
+        showError('Error rendering diagram', 'There was an error rendering the entity relationship diagram.', error.message);
       });
     }
     
-    // Add initial relationships placeholder (empty)
-    mermaidDefinition += '  %% Relationships loading...\n';
-    
-    // Create a div for the initial diagram (shows immediately with table names only)
-    const erdDiv = document.createElement('div');
-    erdDiv.className = 'mermaid';
-    erdDiv.innerHTML = mermaidDefinition;
-    
     // Get the container reference for later use
     const container = document.getElementById('erd-container');
-    
-    // Create a temporary container for initial rendering
-    const tempInitContainer = document.createElement('div');
-    tempInitContainer.style.visibility = 'hidden';
-    tempInitContainer.style.position = 'absolute';
-    tempInitContainer.style.width = '100%';
-    tempInitContainer.appendChild(erdDiv);
-    document.body.appendChild(tempInitContainer);
-    
-    // Update loading status for initial render
-    updateLoadingStatus('Rendering initial diagram...');
-    
-    // Render the initial diagram in the temporary container
-    mermaid.init(undefined, erdDiv).then(function() {
-      try {
-        // Remove from temp container without destroying
-        tempInitContainer.removeChild(erdDiv);
-        
-        // Hide the loading indicator temporarily (will show updated loading for data fetching)
-        document.getElementById('erd-loading').style.display = 'none';
-        
-        // Add the rendered diagram to the main container
-        container.appendChild(erdDiv);
-        
-        // Remove temp container
-        document.body.removeChild(tempInitContainer);
-        
-        // Setup initial zoom controls
-        setTimeout(() => {
-          setupZoomControls();
-          // Show a subtle loading indicator that data is still loading
-          showDataLoadingIndicator();
-        }, 100);
-      } catch(err) {
-        console.error('Error moving initial diagram to container:', err);
-      }
-    }).catch(function(error) {
-      console.error('Error rendering initial diagram:', error);
-      document.body.removeChild(tempInitContainer);
-      showError('Error generating diagram', 'There was an error generating the initial entity relationship diagram.', error.message);
-    });
-    
-    // Function to show a subtle loading indicator for data loading
-    function showDataLoadingIndicator() {
-      // Create a small loading badge in the top-right corner
-      const loadingBadge = document.createElement('div');
-      loadingBadge.id = 'data-loading-badge';
-      loadingBadge.className = 'position-absolute top-0 end-0 m-3';
-      loadingBadge.style.zIndex = '1000';
-      loadingBadge.innerHTML = `
-        <div class="badge bg-info d-flex align-items-center">
-          <div class="spinner-border spinner-border-sm me-2" role="status" style="width: 0.8rem; height: 0.8rem;">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-          Loading details...
-        </div>
-      `;
-      
-      container.style.position = 'relative';
-      container.appendChild(loadingBadge);
-      
-      // Remove the badge when data loading is complete
-      const checkComplete = () => {
-        if (columnsLoadedCount === totalTables && relationshipsLoaded) {
-          setTimeout(() => {
-            const badge = document.getElementById('data-loading-badge');
-            if (badge) {
-              badge.remove();
-            }
-          }, 500); // Small delay to show completion
-        } else {
-          setTimeout(checkComplete, 500);
-        }
-      };
-      
-      setTimeout(checkComplete, 1000);
-    }
     
     // SVG Pan Zoom instance
     let panZoomInstance = null;
