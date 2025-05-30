@@ -1574,23 +1574,46 @@
         </p>
       </div>
       
-      <!-- Datetime range fields -->
+      <!-- Date range picker -->
       <div class="mb-3">
-        <label for="floatingCreationFilterStart" class="form-label">Start Date/Time</label>
-        <input type="datetime-local" 
-               id="floatingCreationFilterStart" 
-               name="creation_filter_start" 
+        <label for="floatingCreationFilterRange" class="form-label">Date Range</label>
+        <input type="text" 
+               id="floatingCreationFilterRange" 
+               name="creation_filter_range" 
                class="form-control" 
-               value="<%= @creation_filter_start %>">
+               placeholder="Select date range..."
+               readonly>
+        <!-- Hidden inputs for form submission -->
+        <input type="hidden" id="creation_filter_start" name="creation_filter_start" value="<%= @creation_filter_start %>">
+        <input type="hidden" id="creation_filter_end" name="creation_filter_end" value="<%= @creation_filter_end %>">
       </div>
       
+      <!-- Quick preset buttons -->
       <div class="mb-3">
-        <label for="floatingCreationFilterEnd" class="form-label">End Date/Time</label>
-        <input type="datetime-local" 
-               id="floatingCreationFilterEnd" 
-               name="creation_filter_end" 
-               class="form-control" 
-               value="<%= @creation_filter_end %>">
+        <label class="form-label">Quick Presets</label>
+        <div class="d-grid gap-1">
+          <button type="button" class="btn btn-outline-secondary btn-sm preset-btn" data-preset="lastminute">
+            <i class="bi bi-clock me-1"></i>Last Minute
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm preset-btn" data-preset="last5minutes">
+            <i class="bi bi-clock-history me-1"></i>Last 5 Minutes
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm preset-btn" data-preset="today">
+            <i class="bi bi-calendar-day me-1"></i>Today
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm preset-btn" data-preset="yesterday">
+            <i class="bi bi-calendar-minus me-1"></i>Yesterday
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm preset-btn" data-preset="last7days">
+            <i class="bi bi-calendar-week me-1"></i>Last 7 Days
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm preset-btn" data-preset="last30days">
+            <i class="bi bi-calendar-month me-1"></i>Last 30 Days
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm preset-btn" data-preset="thismonth">
+            <i class="bi bi-calendar3 me-1"></i>This Month
+          </button>
+        </div>
       </div>
       
       <div class="d-grid gap-2">
@@ -1664,18 +1687,29 @@
     align-items: center;
     justify-content: center;
     font-size: 1.2rem;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: none;
     position: relative;
+    background: var(--bs-primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.4);
   }
   
   .floating-filter-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(var(--bs-primary-rgb), 0.5) !important;
+    background: var(--bs-primary) !important;
+    color: white !important;
   }
   
   .floating-filter-btn:active {
-    transform: translateY(0);
+    transform: translateY(-1px) scale(1.02);
+    transition: all 0.1s ease;
+  }
+  
+  .floating-filter-btn:focus {
+    outline: 2px solid rgba(var(--bs-primary-rgb), 0.5);
+    outline-offset: 2px;
   }
   
   /* Badge for active filter indicator */
@@ -1686,22 +1720,470 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    background: var(--bs-success) !important;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
   }
   
   /* Better datetime input styling for the floating filter */
-  #creationFilterOffcanvas input[type="datetime-local"] {
-    padding-right: 0.5rem;
+  #creationFilterOffcanvas .form-control {
+    border-radius: 6px;
+    border: 1px solid var(--bs-border-color);
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    transition: all 0.15s ease-in-out;
   }
   
-  /* Dark mode support for datetime inputs */
-  [data-bs-theme="dark"] #creationFilterOffcanvas input[type="datetime-local"] {
-    background-color: rgba(255,255,255,0.1);
-    color: #fff;
-    border-color: rgba(255,255,255,0.15);
+  #creationFilterOffcanvas .form-control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+    background-color: var(--bs-body-bg);
   }
   
-  [data-bs-theme="dark"] #creationFilterOffcanvas input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-    filter: invert(1);
+  /* Offcanvas enhancements */
+  #creationFilterOffcanvas {
+    backdrop-filter: blur(10px);
+  }
+  
+  #creationFilterOffcanvas .offcanvas-header {
+    background: var(--bs-body-bg);
+    border-bottom: 1px solid var(--bs-border-color);
+    padding: 1.25rem;
+  }
+  
+  #creationFilterOffcanvas .offcanvas-body {
+    background: var(--bs-body-bg);
+    padding: 1.25rem;
+  }
+  
+  #creationFilterOffcanvas .offcanvas-title {
+    color: var(--bs-body-color);
+    font-weight: 600;
+  }
+  
+  /* Dark mode specific enhancements */
+  [data-bs-theme="dark"] .floating-filter-btn {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(var(--bs-primary-rgb), 0.2);
+  }
+  
+  [data-bs-theme="dark"] .floating-filter-btn:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(var(--bs-primary-rgb), 0.3) !important;
+  }
+  
+  [data-bs-theme="dark"] #creationFilterOffcanvas .offcanvas-header {
+    background: var(--bs-dark);
+    border-bottom-color: var(--bs-border-color-translucent);
+  }
+  
+  [data-bs-theme="dark"] #creationFilterOffcanvas .offcanvas-body {
+    background: var(--bs-dark);
+  }
+  
+  [data-bs-theme="dark"] #creationFilterOffcanvas .form-control {
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color-translucent);
+  }
+  
+  [data-bs-theme="dark"] #creationFilterOffcanvas .form-control:focus {
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-primary);
+  }
+  
+  /* Date range picker styling */
+  #floatingCreationFilterRange {
+    cursor: pointer;
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    border: 1px solid var(--bs-border-color);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, background-color 0.15s ease-in-out;
+  }
+  
+  #floatingCreationFilterRange:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+    background-color: var(--bs-body-bg);
+  }
+  
+  #floatingCreationFilterRange::placeholder {
+    color: var(--bs-secondary-color);
+    opacity: 0.7;
+  }
+  
+  /* Enhanced dark mode support for input */
+  [data-bs-theme="dark"] #floatingCreationFilterRange {
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color-translucent);
+    color: var(--bs-body-color);
+  }
+  
+  [data-bs-theme="dark"] #floatingCreationFilterRange:focus {
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+  }
+  
+  /* Preset buttons styling */
+  .preset-btn {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.75rem;
+    text-align: left;
+    justify-content: flex-start;
+    border: 1px solid var(--bs-border-color);
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .preset-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(var(--bs-primary-rgb), 0.1), transparent);
+    transition: left 0.3s ease;
+  }
+  
+  .preset-btn:hover {
+    background-color: var(--bs-primary);
+    color: white;
+    border-color: var(--bs-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(var(--bs-primary-rgb), 0.2);
+  }
+  
+  .preset-btn:hover::before {
+    left: 100%;
+  }
+  
+  .preset-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(var(--bs-primary-rgb), 0.2);
+  }
+  
+  .preset-btn i {
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+  }
+  
+  .preset-btn:hover i {
+    opacity: 1;
+  }
+  
+  /* Dark mode enhancements for preset buttons */
+  [data-bs-theme="dark"] .preset-btn {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-border-color-translucent);
+    color: var(--bs-body-color);
+  }
+  
+  [data-bs-theme="dark"] .preset-btn:hover {
+    background-color: var(--bs-primary);
+    color: white;
+    border-color: var(--bs-primary);
+    box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb), 0.3);
+  }
+  
+  /* Flatpickr theme adjustments */
+  .flatpickr-calendar {
+    border-radius: 8px;
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+    font-family: var(--bs-body-font-family);
+  }
+  
+  .flatpickr-months {
+    background: var(--bs-body-bg);
+    border-bottom: 1px solid var(--bs-border-color);
+    border-radius: 8px 8px 0 0;
+  }
+  
+  .flatpickr-month {
+    color: var(--bs-body-color);
+    fill: var(--bs-body-color);
+  }
+  
+  .flatpickr-current-month {
+    color: var(--bs-body-color);
+  }
+  
+  .flatpickr-current-month .flatpickr-monthDropdown-month {
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+  }
+  
+  .flatpickr-weekdays {
+    background: var(--bs-body-bg);
+  }
+  
+  .flatpickr-weekday {
+    color: var(--bs-secondary-color);
+    font-weight: 600;
+    font-size: 0.75rem;
+  }
+  
+  .flatpickr-day {
+    color: var(--bs-body-color);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .flatpickr-day:hover {
+    background: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary);
+    border-color: var(--bs-primary-border-subtle);
+  }
+  
+  .flatpickr-day.selected {
+    background: var(--bs-primary);
+    color: white;
+    border-color: var(--bs-primary);
+    box-shadow: 0 2px 4px rgba(var(--bs-primary-rgb), 0.3);
+  }
+  
+  .flatpickr-day.selected:hover {
+    background: var(--bs-primary);
+    color: white;
+  }
+  
+  .flatpickr-day.inRange {
+    background: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary);
+    border-color: transparent;
+  }
+  
+  .flatpickr-day.startRange {
+    background: var(--bs-primary);
+    color: white;
+    border-radius: 4px 0 0 4px;
+  }
+  
+  .flatpickr-day.endRange {
+    background: var(--bs-primary);
+    color: white;
+    border-radius: 0 4px 4px 0;
+  }
+  
+  .flatpickr-day.startRange.endRange {
+    border-radius: 4px;
+  }
+  
+  .flatpickr-day.today {
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+    font-weight: 600;
+  }
+  
+  .flatpickr-day.today:hover {
+    background: var(--bs-primary);
+    color: white;
+  }
+  
+  .flatpickr-day.disabled {
+    color: var(--bs-secondary-color);
+    opacity: 0.5;
+  }
+  
+  .flatpickr-time {
+    background: var(--bs-body-bg);
+    border-radius: 0 0 8px 8px;
+  }
+  
+  .flatpickr-time input {
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  }
+  
+  .flatpickr-time input:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+    outline: 0;
+  }
+  
+  .flatpickr-time .flatpickr-time-separator {
+    color: var(--bs-body-color);
+  }
+  
+  .flatpickr-prev-month,
+  .flatpickr-next-month {
+    color: var(--bs-body-color);
+    fill: var(--bs-body-color);
+    transition: color 0.2s ease;
+  }
+  
+  .flatpickr-prev-month:hover,
+  .flatpickr-next-month:hover {
+    color: var(--bs-primary);
+    fill: var(--bs-primary);
+  }
+  
+  /* Dark mode specific enhancements */
+  [data-bs-theme="dark"] .flatpickr-calendar {
+    background: var(--bs-dark);
+    border-color: var(--bs-border-color-translucent);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.4);
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-months {
+    background: var(--bs-dark);
+    border-bottom-color: var(--bs-border-color-translucent);
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-weekdays {
+    background: var(--bs-dark);
+  }
+  
+  /* Enhanced dark mode day styling for better contrast */
+  [data-bs-theme="dark"] .flatpickr-day {
+    color: #e9ecef !important;
+    background: transparent;
+    border: 1px solid transparent;
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-day:hover {
+    background: rgba(var(--bs-primary-rgb), 0.25) !important;
+    color: #ffffff !important;
+    border-color: rgba(var(--bs-primary-rgb), 0.4);
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-day.inRange {
+    background: rgba(var(--bs-primary-rgb), 0.2) !important;
+    color: #ffffff !important;
+    border-color: transparent;
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-day.selected {
+    background: var(--bs-primary) !important;
+    color: #ffffff !important;
+    border-color: var(--bs-primary);
+    box-shadow: 0 2px 6px rgba(var(--bs-primary-rgb), 0.4);
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-day.selected:hover {
+    background: var(--bs-primary) !important;
+    color: #ffffff !important;
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-day.startRange {
+    background: var(--bs-primary) !important;
+    color: #ffffff !important;
+    border-radius: 4px 0 0 4px;
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-day.endRange {
+    background: var(--bs-primary) !important;
+    color: #ffffff !important;
+    border-radius: 0 4px 4px 0;
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-day.startRange.endRange {
+    border-radius: 4px;
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-day.today {
+    border-color: var(--bs-primary) !important;
+    color: var(--bs-primary) !important;
+    font-weight: 600;
+    background: rgba(var(--bs-primary-rgb), 0.1);
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-day.today:hover {
+    background: var(--bs-primary) !important;
+    color: #ffffff !important;
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-day.disabled {
+    color: #6c757d !important;
+    opacity: 0.4;
+    background: transparent !important;
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-day.disabled:hover {
+    background: transparent !important;
+    color: #6c757d !important;
+    cursor: not-allowed;
+  }
+  
+  /* Dark mode other day states */
+  [data-bs-theme="dark"] .flatpickr-day.nextMonthDay,
+  [data-bs-theme="dark"] .flatpickr-day.prevMonthDay {
+    color: #6c757d !important;
+    opacity: 0.6;
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-day.nextMonthDay:hover,
+  [data-bs-theme="dark"] .flatpickr-day.prevMonthDay:hover {
+    background: rgba(var(--bs-primary-rgb), 0.15) !important;
+    color: #adb5bd !important;
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-time {
+    background: var(--bs-dark);
+    border-top-color: var(--bs-border-color-translucent);
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-time input {
+    background: var(--bs-body-bg);
+    border-color: var(--bs-border-color-translucent);
+    color: #e9ecef !important;
+  }
+
+  .flatpickr-calendar.hasTime .flatpickr-time {
+    border-top: var(--bs-border-color-translucent);
+  }
+
+  .flatpickr-next-month {
+    color: var(--bs-body-color);
+    fill: var(--bs-body-color);
+  }
+
+  span.flatpickr-weekday {
+    color: var(--bs-secondary-color);
+    font-weight: 600;
+    font-size: 0.75rem;
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-time input:focus {
+    border-color: var(--bs-primary);
+    background: var(--bs-body-bg);
+    color: #ffffff !important;
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-time .flatpickr-time-separator {
+    color: #e9ecef !important;
+  }
+  
+  /* Better focus states */
+  .flatpickr-day:focus {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: -2px;
+    z-index: 10;
+  }
+  
+  /* Animation for calendar appearance */
+  .flatpickr-calendar.open {
+    animation: flatpickr-slideDown 0.2s ease-out;
+  }
+  
+  @keyframes flatpickr-slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
   
   /* Small alert styling */
@@ -1716,34 +2198,318 @@
       display: none !important;
     }
   }
+  
+  /* Flatpickr positioning and responsive adjustments */
+  .flatpickr-calendar.arrowTop:before,
+  .flatpickr-calendar.arrowTop:after {
+    border-bottom-color: var(--bs-border-color);
+  }
+  
+  .flatpickr-calendar.arrowBottom:before,
+  .flatpickr-calendar.arrowBottom:after {
+    border-top-color: var(--bs-border-color);
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-calendar.arrowTop:before,
+  [data-bs-theme="dark"] .flatpickr-calendar.arrowTop:after {
+    border-bottom-color: var(--bs-border-color-translucent);
+  }
+  
+  [data-bs-theme="dark"] .flatpickr-calendar.arrowBottom:before,
+  [data-bs-theme="dark"] .flatpickr-calendar.arrowBottom:after {
+    border-top-color: var(--bs-border-color-translucent);
+  }
+  
+  /* Ensure calendar stays within viewport on mobile */
+  @media (max-width: 576px) {
+    .flatpickr-calendar {
+      max-width: calc(100vw - 20px);
+      font-size: 14px;
+    }
+    
+    .flatpickr-day {
+      height: 35px;
+      line-height: 35px;
+    }
+    
+    .flatpickr-time input {
+      font-size: 14px;
+    }
+  }
+  
+  /* Improved accessibility */
+  .flatpickr-calendar {
+    font-family: inherit;
+  }
+  
+  .flatpickr-day[aria-label] {
+    position: relative;
+  }
+  
+  /* Smooth scroll behavior for time inputs */
+  .flatpickr-time input {
+    scroll-behavior: smooth;
+  }
+  
+  /* Enhanced visual feedback for interactive elements */
+  .flatpickr-prev-month,
+  .flatpickr-next-month {
+    border-radius: 4px;
+    padding: 4px;
+    margin: 2px;
+  }
+  
+  .flatpickr-prev-month:hover,
+  .flatpickr-next-month:hover {
+    background: rgba(var(--bs-primary-rgb), 0.1);
+  }
 </style>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Set default values for datetime inputs when empty
-    const startInput = document.getElementById('floatingCreationFilterStart');
-    const endInput = document.getElementById('floatingCreationFilterEnd');
+    // Initialize Flatpickr date range picker
+    const dateRangeInput = document.getElementById('floatingCreationFilterRange');
+    const startHidden = document.getElementById('creation_filter_start');
+    const endHidden = document.getElementById('creation_filter_end');
     
-    // When applying filter with empty start date, default to beginning of current month
-    if (startInput) {
-      startInput.addEventListener('click', function() {
-        if (!this.value) {
+    if (dateRangeInput && typeof flatpickr !== 'undefined') {
+      console.log('Flatpickr library loaded, initializing date range picker');
+      // Store the Flatpickr instance in a variable accessible to all handlers
+      let fp;
+      
+      // Function to initialize Flatpickr
+      function initializeFlatpickr(theme) {
+        // Determine theme based on current document theme or passed parameter
+        const currentTheme = theme || (document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'dark' : 'light');
+        
+        const config = {
+          mode: 'range',
+          enableTime: true,
+          dateFormat: 'Y-m-d H:i',
+          time_24hr: true,
+          allowInput: false,
+          clickOpens: true,
+          theme: currentTheme,
+          animate: true,
+          position: 'auto',
+          static: false,
+          appendTo: document.body, // Ensure it renders above other elements
+          locale: {
+            rangeSeparator: ' to ',
+            weekdays: {
+              shorthand: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+              longhand: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+            },
+            months: {
+              shorthand: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+              longhand: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+            }
+          },
+          onOpen: function(selectedDates, dateStr, instance) {
+            // Add a slight delay to apply theme-specific styling after calendar opens
+            setTimeout(() => {
+              const calendar = instance.calendarContainer;
+              if (calendar) {
+                // Apply theme-specific class for additional styling control
+                calendar.classList.add(`flatpickr-${currentTheme}`);
+                
+                // Ensure proper z-index for offcanvas overlay
+                calendar.style.zIndex = '1070';
+                
+                // Add elegant entrance animation
+                calendar.classList.add('open');
+              }
+            }, 10);
+          },
+          onClose: function(selectedDates, dateStr, instance) {
+            const calendar = instance.calendarContainer;
+            if (calendar) {
+              calendar.classList.remove('open');
+            }
+          },
+          onChange: function(selectedDates, dateStr, instance) {
+            console.log('Date range changed:', selectedDates);
+            
+            if (selectedDates.length === 2) {
+              // Format dates for hidden inputs (Rails expects ISO format)
+              startHidden.value = selectedDates[0].toISOString().slice(0, 16);
+              endHidden.value = selectedDates[1].toISOString().slice(0, 16);
+              
+              // Update display with elegant formatting
+              const formatOptions = {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              };
+              
+              const startFormatted = selectedDates[0].toLocaleDateString('en-US', formatOptions);
+              const endFormatted = selectedDates[1].toLocaleDateString('en-US', formatOptions);
+              dateRangeInput.value = `${startFormatted} to ${endFormatted}`;
+              
+            } else if (selectedDates.length === 1) {
+              startHidden.value = selectedDates[0].toISOString().slice(0, 16);
+              endHidden.value = '';
+              
+              const formatOptions = {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              };
+              
+              const startFormatted = selectedDates[0].toLocaleDateString('en-US', formatOptions);
+              dateRangeInput.value = `${startFormatted} (select end date)`;
+              
+            } else {
+              startHidden.value = '';
+              endHidden.value = '';
+              dateRangeInput.value = '';
+            }
+          }
+        };
+        
+        return flatpickr(dateRangeInput, config);
+      }
+      
+      // Initialize date range picker
+      fp = initializeFlatpickr();
+      
+      // Set initial values if they exist
+      if (startHidden.value || endHidden.value) {
+        const dates = [];
+        if (startHidden.value) {
+          dates.push(new Date(startHidden.value));
+        }
+        if (endHidden.value) {
+          dates.push(new Date(endHidden.value));
+        }
+        fp.setDate(dates);
+      }
+      
+      // Preset button functionality
+      const presetButtons = document.querySelectorAll('.preset-btn');
+      presetButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+          event.preventDefault(); // Prevent any form submission
+          
+          const preset = this.getAttribute('data-preset');
           const now = new Date();
-          const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-          const formattedDate = firstDay.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:MM
-          this.value = formattedDate;
+          let startDate, endDate;
+          
+          console.log('Preset button clicked:', preset); // Debug log
+          
+          switch (preset) {
+            case 'lastminute':
+              startDate = new Date(now);
+              startDate.setMinutes(startDate.getMinutes() - 1);
+              endDate = new Date(now);
+              break;
+            case 'last5minutes':
+              startDate = new Date(now);
+              startDate.setMinutes(startDate.getMinutes() - 5);
+              endDate = new Date(now);
+              break;
+            case 'today':
+              startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+              endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+              break;
+            case 'yesterday':
+              const yesterday = new Date(now);
+              yesterday.setDate(yesterday.getDate() - 1);
+              startDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0);
+              endDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59);
+              break;
+            case 'last7days':
+              startDate = new Date(now);
+              startDate.setDate(startDate.getDate() - 7);
+              startDate.setHours(0, 0, 0, 0);
+              endDate = new Date(now);
+              endDate.setHours(23, 59, 59, 999);
+              break;
+            case 'last30days':
+              startDate = new Date(now);
+              startDate.setDate(startDate.getDate() - 30);
+              startDate.setHours(0, 0, 0, 0);
+              endDate = new Date(now);
+              endDate.setHours(23, 59, 59, 999);
+              break;
+            case 'thismonth':
+              startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+              endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+              break;
+          }
+          
+          if (startDate && endDate && fp) {
+            console.log('Setting dates:', startDate, endDate); // Debug log
+            fp.setDate([startDate, endDate]);
+            
+            // Also update the hidden inputs directly as a fallback
+            startHidden.value = startDate.toISOString().slice(0, 16);
+            endHidden.value = endDate.toISOString().slice(0, 16);
+            
+            // Update the display value
+            const formattedStart = startDate.toLocaleDateString() + ' ' + startDate.toLocaleTimeString();
+            const formattedEnd = endDate.toLocaleDateString() + ' ' + endDate.toLocaleTimeString();
+            dateRangeInput.value = formattedStart + ' to ' + formattedEnd;
+          } else {
+            console.error('Failed to set dates - startDate:', startDate, 'endDate:', endDate, 'fp:', fp);
+          }
+        });
+      });
+      
+      // Listen for theme changes and update Flatpickr theme
+      document.addEventListener('dbviewerThemeChanged', function(e) {
+        const newTheme = e.detail.theme === 'dark' ? 'dark' : 'light';
+        console.log('Theme changed to:', newTheme);
+        
+        // Destroy and recreate with new theme
+        if (fp) {
+          const currentDates = fp.selectedDates;
+          fp.destroy();
+          fp = initializeFlatpickr(newTheme);
+          
+          // Restore previous values if they existed
+          if (currentDates && currentDates.length > 0) {
+            fp.setDate(currentDates);
+          }
         }
       });
-    }
-    
-    // When applying filter with empty end date, default to current datetime
-    if (endInput) {
-      endInput.addEventListener('click', function() {
-        if (!this.value) {
-          const now = new Date();
-          const formattedDate = now.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:MM
-          this.value = formattedDate;
-        }
+      
+      // Also listen for direct data-bs-theme attribute changes using MutationObserver
+      const themeObserver = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
+            const newTheme = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'dark' : 'light';
+            console.log('Theme attribute changed to:', newTheme);
+            
+            if (fp) {
+              const currentDates = fp.selectedDates;
+              fp.destroy();
+              fp = initializeFlatpickr(newTheme);
+              
+              // Restore previous values if they existed
+              if (currentDates && currentDates.length > 0) {
+                fp.setDate(currentDates);
+              }
+            }
+          }
+        });
+      });
+      
+      // Start observing theme changes
+      themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-bs-theme']
+      });
+    } else {
+      console.error('Date range picker initialization failed:', {
+        dateRangeInput: !!dateRangeInput,
+        flatpickr: typeof flatpickr !== 'undefined'
       });
     }
     
