@@ -40,13 +40,7 @@
           <% @tables.each do |table| %>
             <tr>
               <td class="fw-medium">
-                <% 
-                  # Include creation filter params in table links
-                  filter_params = {}
-                  filter_params[:creation_filter_start] = session[:creation_filter_start] if session[:creation_filter_start].present?
-                  filter_params[:creation_filter_end] = session[:creation_filter_end] if session[:creation_filter_end].present?
-                %>
-                <%= link_to table[:name], table_path(table[:name], filter_params), class: "text-decoration-none" %>
+                <%= link_to table[:name], table_path(table[:name]), class: "text-decoration-none" %>
               </td>
               <td class="text-end">
                 <span class="badge bg-secondary-subtle"><%= table[:record_count] %></span>
