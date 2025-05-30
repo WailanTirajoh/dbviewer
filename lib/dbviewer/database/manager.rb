@@ -3,10 +3,12 @@ module Dbviewer
     # Manager handles all database interactions for the DBViewer engine
     # It provides methods to access database structure and data
     class Manager
-      attr_reader :connection, :adapter_name, :table_query_operations
+      attr_reader :connection, :adapter_name, :table_query_operations, :connection_key
 
       # Initialize the database manager
-      def initialize
+      # @param connection_key [Symbol] The key identifying the connection in configuration
+      def initialize(connection_key = nil)
+        @connection_key = connection_key || Dbviewer.configuration.current_connection
         ensure_connection
         @cache_manager = ::Dbviewer::Database::CacheManager.new(configuration.cache_expiry)
         @table_metadata_manager = ::Dbviewer::Database::MetadataManager.new(@connection, @cache_manager)
@@ -181,9 +183,18 @@ module Dbviewer
       # Ensure we have a valid database connection
       # @return [ActiveRecord::ConnectionAdapters::AbstractAdapter] The database connection
       def ensure_connection
-        return @connection if @connection
-
+        return @connection if @connection      # Get the connection based on the connection_key from configuration
+      connection_config = Dbviewer.configuration.database_connections[@connection_key]
+      
+      if connection_config && connection_config[:connection]
+        # Connection class has been resolved in the setup method
+        @connection = connection_config[:connection].connection
+      else
+        # Fallback to the default connection
+        Rails.logger.warn "DBViewer: Using default connection for key: #{@connection_key}"
         @connection = ActiveRecord::Base.connection
+      end
+        
         @adapter_name = @connection.adapter_name.downcase
         @connection
       end

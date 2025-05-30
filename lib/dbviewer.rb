@@ -57,10 +57,43 @@ module Dbviewer
         query_logging_mode: configuration.query_logging_mode
       )
 
-      ActiveRecord::Base.connection
-      Rails.logger.info "DBViewer successfully connected to database"
-    rescue => e
-      Rails.logger.error "DBViewer could not connect to database: #{e.message}"
+      # Check all configured connections
+      connection_errors = []
+      configuration.database_connections.each do |key, config|
+        begin
+          connection_class = nil
+          
+          if config[:connection]
+            connection_class = config[:connection]
+          elsif config[:connection_class].is_a?(String)
+            # Try to load the class if it's defined as a string
+            begin
+              connection_class = config[:connection_class].constantize
+            rescue NameError => e
+              Rails.logger.warn "DBViewer could not load connection class #{config[:connection_class]}: #{e.message}"
+              next
+            end
+          end
+          
+          if connection_class
+            connection = connection_class.connection
+            adapter_name = connection.adapter_name
+            Rails.logger.info "DBViewer successfully connected to #{config[:name] || key.to_s} database (#{adapter_name})"
+            
+            # Store the resolved connection class back in the config
+            config[:connection] = connection_class
+          else
+            raise "No valid connection configuration found for #{key}"
+          end
+        rescue => e
+          connection_errors << { key: key, error: e.message }
+          Rails.logger.error "DBViewer could not connect to #{config[:name] || key.to_s} database: #{e.message}"
+        end
+      end
+      
+      if connection_errors.length == configuration.database_connections.length
+        raise "DBViewer could not connect to any configured database"
+      end
     end
 
     # Initialize engine with default values or user-provided configuration

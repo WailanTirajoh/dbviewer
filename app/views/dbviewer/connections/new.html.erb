@@ -1,0 +1,79 @@
+<% content_for :title, "Add New Database Connection" %>
+
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-plus-circle me-2"></i> Add New Database Connection</h1>
+  </div>
+
+  <div class="row">
+    <div class="col-12 col-md-8 col-lg-6 mx-auto">
+      <div class="card dbviewer-card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Connection Details</h5>
+        </div>
+        <div class="card-body">
+          <%= form_tag connections_path, method: :post, class: "needs-validation", novalidate: true do %>
+            <div class="mb-3">
+              <label for="connection_name" class="form-label">Connection Name*</label>
+              <input type="text" class="form-control" id="connection_name" name="connection_name" 
+                     placeholder="e.g. Blog Database" required>
+              <div class="form-text">A human-readable name for this connection</div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="connection_key" class="form-label">Connection Key*</label>
+              <input type="text" class="form-control" id="connection_key" name="connection_key" 
+                     placeholder="e.g. blog_db" required>
+              <div class="form-text">A unique identifier for this connection (lowercase, no spaces)</div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="connection_class" class="form-label">Connection Class*</label>
+              <input type="text" class="form-control" id="connection_class" name="connection_class" 
+                     placeholder="e.g. BlogDatabase" required>
+              <div class="form-text">
+                The fully qualified class name that establishes the connection.
+                This class must inherit from ActiveRecord::Base.
+              </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+              <%= link_to "Cancel", connections_path, class: "btn btn-secondary" %>
+              <button type="submit" class="btn btn-primary">Add Connection</button>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Form validation script
+  document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.needs-validation')
+    
+    // Loop over them and prevent submission
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+        
+        form.classList.add('was-validated')
+      }, false)
+    })
+    
+    // Auto-generate a key from the name
+    const nameInput = document.getElementById('connection_name')
+    const keyInput = document.getElementById('connection_key')
+    
+    nameInput.addEventListener('input', function() {
+      keyInput.value = this.value
+        .toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_]/g, '')
+    })
+  })
+</script>

@@ -5,12 +5,100 @@ module Dbviewer
     extend ActiveSupport::Concern
 
     included do
-      helper_method :current_table?, :get_database_name, :get_adapter_name if respond_to?(:helper_method)
+      helper_method :current_table?, :get_database_name, :get_adapter_name, 
+                    :current_connection_key, :available_connections if respond_to?(:helper_method)
     end
 
-    # Initialize the database manager
+    # Get the current active connection key
+    def current_connection_key
+      # Get the connection key from the session or fall back to the default
+      key = session[:dbviewer_connection] || Dbviewer.configuration.current_connection
+      
+      # Ensure the key actually exists in our configured connections
+      if key && Dbviewer.configuration.database_connections.key?(key.to_sym)
+        return key.to_sym
+      end
+      
+      # If the key doesn't exist, fall back to any available connection
+      first_key = Dbviewer.configuration.database_connections.keys.first
+      if first_key
+        session[:dbviewer_connection] = first_key # Update the session
+        return first_key
+      end
+      
+      # If there are no connections configured, use a default key
+      # This should never happen in normal operation, but it's a safety measure
+      :default
+    end
+
+    # Set the current connection to use
+    def switch_connection(connection_key)
+      connection_key = connection_key.to_sym if connection_key.respond_to?(:to_sym)
+      
+      if connection_key && Dbviewer.configuration.database_connections.key?(connection_key)
+        session[:dbviewer_connection] = connection_key
+        # Clear the database manager to force it to be recreated with the new connection
+        @database_manager = nil
+        return true
+      else
+        # If the connection key doesn't exist, reset to default connection
+        if Dbviewer.configuration.database_connections.key?(Dbviewer.configuration.current_connection)
+          session[:dbviewer_connection] = Dbviewer.configuration.current_connection
+          @database_manager = nil
+          return true
+        else
+          # If even the default connection isn't valid, try the first available connection
+          first_key = Dbviewer.configuration.database_connections.keys.first
+          if first_key
+            session[:dbviewer_connection] = first_key
+            @database_manager = nil
+            return true
+          end
+        end
+      end
+      
+      false # Return false if we couldn't set a valid connection
+    end
+
+    # Get list of available connections
+    def available_connections
+      connections = Dbviewer.configuration.database_connections.map do |key, config|
+        # Try to determine the adapter name if it's not already stored
+        adapter_name = nil
+        if config[:adapter_name].present?
+          adapter_name = config[:adapter_name]
+        elsif config[:connection].present?
+          begin
+            adapter_name = config[:connection].connection.adapter_name
+          rescue => e
+            Rails.logger.error("Error getting adapter name: #{e.message}")
+          end
+        end
+        
+        { 
+          key: key,
+          name: config[:name] || key.to_s.humanize,
+          adapter_name: adapter_name,
+          current: key.to_sym == current_connection_key.to_sym
+        }
+      end
+      
+      # Ensure at least one connection is marked as current
+      unless connections.any? { |c| c[:current] }
+        # If no connection is current, mark the first one as current
+        if connections.any?
+          connections.first[:current] = true
+          # Also update the session
+          session[:dbviewer_connection] = connections.first[:key]
+        end
+      end
+      
+      connections
+    end
+
+    # Initialize the database manager with the current connection
     def database_manager
-      @database_manager ||= ::Dbviewer::Database::Manager.new
+      @database_manager ||= ::Dbviewer::Database::Manager.new(current_connection_key)
     end
 
     # Initialize the table query operations manager
@@ -21,6 +109,12 @@ module Dbviewer
 
     # Get the name of the current database
     def get_database_name
+      # First check if this connection has a name in the configuration
+      current_conn_config = Dbviewer.configuration.database_connections[current_connection_key]
+      if current_conn_config && current_conn_config[:name].present?
+        return current_conn_config[:name]
+      end
+      
       adapter = database_manager.connection.adapter_name.downcase
 
       case adapter
@@ -34,7 +128,7 @@ module Dbviewer
         result ? result["db_name"] : "Database"
       when /sqlite/
         # For SQLite, extract the database name from the connection_config
-        database_path = ActiveRecord::Base.connection.pool.spec.config[:database] || ""
+        database_path = database_manager.connection.pool.spec.config[:database] || ""
         File.basename(database_path, ".*") || "SQLite Database"
       else
         "Database" # Default fallback
@@ -67,12 +161,22 @@ module Dbviewer
         table_stats = {
           name: table_name
         }
-
-        # Only fetch record counts if explicitly requested
-        table_stats[:record_count] = database_manager.record_count(table_name) if include_record_counts
-
+        
+        # Only fetch record count if specifically requested
+        if include_record_counts
+          begin
+            table_stats[:record_count] = database_manager.record_count(table_name)
+          rescue => e
+            Rails.logger.error("Error fetching record count for #{table_name}: #{e.message}")
+            table_stats[:record_count] = 0
+          end
+        end
+        
         table_stats
       end
+    rescue => e
+      Rails.logger.error("Error fetching tables: #{e.message}")
+      []
     end
 
     # Gather database analytics information

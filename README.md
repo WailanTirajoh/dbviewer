@@ -32,6 +32,11 @@ It's designed for development, debugging, and database analysis, offering a clea
   - View table structure reference while writing queries
   - Protection against potentially harmful SQL operations
   - Query execution statistics and timing
+- **Multiple Database Connections**:
+  - Connect to multiple databases within your application
+  - Switch between connections on-the-fly to view different database schemas
+  - Add new database connections from the UI without code changes
+  - Test connections to verify they're working properly
 - **Enhanced UI Features**:
   - Responsive, Bootstrap-based interface that works on desktop and mobile
   - Fixed header navigation with quick access to all features
@@ -141,6 +146,34 @@ end
 You can also create this file manually if you prefer.
 
 The configuration is accessed through `Dbviewer.configuration` throughout the codebase. You can also access it via `Dbviewer.config` which is an alias for backward compatibility.
+
+### Multiple Database Connections
+
+DBViewer supports working with multiple database connections in your application. This is useful for applications that connect to multiple databases or use different connection pools.
+
+To configure multiple database connections, set them up in your initializer:
+
+```ruby
+# config/initializers/dbviewer.rb
+Dbviewer.configure do |config|
+  # Multiple database connections configuration
+  config.database_connections = {
+    primary: { 
+      connection_class: "ActiveRecord::Base",
+      name: "Primary Database" 
+    },
+    secondary: { 
+      connection_class: "SecondaryDatabase",
+      name: "Blog Database" 
+    }
+  }
+  
+  # Set the default active connection
+  config.current_connection = :primary
+end
+```
+
+Each connection needs to reference an ActiveRecord class that establishes a database connection. For more details, see [Multiple Database Connections](docs/multiple_connections.md).
 
 ## 🪵 Query Logging
 

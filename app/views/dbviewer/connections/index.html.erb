@@ -1,0 +1,182 @@
+<% content_for :title, "Database Connections" %>
+
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-database-fill me-2"></i> Database Connections</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newConnectionModal">
+      <i class="bi bi-plus-circle me-1"></i> Add Connection
+    </button>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        You can switch between multiple database connections to view different databases in your application.
+      </div>
+    </div>
+  </div>
+
+  <% if flash[:alert] %>
+    <div class="row">
+      <div class="col-12">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <%= flash[:alert] %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <% if flash[:notice] %>
+    <div class="row">
+      <div class="col-12">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <i class="bi bi-check-circle-fill me-2"></i>
+          <%= flash[:notice] %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+  <% end %>
+  
+  <div class="row">
+    <% @connections.each do |connection| %>
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dbviewer-card h-100 <%= 'border-primary' if connection[:current] %>">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+              <% if connection[:adapter_name]&.downcase&.include?('sqlite') %>
+                <i class="bi bi-database-fill me-2 text-success"></i>
+              <% elsif connection[:adapter_name]&.downcase&.include?('mysql') %>
+                <i class="bi bi-database-fill me-2 text-warning"></i>
+              <% elsif connection[:adapter_name]&.downcase&.include?('postgres') %>
+                <i class="bi bi-database-fill me-2 text-info"></i>
+              <% else %>
+                <i class="bi bi-database me-2"></i>
+              <% end %>
+              <%= connection[:name] %>
+            </h5>
+            <% if connection[:current] %>
+              <span class="badge bg-success">Current</span>
+            <% end %>
+          </div>
+          <div class="card-body">
+            <% if connection[:current] %>
+              <p class="mb-3"><em>Currently active connection</em></p>
+            <% end %>
+            <p><strong>Key:</strong> <%= connection[:key] %></p>
+            <% if connection[:adapter_name] %>
+              <p><strong>Adapter:</strong> <%= connection[:adapter_name] %></p>
+            <% end %>
+            
+            <div class="d-flex flex-column mt-3">
+              <div class="d-flex justify-content-between mb-2">
+                <% if connection[:current] %>
+                  <button class="btn btn-outline-secondary btn-sm" disabled>
+                    <i class="bi bi-check-circle-fill me-1"></i> Currently Active
+                  </button>
+                <% else %>
+                  <%= button_to connection_path(connection[:key]), method: :post, class: "btn btn-primary btn-sm" do %>
+                    <i class="bi bi-lightning-charge me-1"></i> Switch to this Connection
+                  <% end %>
+                <% end %>
+                
+                <% unless connection[:key] == :default %>
+                  <%= button_to connection_path(connection[:key]), method: :delete, 
+                      class: "btn btn-outline-danger btn-sm", 
+                      data: { confirm: "Are you sure you want to remove this connection?" } do %>
+                    <i class="bi bi-trash me-1"></i> Remove
+                  <% end %>
+                <% end %>
+              </div>
+              
+              <div class="mt-2">
+                <button class="btn btn-outline-secondary btn-sm w-100 test-connection-btn" 
+                        data-connection-key="<%= connection[:key] %>">
+                  <i class="bi bi-lightning me-1"></i> Test Connection
+                </button>
+                <div id="connection-status-<%= connection[:key] %>" class="small mt-2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- New Connection Modal -->
+<div class="modal fade" id="newConnectionModal" tabindex="-1" aria-labelledby="newConnectionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="newConnectionModalLabel">Add New Database Connection</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <%= form_tag connections_path, method: :post, class: "needs-validation", novalidate: true do %>
+          <div class="mb-3">
+            <label for="connection_name" class="form-label">Connection Name*</label>
+            <input type="text" class="form-control" id="connection_name" name="connection_name" 
+                   placeholder="e.g. Blog Database" required>
+            <div class="form-text">A human-readable name for this connection</div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="connection_key" class="form-label">Connection Key*</label>
+            <input type="text" class="form-control" id="connection_key" name="connection_key" 
+                   placeholder="e.g. blog_db" required>
+            <div class="form-text">A unique identifier for this connection (lowercase, no spaces)</div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="connection_class" class="form-label">Connection Class*</label>
+            <input type="text" class="form-control" id="connection_class" name="connection_class" 
+                   placeholder="e.g. BlogDatabase" required>
+            <div class="form-text">
+              The fully qualified class name that establishes the connection.
+              This class must inherit from ActiveRecord::Base.
+            </div>
+          </div>
+          
+          <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Connection</button>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Form validation script
+  document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.needs-validation')
+    
+    // Loop over them and prevent submission
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+        
+        form.classList.add('was-validated')
+      }, false)
+    })
+    
+    // Auto-generate a key from the name
+    const nameInput = document.getElementById('connection_name')
+    const keyInput = document.getElementById('connection_key')
+    
+    nameInput.addEventListener('input', function() {
+      keyInput.value = this.value
+        .toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_]/g, '')
+    })
+  })
+</script>
