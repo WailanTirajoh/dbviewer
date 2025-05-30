@@ -19,7 +19,7 @@ module Dbviewer
       def relationship_counts
         table_name = params[:id]
         record_id = params[:record_id]
-        
+
         unless table_name.present? && record_id.present?
           render_error("Table name and record ID are required", 400)
           return
@@ -28,25 +28,22 @@ module Dbviewer
         begin
           # Get table metadata to find relationships
           metadata = fetch_table_metadata(table_name)
-          
+
           unless metadata
             render_error("Table not found", 404)
             return
           end
 
-          # Get primary key for the table
-          primary_key = metadata.dig(:primary_key) || 'id'
-          
           # Get reverse foreign keys (has_many relationships)
           reverse_foreign_keys = metadata.dig(:reverse_foreign_keys) || []
-          
+
           relationship_counts = reverse_foreign_keys.map do |rel|
             begin
               # Count records in the related table that reference this record
               count_query = "SELECT COUNT(*) as count FROM #{rel[:from_table]} WHERE #{rel[:column]} = ?"
-              result = database_manager.connection.exec_query(count_query, "Count Query", [record_id])
+              result = database_manager.connection.exec_query(count_query, "Count Query", [ record_id ])
               count = result.rows.first&.first || 0
-              
+
               {
                 table: rel[:from_table],
                 foreign_key: rel[:column],
