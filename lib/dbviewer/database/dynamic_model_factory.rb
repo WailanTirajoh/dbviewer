@@ -14,9 +14,6 @@ module Dbviewer
       # @param table_name [String] Name of the table
       # @return [Class] ActiveRecord model class for the table
       def get_model_for(table_name)
-        cached_model = @cache_manager.get_model(table_name)
-        return cached_model if cached_model
-
         model = create_model_for(table_name)
         @cache_manager.store_model(table_name, model)
         model
@@ -28,10 +25,7 @@ module Dbviewer
       # @param table_name [String] Name of the table
       # @return [Class] ActiveRecord model class for the table
       def create_model_for(table_name)
-        model_name = table_name.classify
-
-        # Create a new model class dynamically
-        model = Class.new(ActiveRecord::Base) do
+        model = Dbviewer.const_set(table_name.classify, Class.new(ActiveRecord::Base) do
           self.table_name = table_name
 
           # Some tables might not have primary keys, so we handle that
@@ -47,13 +41,9 @@ module Dbviewer
 
           # Disable timestamps for better compatibility
           self.record_timestamps = false
-        end
+        end)
 
-        # Set model name constant if not already taken
-        # Use a namespace to avoid polluting the global namespace
-        unless Dbviewer.const_defined?("DynamicModel_#{model_name}")
-          Dbviewer.const_set("DynamicModel_#{model_name}", model)
-        end
+        model.establish_connection(@connection.instance_variable_get(:@config))
 
         model
       end
