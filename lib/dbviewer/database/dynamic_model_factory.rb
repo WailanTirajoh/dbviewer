@@ -14,7 +14,8 @@ module Dbviewer
       # @param table_name [String] Name of the table
       # @return [Class] ActiveRecord model class for the table
       def get_model_for(table_name)
-        return @cache_manager.get_model(table_name) if @cache_manager.has_model?(table_name)
+        cached_model = @cache_manager.get_model(table_name)
+        return cached_model if cached_model
 
         model = create_model_for(table_name)
         @cache_manager.store_model(table_name, model)
