@@ -153,6 +153,13 @@ module Dbviewer
         end
       end
 
+      # Get a dynamic AR model for a table
+      # @param table_name [String] Name of the table
+      # @return [Class] ActiveRecord model class
+      def get_model_for(table_name)
+        @dynamic_model_factory.get_model_for(table_name)
+      end
+
       private
 
       def fetch_mysql_size
@@ -200,13 +207,6 @@ module Dbviewer
       # Reset caches if they've been around too long
       def reset_cache_if_needed
         @cache_manager.reset_if_needed
-      end
-
-      # Get a dynamic AR model for a table
-      # @param table_name [String] Name of the table
-      # @return [Class] ActiveRecord model class
-      def get_model_for(table_name)
-        @dynamic_model_factory.get_model_for(table_name)
       end
     end
   end
