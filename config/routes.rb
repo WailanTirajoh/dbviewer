@@ -10,6 +10,12 @@ Dbviewer::Engine.routes.draw do
 
   resources :entity_relationship_diagrams, only: [ :index ]
 
+  resources :connections, only: [ :index, :new, :create, :destroy ] do
+    member do
+      post :update
+    end
+  end
+
   resources :logs, only: [ :index ] do
     collection do
       delete :destroy_all
@@ -44,6 +50,12 @@ Dbviewer::Engine.routes.draw do
     resources :queries, only: [] do
       collection do
         get "recent"
+      end
+    end
+
+    resources :connections, only: [] do
+      member do
+        get "test"
       end
     end
   end

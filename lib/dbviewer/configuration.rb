@@ -41,6 +41,16 @@ module Dbviewer
     # Default column to order table details by (e.g., 'updated_at')
     attr_accessor :default_order_column
 
+    # Multiple database connections configuration
+    # @example {
+    #   primary: { connection_class: "ActiveRecord::Base", name: "Primary DB" },
+    #   secondary: { connection_class: "SomeClass", name: "Secondary DB" }
+    # }
+    attr_accessor :database_connections
+
+    # The key of the current active connection
+    attr_accessor :current_connection
+
     def initialize
       @per_page_options = [ 10, 20, 50, 100 ]
       @default_per_page = 20
@@ -55,6 +65,13 @@ module Dbviewer
       @enable_query_logging = true
       @admin_credentials = nil
       @default_order_column = "updated_at"
+      @database_connections = {
+        default: {
+          connection_class: "ActiveRecord::Base",
+          name: "Default Database"
+        }
+      }
+      @current_connection = :default
     end
   end
 end

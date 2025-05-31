@@ -401,3 +401,76 @@ puts "Projects: #{Project.count}"
 puts "Project Assignments: #{ProjectAssignment.count}"
 puts "Skills: #{Skill.count}"
 puts "Employee Skills: #{EmployeeSkill.count}"
+
+puts "\nSetting up secondary database (Blog)..."
+if defined?(SecondaryDatabase) && defined?(SecondaryUser)
+  puts "Creating users for the secondary database..."
+
+  # Only create if table is empty
+  if SecondaryUser.count == 0
+    users_data = [
+      { username: "john_doe", email: "john@example.com", password_digest: "password123", admin: true, status: "active" },
+      { username: "jane_smith", email: "jane@example.com", password_digest: "password123", status: "active" },
+      { username: "bob_jones", email: "bob@example.com", password_digest: "password123", status: "inactive" }
+    ]
+
+    users = users_data.map do |user_data|
+      SecondaryUser.create!(
+        username: user_data[:username],
+        email: user_data[:email],
+        password_digest: user_data[:password_digest],
+        admin: user_data[:admin] || false,
+        status: user_data[:status],
+        created_at: Time.current,
+        updated_at: Time.current
+      )
+    end
+
+    # Create blog posts
+    puts "Creating blog posts for the secondary database..."
+    blog_posts_data = [
+      { title: "Getting Started with Rails", content: "Ruby on Rails is a web application framework...", user: users[0], status: "published" },
+      { title: "Advanced ActiveRecord Techniques", content: "ActiveRecord provides a rich API for...", user: users[1], status: "draft" },
+      { title: "Building APIs with Rails", content: "In this article, we will explore...", user: users[0], status: "published" }
+    ]
+
+    blog_posts = blog_posts_data.map do |post_data|
+      SecondaryBlogPost.create!(
+        title: post_data[:title],
+        content: post_data[:content],
+        user: post_data[:user],
+        status: post_data[:status],
+        slug: post_data[:title].parameterize,
+        published_at: post_data[:status] == "published" ? Time.current : nil,
+        created_at: Time.current,
+        updated_at: Time.current
+      )
+    end
+
+    # Create comments
+    puts "Creating comments for the secondary database..."
+    comments_data = [
+      { content: "Great article!", blog_post: blog_posts[0], user: users[1], approved: true },
+      { content: "I have a question about...", blog_post: blog_posts[0], user: users[2], approved: true },
+      { content: "Looking forward to the next part!", blog_post: blog_posts[2], user: users[1], approved: true },
+      { content: "Thanks for sharing this knowledge", blog_post: blog_posts[2], user: users[2], approved: false }
+    ]
+
+    comments_data.each do |comment_data|
+      SecondaryComment.create!(
+        content: comment_data[:content],
+        blog_post: comment_data[:blog_post],
+        user: comment_data[:user],
+        approved: comment_data[:approved],
+        created_at: Time.current,
+        updated_at: Time.current
+      )
+    end
+
+    puts "Secondary database seed completed successfully!"
+  else
+    puts "Secondary database already has data, skipping seed."
+  end
+else
+  puts "SecondaryDatabase models not defined, skipping secondary database seeding."
+end

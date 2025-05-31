@@ -1357,6 +1357,27 @@
             <% end %>
           </ul>
           <ul class="navbar-nav ms-auto">
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDatabaseDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-database"></i> <%= (current_conn = available_connections.find { |c| c[:current] }) ? current_conn[:name] : "Database" %>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDatabaseDropdown">
+                <% available_connections.each do |connection| %>
+                  <li>
+                    <%= button_to connection_path(connection[:key]), method: :post, class: "dropdown-item border-0 w-100 text-start #{'active' if connection[:current]}" do %>
+                      <% if connection[:current] %>
+                        <i class="bi bi-check2-circle me-2"></i>
+                      <% else %>
+                        <i class="bi bi-circle me-2"></i>
+                      <% end %>
+                      <%= connection[:name] %>
+                    <% end %>
+                  </li>
+                <% end %>
+                <li><hr class="dropdown-divider"></li>
+                <li><%= link_to "<i class='bi bi-gear'></i> Manage Connections".html_safe, connections_path, class: "dropdown-item" %></li>
+              </ul>
+            </li>
             <li class="nav-item">
               <button type="button" class="theme-toggle nav-link" aria-label="<%= theme_toggle_label %>">
                 <%= theme_toggle_icon %>
@@ -1364,7 +1385,7 @@
             </li>
             <li class="nav-item">
               <span class="navbar-text ms-2 text-light d-flex align-items-center">
-                <small><i class="bi bi-database"></i> <%= Rails.env %> environment</small>
+                <small><i class="bi bi-tools"></i> <%= Rails.env %> environment</small>
               </span>
             </li>
           </ul>

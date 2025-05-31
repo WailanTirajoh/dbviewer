@@ -3,10 +3,12 @@ module Dbviewer
     # Manager handles all database interactions for the DBViewer engine
     # It provides methods to access database structure and data
     class Manager
-      attr_reader :connection, :adapter_name, :table_query_operations
+      attr_reader :connection, :adapter_name, :table_query_operations, :connection_key
 
       # Initialize the database manager
-      def initialize
+      # @param connection_key [Symbol] The key identifying the connection in configuration
+      def initialize(connection_key = nil)
+        @connection_key = connection_key || Dbviewer.configuration.current_connection
         ensure_connection
         @cache_manager = ::Dbviewer::Database::CacheManager.new(configuration.cache_expiry)
         @table_metadata_manager = ::Dbviewer::Database::MetadataManager.new(@connection, @cache_manager)
@@ -151,6 +153,13 @@ module Dbviewer
         end
       end
 
+      # Get a dynamic AR model for a table
+      # @param table_name [String] Name of the table
+      # @return [Class] ActiveRecord model class
+      def get_model_for(table_name)
+        @dynamic_model_factory.get_model_for(table_name)
+      end
+
       private
 
       def fetch_mysql_size
@@ -182,8 +191,15 @@ module Dbviewer
       # @return [ActiveRecord::ConnectionAdapters::AbstractAdapter] The database connection
       def ensure_connection
         return @connection if @connection
+        connection_config = Dbviewer.configuration.database_connections[@connection_key]
 
-        @connection = ActiveRecord::Base.connection
+        if connection_config && connection_config[:connection_class]
+          @connection = connection_config[:connection_class].constantize.connection
+        else
+          Rails.logger.warn "DBViewer: Using default connection for key: #{@connection_key}"
+          @connection = ActiveRecord::Base.connection
+        end
+
         @adapter_name = @connection.adapter_name.downcase
         @connection
       end
@@ -191,13 +207,6 @@ module Dbviewer
       # Reset caches if they've been around too long
       def reset_cache_if_needed
         @cache_manager.reset_if_needed
-      end
-
-      # Get a dynamic AR model for a table
-      # @param table_name [String] Name of the table
-      # @return [Class] ActiveRecord model class
-      def get_model_for(table_name)
-        @dynamic_model_factory.get_model_for(table_name)
       end
     end
   end

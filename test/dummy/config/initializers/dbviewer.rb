@@ -13,6 +13,19 @@ Dbviewer.configure do |config|
   config.query_log_path = "log/dbviewer.log"         # Path for query log file when in :file mode
   config.max_memory_queries = 1000                   # Maximum number of queries to store in memory
 
+  # Multiple database connections
+  config.database_connections = {
+    primary: {
+      connection_class: "ActiveRecord::Base",
+      name: "Primary DB (E-commerce)"
+    },
+    secondary: {
+      connection_class: "SecondaryDatabase",
+      name: "Blog Database"
+    }
+  }
+  config.current_connection = :primary
+
   # Authentication options (Basic Auth)
   # config.admin_credentials = {
   #   username: "admin",

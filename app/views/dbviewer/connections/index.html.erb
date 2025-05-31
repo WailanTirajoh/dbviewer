@@ -1,0 +1,119 @@
+<% content_for :title, "Database Connections" %>
+
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-database-fill me-2"></i> Database Connections</h1>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        You can switch between multiple database connections to view different databases in your application.
+      </div>
+    </div>
+  </div>
+
+  <% if flash[:alert] %>
+    <div class="row">
+      <div class="col-12">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <%= flash[:alert] %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <% if flash[:notice] %>
+    <div class="row">
+      <div class="col-12">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <i class="bi bi-check-circle-fill me-2"></i>
+          <%= flash[:notice] %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+  <% end %>
+  
+  <div class="row">
+    <% @connections.each do |connection| %>
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card dbviewer-card h-100 <%= 'border-primary' if connection[:current] %>">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+              <% if connection[:adapter_name]&.downcase&.include?('sqlite') %>
+                <i class="bi bi-database-fill me-2 text-success"></i>
+              <% elsif connection[:adapter_name]&.downcase&.include?('mysql') %>
+                <i class="bi bi-database-fill me-2 text-warning"></i>
+              <% elsif connection[:adapter_name]&.downcase&.include?('postgres') %>
+                <i class="bi bi-database-fill me-2 text-info"></i>
+              <% else %>
+                <i class="bi bi-database me-2"></i>
+              <% end %>
+              <%= connection[:name] %>
+            </h5>
+            <% if connection[:current] %>
+              <span class="badge bg-success">Current</span>
+            <% end %>
+          </div>
+          <div class="card-body">
+            <% if connection[:current] %>
+              <p class="mb-3"><em>Currently active connection</em></p>
+            <% end %>
+            <p><strong>Key:</strong> <%= connection[:key] %></p>
+            <% if connection[:adapter_name] %>
+              <p><strong>Adapter:</strong> <%= connection[:adapter_name] %></p>
+            <% end %>
+            
+            <div class="d-flex flex-column mt-3">
+              <div class="d-flex justify-content-between mb-2">
+                <% if connection[:current] %>
+                  <button class="btn btn-outline-secondary btn-sm" disabled>
+                    <i class="bi bi-check-circle-fill me-1"></i> Currently Active
+                  </button>
+                <% else %>
+                  <%= button_to connection_path(connection[:key]), method: :post, class: "btn btn-primary btn-sm" do %>
+                    <i class="bi bi-lightning-charge me-1"></i> Switch to this Connection
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script>
+  // Form validation script
+  document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.needs-validation')
+    
+    // Loop over them and prevent submission
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+        
+        form.classList.add('was-validated')
+      }, false)
+    })
+    
+    // Auto-generate a key from the name
+    const nameInput = document.getElementById('connection_name')
+    const keyInput = document.getElementById('connection_key')
+    
+    nameInput.addEventListener('input', function() {
+      keyInput.value = this.value
+        .toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_]/g, '')
+    })
+  })
+</script>
