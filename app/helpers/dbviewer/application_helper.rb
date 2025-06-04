@@ -505,19 +505,39 @@ module Dbviewer
       end
 
       content_tag(:td, class: "text-center action-column") do
-        button_tag(
-          type: "button",
-          class: "btn btn-sm btn-primary view-record-btn",
-          title: "View Record Details",
-          data: {
-            bs_toggle: "modal",
-            bs_target: "#recordDetailModal",
-            record_data: data_attributes.to_json,
-            foreign_keys: metadata && metadata[:foreign_keys] ? metadata[:foreign_keys].to_json : "[]",
-            reverse_foreign_keys: metadata && metadata[:reverse_foreign_keys] ? metadata[:reverse_foreign_keys].to_json : "[]"
-          }
-        ) do
-          content_tag(:i, "", class: "bi bi-eye")
+        content_tag(:div, class: "d-flex gap-1 justify-content-center") do
+          # View Record button (existing)
+          view_button = button_tag(
+            type: "button",
+            class: "btn btn-sm btn-primary view-record-btn",
+            title: "View Record Details",
+            data: {
+              bs_toggle: "modal",
+              bs_target: "#recordDetailModal",
+              record_data: data_attributes.to_json,
+              foreign_keys: metadata && metadata[:foreign_keys] ? metadata[:foreign_keys].to_json : "[]",
+              reverse_foreign_keys: metadata && metadata[:reverse_foreign_keys] ? metadata[:reverse_foreign_keys].to_json : "[]"
+            }
+          ) do
+            content_tag(:i, "", class: "bi bi-eye")
+          end
+
+          # Copy FactoryBot button (new)
+          copy_factory_button = button_tag(
+            type: "button",
+            class: "btn btn-sm btn-outline-secondary copy-factory-btn",
+            title: "Copy FactoryBot",
+            data: {
+              record_data: data_attributes.to_json,
+              table_name: @table_name
+            },
+            onclick: "copyFactoryBotCode(this)"
+          ) do
+            content_tag(:i, "", class: "bi bi-clipboard")
+          end
+
+          # Concatenate both buttons
+          view_button + copy_factory_button
         end
       end
     end

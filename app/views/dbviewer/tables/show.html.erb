@@ -131,14 +131,24 @@
     
     /* Action column styling */
     .action-column {
-      width: 60px;
-      min-width: 60px; /* Ensure minimum width */
+      width: 100px;  /* Increased from 60px to accommodate two buttons */
+      min-width: 100px; /* Ensure minimum width */
       white-space: nowrap;
       position: sticky;
       left: 0;
       z-index: 15;
       background-color: var(--bs-table-striped-bg, #f2f2f2);
       box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .copy-factory-btn {
+      padding: 0.1rem 0.4rem;
+      width: 32px;
+    }
+    
+    .copy-factory-btn:hover {
+      opacity: 0.85;
+      transform: translateY(-1px);
     }
     
     /* Ensure proper background color for actions column in dark mode */
@@ -522,8 +532,8 @@
   
   /* Action column styling */
   .action-column {
-    width: 60px;
-    min-width: 60px; /* Ensure minimum width */
+    width: 100px;  /* Increased from 60px to accommodate two buttons */
+    min-width: 100px; /* Ensure minimum width */
     white-space: nowrap;
     position: sticky;
     left: 0;
@@ -531,6 +541,16 @@
     background-color: var(--bs-body-bg, #fff); /* Use body background color */
     box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
     border-right: 1px solid var(--bs-border-color);
+  }
+  
+  .copy-factory-btn {
+    padding: 0.1rem 0.4rem;
+    width: 32px;
+  }
+  
+  .copy-factory-btn:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
   }
   
   /* Ensure proper background color for actions column in dark mode */
@@ -1493,154 +1513,100 @@
         }
       });
     }
-  });
-  
-  // Helper function to create relationship sections
-  // Function to fetch relationship counts from API
-  async function fetchRelationshipCounts(tableName, recordId, relationships, hasManySection) {
-    try {
-      const response = await fetch(`/dbviewer/api/tables/${tableName}/relationship_counts?record_id=${recordId}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Update each count in the UI
-      const countSpans = hasManySection.querySelectorAll('.relationship-count');
-      
-      relationships.forEach((relationship, index) => {
-        const countSpan = countSpans[index];
-        if (countSpan) {
-          const relationshipData = data.relationships.find(r => 
-            r.table === relationship.from_table && r.foreign_key === relationship.column
-          );
-          
-          if (relationshipData) {
-            const count = relationshipData.count;
-            let badgeClass = 'bg-secondary';
-            let badgeText = `${count} record${count !== 1 ? 's' : ''}`;
-            
-            // Use different colors based on count
-            if (count > 0) {
-              badgeClass = count > 10 ? 'bg-warning' : 'bg-success';
-            }
-            
-            countSpan.innerHTML = `<span class="badge ${badgeClass}">${badgeText}</span>`;
+    
+    // Function to copy FactoryBot code
+    window.copyFactoryBotCode = function(button) {
+      try {
+        // Get record data and table name from data attributes
+        const recordData = JSON.parse(button.dataset.recordData);
+        const tableName = button.dataset.tableName;
+        
+        // Singularize table name for factory (simple Rails-like singularization)
+        let factoryName = tableName;
+        if (factoryName.endsWith('ies')) {
+          factoryName = factoryName.slice(0, -3) + 'y';
+        } else if (factoryName.endsWith('s')) {
+          factoryName = factoryName.slice(0, -1);
+        }
+        
+        // Generate the factory bot code
+        let factoryCode = `create(:${factoryName}, `;
+        
+        // Add attributes
+        const attributes = [];
+        for (const [key, value] of Object.entries(recordData)) {
+          if (value === null || value === 'NULL' || value === 'null') {
+            attributes.push(`${key}: nil`);
+          } else if (value === 'true' || value === 'false' || !isNaN(Number(value))) {
+            // Boolean values and numbers don't need quotes
+            attributes.push(`${key}: ${value}`);
           } else {
-            // Fallback if no data found
-            countSpan.innerHTML = '<span class="badge bg-danger">Error</span>';
+            // Add quotes for string values and escape single quotes
+            const escapedValue = value.replace(/'/g, "\\'");
+            attributes.push(`${key}: '${escapedValue}'`);
           }
         }
-      });
-      
-    } catch (error) {
-      console.error('Error fetching relationship counts:', error);
-      
-      // Show error state in UI
-      const countSpans = hasManySection.querySelectorAll('.relationship-count');
-      countSpans.forEach(span => {
-        span.innerHTML = '<span class="badge bg-danger">Error</span>';
-      });
-    }
-  }
-
-  function createRelationshipSection(title, relationships, recordData, type, primaryKeyValue = null) {
-    const section = document.createElement('div');
-    section.className = 'relationship-section mb-4';
-    
-    // Create section header
-    const header = document.createElement('h6');
-    header.className = 'mb-3';
-    const icon = type === 'belongs_to' ? 'bi-arrow-up-right' : 'bi-arrow-down-left';
-    header.innerHTML = `<i class="bi ${icon} me-2"></i>${title}`;
-    section.appendChild(header);
-    
-    const tableContainer = document.createElement('div');
-    tableContainer.className = 'table-responsive';
-    
-    const table = document.createElement('table');
-    table.className = 'table table-sm table-bordered';
-    
-    // Create header based on relationship type
-    const thead = document.createElement('thead');
-    if (type === 'belongs_to') {
-      thead.innerHTML = `
-        <tr>
-          <th width="25%">Column</th>
-          <th width="25%">Value</th>
-          <th width="25%">References</th>
-          <th width="25%">Action</th>
-        </tr>
-      `;
-    } else {
-      thead.innerHTML = `
-        <tr>
-          <th width="30%">Related Table</th>
-          <th width="25%">Foreign Key</th>
-          <th width="20%">Count</th>
-          <th width="25%">Action</th>
-        </tr>
-      `;
-    }
-    table.appendChild(thead);
-    
-    // Create body
-    const tbody = document.createElement('tbody');
-    
-    relationships.forEach(fk => {
-      const row = document.createElement('tr');
-      
-      if (type === 'belongs_to') {
-        const columnValue = recordData[fk.column];
-        row.innerHTML = `
-          <td class="fw-medium">${fk.column}</td>
-          <td><code>${columnValue}</code></td>
-          <td>
-            <span class="text-muted">${fk.to_table}.</span><strong>${fk.primary_key}</strong>
-          </td>
-          <td>
-            <a href="/dbviewer/tables/${fk.to_table}?column_filters[${fk.primary_key}]=${encodeURIComponent(columnValue)}" 
-               class="btn btn-sm btn-outline-primary" 
-               title="View referenced record in ${fk.to_table}">
-              <i class="bi bi-arrow-right me-1"></i>View
-            </a>
-          </td>
-        `;
-      } else {
-        // For has_many relationships
-        row.innerHTML = `
-          <td class="fw-medium">${fk.from_table}</td>
-          <td>
-            <span class="text-muted">${fk.from_table}.</span><strong>${fk.column}</strong>
-          </td>
-          <td>
-            <span class="relationship-count">
-              <span class="badge bg-secondary">
-                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                Loading...
-              </span>
-            </span>
-          </td>
-          <td>
-            <a href="/dbviewer/tables/${fk.from_table}?column_filters[${fk.column}]=${encodeURIComponent(primaryKeyValue)}" 
-               class="btn btn-sm btn-outline-success" 
-               title="View all ${fk.from_table} records that reference this record">
-              <i class="bi bi-list me-1"></i>View Related
-            </a>
-          </td>
-        `;
+        
+        factoryCode += attributes.join(', ');
+        factoryCode += ')';
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(factoryCode).then(() => {
+          // Show a temporary success message on the button
+          const originalTitle = button.getAttribute('title');
+          button.setAttribute('title', 'Copied!');
+          button.classList.remove('btn-outline-secondary');
+          button.classList.add('btn-success');
+          
+          // Show a toast notification
+          if (typeof Toastify === 'function') {
+            const factoryName = tableName.endsWith('s') ? tableName.slice(0, -1) : tableName;
+            Toastify({
+              text: `<span class="toast-icon"><i class="bi bi-clipboard-check"></i></span> FactoryBot code for ${factoryName} copied to clipboard!`,
+              className: "toast-factory-bot",
+              duration: 3000,
+              gravity: "bottom",
+              position: "right",
+              escapeMarkup: false,
+              style: {
+                animation: "slideInRight 0.3s ease-out, slideOutRight 0.3s ease-out 2.7s"
+              },
+              onClick: function() { /* Dismiss toast on click */ }
+            }).showToast();
+          }
+          
+          setTimeout(() => {
+            button.setAttribute('title', originalTitle);
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-secondary');
+          }, 2000);
+        }).catch(err => {
+          console.error('Failed to copy text: ', err);
+          
+          // Show error toast
+          if (typeof Toastify === 'function') {
+            Toastify({
+              text: '<span class="toast-icon"><i class="bi bi-exclamation-triangle"></i></span> Failed to copy to clipboard',
+              className: "bg-danger",
+              duration: 3000,
+              gravity: "bottom",
+              position: "right",
+              escapeMarkup: false,
+              style: {
+                background: "linear-gradient(135deg, #dc3545, #c82333)",
+                animation: "slideInRight 0.3s ease-out"
+              }
+            }).showToast();
+          } else {
+            alert('Failed to copy to clipboard. See console for details.');
+          }
+        });
+      } catch (error) {
+        console.error('Error generating FactoryBot code:', error);
+        alert('Error generating FactoryBot code. See console for details.');
       }
-      
-      tbody.appendChild(row);
-    });
-    
-    table.appendChild(tbody);
-    tableContainer.appendChild(table);
-    section.appendChild(tableContainer);
-    
-    return section;
-  }
+    };
+  });
 </script>
 
 <!-- Floating Creation Filter - Only visible on desktop and on table details page -->

@@ -29,6 +29,10 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <!-- Chart.js for Data Visualization -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+  <!-- Toastify JS for notifications -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
   
   <style>
     /* Base styles and typography */
@@ -1330,6 +1334,57 @@
     }
     
     /* Add this right above the style closing tag */
+
+    /* Toast styling customizations */
+    .toastify {
+      padding: 12px 20px;
+      color: white;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--bs-body-font-family);
+      font-size: 0.95rem;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+      max-width: 350px;
+    }
+
+    .toast-factory-bot {
+      background: linear-gradient(135deg, #28a745, #20c997);
+    }
+
+    .toast-icon {
+      margin-right: 10px;
+      font-size: 1.25em;
+    }
+
+    /* Dark mode toast styling */
+    [data-bs-theme="dark"] .toast-factory-bot {
+      background: linear-gradient(135deg, #157347, #13795b);
+    }
+
+    /* Toast animations */
+    @keyframes slideInRight {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOutRight {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body>
