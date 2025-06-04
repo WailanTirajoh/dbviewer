@@ -19,7 +19,7 @@ module Dbviewer
     end
 
     initializer "dbviewer.notifications" do
-      return unless Rails.env.development?
+      next unless Rails.env.development?
 
       ActiveSupport::Notifications.subscribe("sql.active_record") do |*args|
         event = ActiveSupport::Notifications::Event.new(*args)
