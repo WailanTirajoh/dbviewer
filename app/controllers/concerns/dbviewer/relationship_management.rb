@@ -4,122 +4,23 @@ module Dbviewer
 
     # Fetch relationships between tables for ERD visualization
     def fetch_table_relationships
-      # Use functional approach: flat_map to extract all relationships from all tables
-      @tables.flat_map do |table|
-        extract_table_relationships_from_metadata(table[:name])
-      end
+      @tables.flat_map { |table| extract_table_relationships_from_metadata(table[:name]) }
     end
 
     # Get mini ERD data for a specific table and its relationships
     def fetch_mini_erd_for_table(table_name)
-      related_tables = []
-      relationships = []
+      outgoing_data = collect_outgoing_relationships(table_name)
+      incoming_data = collect_incoming_relationships(table_name)
 
-      # Add current table
-      related_tables << { name: table_name }
+      initial_tables = [ { name: table_name } ]
+      all_relationships = outgoing_data[:relationships] + incoming_data[:relationships]
+      all_tables = (initial_tables + outgoing_data[:tables] + incoming_data[:tables]).uniq { |t| t[:name] }
 
-      # Get foreign keys from this table to others (outgoing relationships)
-      begin
-        metadata = fetch_table_metadata(table_name)
-        Rails.logger.debug("[DBViewer] Table metadata: #{metadata.inspect}")
-
-        if metadata && metadata[:foreign_keys].present?
-          metadata[:foreign_keys].each do |fk|
-            # Ensure all required fields are present
-            next unless fk[:to_table].present? && fk[:column].present?
-
-            # Sanitize table and column names for display
-            from_table = table_name.to_s
-            to_table = fk[:to_table].to_s
-            from_column = fk[:column].to_s
-            to_column = fk[:primary_key].to_s.presence || "id"
-            relationship_name = fk[:name].to_s.presence || "#{from_table}_to_#{to_table}"
-
-            relationship = {
-              from_table: from_table,
-              to_table: to_table,
-              from_column: from_column,
-              to_column: to_column,
-              name: relationship_name,
-              direction: "outgoing"
-            }
-
-            relationships << relationship
-            Rails.logger.debug("[DBViewer] Added outgoing relationship: #{relationship.inspect}")
-
-            # Add the related table if not already included
-            unless related_tables.any? { |t| t[:name] == to_table }
-              related_tables << { name: to_table }
-            end
-          end
-        end
-      rescue => e
-        Rails.logger.error("[DBViewer] Error fetching outgoing relationships for #{table_name}: #{e.message}")
-        Rails.logger.error(e.backtrace.join("\n"))
-      end
-
-      # Get foreign keys from other tables to this one (incoming relationships)
-      begin
-        database_manager.tables.each do |other_table_name|
-          next if other_table_name == table_name # Skip self
-
-          begin
-            other_metadata = fetch_table_metadata(other_table_name)
-            if other_metadata && other_metadata[:foreign_keys].present?
-              other_metadata[:foreign_keys].each do |fk|
-                if fk[:to_table] == table_name
-                  # Ensure all required fields are present
-                  next unless fk[:column].present?
-
-                  # Sanitize table and column names for display
-                  from_table = other_table_name.to_s
-                  to_table = table_name.to_s
-                  from_column = fk[:column].to_s
-                  to_column = fk[:primary_key].to_s.presence || "id"
-                  relationship_name = fk[:name].to_s.presence || "#{from_table}_to_#{to_table}"
-
-                  relationship = {
-                    from_table: from_table,
-                    to_table: to_table,
-                    from_column: from_column,
-                    to_column: to_column,
-                    name: relationship_name,
-                    direction: "incoming"
-                  }
-
-                  relationships << relationship
-                  Rails.logger.debug("[DBViewer] Added incoming relationship: #{relationship.inspect}")
-
-                  # Add the related table if not already included
-                  unless related_tables.any? { |t| t[:name] == from_table }
-                    related_tables << { name: from_table }
-                  end
-                end
-              end
-            end
-          rescue => e
-            Rails.logger.error("[DBViewer] Error processing relationships for table #{other_table_name}: #{e.message}")
-            # Continue to the next table
-          end
-        end
-      rescue => e
-        Rails.logger.error("[DBViewer] Error fetching incoming relationships for #{table_name}: #{e.message}")
-        Rails.logger.error(e.backtrace.join("\n"))
-      end
-
-      # If no relationships were found, make sure to still include at least the current table
-      if relationships.empty?
-        Rails.logger.info("[DBViewer] No relationships found for table: #{table_name}")
-      end
-
-      result = {
-        tables: related_tables,
-        relationships: relationships,
+      {
+        tables: all_tables,
+        relationships: all_relationships,
         timestamp: Time.now.to_i
       }
-
-      Rails.logger.info("[DBViewer] Mini ERD data generated: #{related_tables.length} tables, #{relationships.length} relationships")
-      result
     end
 
     private
@@ -140,6 +41,133 @@ module Dbviewer
           name: fk[:name]
         }
       end
+    end
+
+    # Collect outgoing relationships from the specified table to other tables
+    # @param table_name [String] The source table name
+    # @return [Hash] Hash containing :tables and :relationships arrays
+    def collect_outgoing_relationships(table_name)
+      tables = []
+      relationships = []
+
+      metadata = fetch_table_metadata(table_name)
+      return { tables: tables, relationships: relationships } unless metadata&.dig(:foreign_keys)&.present?
+
+      metadata[:foreign_keys].each do |fk|
+        result = process_outgoing_foreign_key(table_name, fk)
+        if result
+          relationships << result[:relationship]
+          tables << result[:table]
+        end
+      end
+
+      {
+        tables: tables,
+        relationships: relationships
+      }
+    end
+
+    # Process a single outgoing foreign key relationship
+    # @param table_name [String] The source table name
+    # @param fk [Hash] Foreign key metadata
+    # @return [Hash, nil] Hash containing :relationship and :table, or nil if invalid
+    def process_outgoing_foreign_key(table_name, fk)
+      return nil unless fk[:to_table].present? && fk[:column].present?
+
+      relationship = build_relationship_hash(
+        from_table: table_name.to_s,
+        to_table: fk[:to_table].to_s,
+        from_column: fk[:column].to_s,
+        to_column: fk[:primary_key].to_s.presence || "id",
+        name: fk[:name].to_s.presence || "#{table_name}_to_#{fk[:to_table]}",
+        direction: "outgoing"
+      )
+
+      {
+        relationship: relationship,
+        table: {
+          name: fk[:to_table].to_s
+        }
+      }
+    end
+
+    # Collect incoming relationships from other tables to the specified table
+    # @param table_name [String] The target table name
+    # @return [Hash] Hash containing :tables and :relationships arrays
+    def collect_incoming_relationships(table_name)
+      results = database_manager.tables
+        .reject { |other_table_name| other_table_name == table_name }
+        .map { |other_table_name| process_table_for_incoming_relationships(table_name, other_table_name) }
+        .compact
+
+      {
+        tables: results.flat_map { |result| result[:tables] },
+        relationships: results.flat_map { |result| result[:relationships] }
+      }
+    end
+
+    # Process a single table to find incoming relationships to the target table
+    # @param target_table [String] The target table name
+    # @param source_table [String] The source table name to check
+    # @return [Hash, nil] Hash containing :tables and :relationships arrays, or nil if no relationships
+    def process_table_for_incoming_relationships(target_table, source_table)
+      other_metadata = fetch_table_metadata(source_table)
+      return nil unless other_metadata&.dig(:foreign_keys)&.present?
+
+      results = other_metadata[:foreign_keys]
+        .map { |fk| process_incoming_foreign_key(target_table, source_table, fk) }
+        .compact
+
+      return nil if results.empty?
+
+      {
+        tables: results.map { |result| result[:table] },
+        relationships: results.map { |result| result[:relationship] }
+      }
+    end
+
+    # Process a single incoming foreign key relationship
+    # @param target_table [String] The target table name
+    # @param source_table [String] The source table name
+    # @param fk [Hash] Foreign key metadata
+    # @return [Hash, nil] Hash containing :relationship and :table, or nil if invalid
+    def process_incoming_foreign_key(target_table, source_table, fk)
+      return nil unless fk[:to_table] == target_table && fk[:column].present?
+
+      relationship = build_relationship_hash(
+        from_table: source_table.to_s,
+        to_table: target_table.to_s,
+        from_column: fk[:column].to_s,
+        to_column: fk[:primary_key].to_s.presence || "id",
+        name: fk[:name].to_s.presence || "#{source_table}_to_#{target_table}",
+        direction: "incoming"
+      )
+
+      {
+        relationship: relationship,
+        table: {
+          name: source_table.to_s
+        }
+      }
+    end
+
+    # Build a standardized relationship hash
+    # @param from_table [String] Source table name
+    # @param to_table [String] Target table name
+    # @param from_column [String] Source column name
+    # @param to_column [String] Target column name
+    # @param name [String] Relationship name
+    # @param direction [String] Relationship direction
+    # @return [Hash] Standardized relationship hash
+    def build_relationship_hash(from_table:, to_table:, from_column:, to_column:, name:, direction:)
+      {
+        from_table: from_table,
+        to_table: to_table,
+        from_column: from_column,
+        to_column: to_column,
+        name: name,
+        direction: direction
+      }
     end
   end
 end
