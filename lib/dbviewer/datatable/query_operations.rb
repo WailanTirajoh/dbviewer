@@ -90,104 +90,7 @@ module Dbviewer
         0
       end
 
-      # Get column histogram/value distribution data for a specific column
-      # @param table_name [String] Name of the table
-      # @param column_name [String] Name of the column
-      # @param limit [Integer] Maximum number of distinct values to return
-      # @return [Array<Hash>] Array of value distribution data with labels and counts
-      def fetch_column_distribution(table_name, column_name, limit = 20)
-        return [] unless column_exists?(table_name, column_name)
-
-        query = "SELECT #{column_name} as label, COUNT(*) as count FROM #{table_name}
-                 WHERE #{column_name} IS NOT NULL
-                 GROUP BY #{column_name}
-                 ORDER BY count DESC LIMIT #{limit}"
-
-        begin
-          result = @connection.execute(query)
-          adapter = @connection.adapter_name.downcase
-
-          # Format depends on adapter
-          if adapter =~ /mysql/
-            result.to_a.map { |row| { label: row[0], value: row[1] } }
-          elsif adapter =~ /sqlite/
-            result.map { |row| { label: row["label"], value: row["count"] } }
-          else # postgresql
-            result.map { |row| { label: row["label"], value: row["count"] } }
-          end
-        rescue => e
-          Rails.logger.error("Error fetching column distribution: #{e.message}")
-          []
-        end
-      end
-
-      # Get timestamp aggregation data for charts
-      # @param table_name [String] Name of the table
-      # @param grouping [String] Grouping type (hourly, daily, weekly, monthly)
-      # @param column [String] Timestamp column name (defaults to created_at)
-      # @return [Array<Hash>] Array of timestamp data with labels and counts
-      def fetch_timestamp_data(table_name, grouping = "daily", column = "created_at")
-        return [] unless column_exists?(table_name, column)
-
-        adapter = @connection.adapter_name.downcase
-
-        date_format = case grouping
-        when "hourly"
-          if adapter =~ /mysql/
-            "DATE_FORMAT(#{column}, '%Y-%m-%d %H:00')"
-          elsif adapter =~ /sqlite/
-            "strftime('%Y-%m-%d %H:00', #{column})"
-          else # postgresql
-            "TO_CHAR(#{column}, 'YYYY-MM-DD HH24:00')"
-          end
-        when "weekly"
-          if adapter =~ /mysql/
-            "DATE_FORMAT(#{column}, '%Y-%v')"
-          elsif adapter =~ /sqlite/
-            "strftime('%Y-%W', #{column})"
-          else # postgresql
-            "TO_CHAR(#{column}, 'YYYY-IW')"
-          end
-        when "monthly"
-          if adapter =~ /mysql/
-            "DATE_FORMAT(#{column}, '%Y-%m')"
-          elsif adapter =~ /sqlite/
-            "strftime('%Y-%m', #{column})"
-          else # postgresql
-            "TO_CHAR(#{column}, 'YYYY-MM')"
-          end
-        else # daily is default
-          if adapter =~ /mysql/
-            "DATE(#{column})"
-          elsif adapter =~ /sqlite/
-            "date(#{column})"
-          else # postgresql
-            "DATE(#{column})"
-          end
-        end
-
-        # Query works the same for all database adapters
-        query = "SELECT #{date_format} as label, COUNT(*) as count FROM #{table_name}
-                 WHERE #{column} IS NOT NULL
-                 GROUP BY label
-                 ORDER BY MIN(#{column}) DESC LIMIT 30"
-
-        begin
-          result = @connection.execute(query)
-
-          # Format depends on adapter
-          if adapter =~ /mysql/
-            result.to_a.map { |row| { label: row[0], value: row[1] } }
-          elsif adapter =~ /sqlite/
-            result.map { |row| { label: row["label"], value: row["count"] } }
-          else # postgresql
-            result.map { |row| { label: row["label"], value: row["count"] } }
-          end
-        rescue => e
-          Rails.logger.error("Error fetching timestamp data: #{e.message}")
-          []
-        end
-      end
+      ## -- Delegator
 
       # Execute a raw SQL query after validating for safety
       # @param sql [String] SQL query to execute
@@ -223,110 +126,60 @@ module Dbviewer
       def apply_column_filters(query, table_name, column_filters)
         return query unless column_filters.present?
 
-        # Create a copy of column_filters to modify without affecting the original
-        filters = column_filters.dup
-
-        # First check if we have a datetime range filter for created_at
-        if filters["created_at"].present? &&
-           filters["created_at_end"].present? &&
-           column_exists?(table_name, "created_at")
-
-          # Handle datetime range for created_at
-          begin
-            start_datetime = Time.parse(filters["created_at"].to_s)
-            end_datetime = Time.parse(filters["created_at_end"].to_s)
-
-            # Make sure end_datetime is at the end of the day/minute if it doesn't have time component
-            if end_datetime.to_s.match(/00:00:00/)
-              end_datetime = end_datetime.end_of_day
-            end
-
-            Rails.logger.info("[DBViewer] Applying date range filter on #{table_name}.created_at: #{start_datetime} to #{end_datetime}")
-
-            # Use qualified column name for tables with schema
-            column_name = "#{table_name}.created_at"
-
-            # Different databases may require different SQL for datetime comparison
-            adapter_name = connection.adapter_name.downcase
-
-            if adapter_name =~ /mysql/
-              query = query.where("#{column_name} BETWEEN ? AND ?", start_datetime, end_datetime)
-            elsif adapter_name =~ /sqlite/
-              # SQLite needs special handling for datetime format
-              query = query.where("datetime(#{column_name}) BETWEEN datetime(?) AND datetime(?)", start_datetime, end_datetime)
-            else # postgresql
-              query = query.where("#{column_name} >= ? AND #{column_name} <= ?", start_datetime, end_datetime)
-            end
-
-            # Remove these from filters as they're handled above
-            filters.delete("created_at")
-            filters.delete("created_at_end")
-
-          rescue => e
-            Rails.logger.error("[DBViewer] Error parsing date range: #{e.message}")
-            # Remove the problematic filters and continue
-            filters.delete("created_at")
-            filters.delete("created_at_end")
-          end
-        end
-
-        # Apply remaining simple column filters
-        filters.each do |column, value|
-          next unless column_exists?(table_name, column)
-
-          # Check if this is a column operator field
-          if column.end_with?("_operator")
-            next  # Skip operator fields - they're processed with their column
-          end
-
-          column_sym = column.to_sym
-          operator = filters["#{column}_operator"]
-
-          # Special handling for is_null and is_not_null operators that don't need a value
-          if operator == "is_null" || value == "is_null"
-            Rails.logger.debug("[DBViewer] Applying null filter: #{column} IS NULL")
-            query = query.where("#{column} IS NULL")
-            next
-          elsif operator == "is_not_null" || value == "is_not_null"
-            Rails.logger.debug("[DBViewer] Applying not null filter: #{column} IS NOT NULL")
-            query = query.where("#{column} IS NOT NULL")
-            next
-          end
-
-          # Skip if no value and we're not using a special operator
-          next if value.blank? || value == "is_null" || value == "is_not_null"
-
-          Rails.logger.debug("[DBViewer] Applying filter: #{column} = #{value}")
-
-          # Handle different types of filtering
-          if value.to_s.include?("%") || value.to_s.include?("*")
-            # Pattern matching (LIKE operation)
-            pattern = value.to_s.gsub("*", "%")
-            query = query.where("#{column} LIKE ?", pattern)
-          elsif value.to_s.start_with?(">=", "<=", ">", "<", "!=")
-            # Comparison operators
-            operator = value.to_s.match(/^(>=|<=|>|<|!=)/)[1]
-            comparison_value = value.to_s.gsub(/^(>=|<=|>|<|!=)\s*/, "")
-
-            case operator
-            when ">="
-              query = query.where("#{column} >= ?", comparison_value)
-            when "<="
-              query = query.where("#{column} <= ?", comparison_value)
-            when ">"
-              query = query.where("#{column} > ?", comparison_value)
-            when "<"
-              query = query.where("#{column} < ?", comparison_value)
-            when "!="
-              query = query.where("#{column} != ?", comparison_value)
-            end
-          else
-            # Exact match
-            query = query.where(column_sym => value)
-          end
+        column_filters.each do |column, value|
+          query = apply_single_column_filter(query, table_name, column, value, column_filters)
         end
 
         query
+      end
+
+      # Apply a single column filter to a query
+      # @param query [ActiveRecord::Relation] The query to apply the filter to
+      # @param table_name [String] Name of the table
+      # @param column [String] The column name
+      # @param value [String] The filter value
+      # @param column_filters [Hash] All column filters for accessing operator
+      # @return [ActiveRecord::Relation] The filtered query
+      def apply_single_column_filter(query, table_name, column, value, column_filters)
+        return query unless column_exists?(table_name, column)
+        return query if column.end_with?("_operator")
+
+        operator = column_filters["#{column}_operator"]
+        return query if operator.empty?
+
+        if special_operators(query)[operator]
+          return special_operators(query)[operator].call(column)
+        end
+        return query if value.blank?
+
+        if operator && operator_handlers(query)[operator]
+          return operator_handlers(query)[operator].call(column, value)
+        end
+
+        query
+      end
+
+      def special_operators(query)
+        {
+          "is_null" => ->(column) {  query.where("#{column} IS NULL") },
+          "is_not_null" => ->(column) { query.where("#{column} IS NOT NULL") }
+        }
+      end
+
+      def operator_handlers(query)
+        {
+          "contains" => ->(column, value) { query.where("#{column} LIKE ?", "%#{value}%") },
+          "not_contain" => ->(column, value) { query.where("#{column} NOT LIKE ?", "%#{value}%") },
+          "starts_with" => ->(column, value) { query.where("#{column} LIKE ?", "#{value}%") },
+          "ends_with" => ->(column, value) { query.where("#{column} LIKE ?", "%#{value}") },
+          "equals" => ->(column, value) { query.where(column.to_sym => value) },
+          "eq" => ->(column, value) { query.where("#{column} = ?", value) },
+          "gte" => ->(column, value) { query.where("#{column} >= ?", value) },
+          "lte" => ->(column, value) { query.where("#{column} <= ?", value) },
+          "gt" => ->(column, value) { query.where("#{column} > ?", value) },
+          "lt" => ->(column, value) { query.where("#{column} < ?", value) },
+          "neq" => ->(column, value) { query.where("#{column} != ?", value) }
+        }
       end
 
       # Helper methods delegated to managers
