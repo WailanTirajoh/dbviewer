@@ -123,6 +123,10 @@ module Dbviewer
       # @param column_filters [Hash] All column filters for accessing operator
       # @return [ActiveRecord::Relation] The filtered query
       def apply_single_column_filter(query, table_name, column, value, column_filters)
+        if global_filter?(column, column_filters)
+          return query if column == "created_at_end"
+          return query.where(created_at: column_filters["created_at"]..column_filters["created_at_end"])
+        end
         return query unless column_exists?(table_name, column)
         return query if column.end_with?("_operator")
 
@@ -141,6 +145,10 @@ module Dbviewer
         end
 
         query
+      end
+
+      def global_filter?(column, filters)
+        (column == "created_at" || column == "created_at_end") && filters["created_at_end"].present?
       end
 
       def special_operators(query)
