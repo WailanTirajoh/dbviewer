@@ -526,12 +526,12 @@ module Dbviewer
           copy_factory_button = button_tag(
             type: "button",
             class: "btn btn-sm btn-outline-secondary copy-factory-btn",
-            title: "Copy FactoryBot",
+            title: "Copy to JSON",
             data: {
               record_data: data_attributes.to_json,
               table_name: @table_name
             },
-            onclick: "copyFactoryBotCode(this)"
+            onclick: "copyToJson(this)"
           ) do
             content_tag(:i, "", class: "bi bi-clipboard")
           end

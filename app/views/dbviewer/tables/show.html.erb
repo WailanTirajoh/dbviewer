@@ -1515,43 +1515,16 @@
     }
     
     // Function to copy FactoryBot code
-    window.copyFactoryBotCode = function(button) {
+    window.copyToJson = function(button) {
       try {
-        // Get record data and table name from data attributes
+        // Get record data from data attribute
         const recordData = JSON.parse(button.dataset.recordData);
-        const tableName = button.dataset.tableName;
         
-        // Singularize table name for factory (simple Rails-like singularization)
-        let factoryName = tableName;
-        if (factoryName.endsWith('ies')) {
-          factoryName = factoryName.slice(0, -3) + 'y';
-        } else if (factoryName.endsWith('s')) {
-          factoryName = factoryName.slice(0, -1);
-        }
-        
-        // Generate the factory bot code
-        let factoryCode = `create(:${factoryName}, `;
-        
-        // Add attributes
-        const attributes = [];
-        for (const [key, value] of Object.entries(recordData)) {
-          if (value === null || value === 'NULL' || value === 'null') {
-            attributes.push(`${key}: nil`);
-          } else if (value === 'true' || value === 'false' || !isNaN(Number(value))) {
-            // Boolean values and numbers don't need quotes
-            attributes.push(`${key}: ${value}`);
-          } else {
-            // Add quotes for string values and escape single quotes
-            const escapedValue = value.replace(/'/g, "\\'");
-            attributes.push(`${key}: '${escapedValue}'`);
-          }
-        }
-        
-        factoryCode += attributes.join(', ');
-        factoryCode += ')';
+        // Generate formatted JSON string
+        const jsonString = JSON.stringify(recordData, null, 2);
         
         // Copy to clipboard
-        navigator.clipboard.writeText(factoryCode).then(() => {
+        navigator.clipboard.writeText(jsonString).then(() => {
           // Show a temporary success message on the button
           const originalTitle = button.getAttribute('title');
           button.setAttribute('title', 'Copied!');
@@ -1560,9 +1533,8 @@
           
           // Show a toast notification
           if (typeof Toastify === 'function') {
-            const factoryName = tableName.endsWith('s') ? tableName.slice(0, -1) : tableName;
             Toastify({
-              text: `<span class="toast-icon"><i class="bi bi-clipboard-check"></i></span> FactoryBot code for ${factoryName} copied to clipboard!`,
+              text: `<span class="toast-icon"><i class="bi bi-clipboard-check"></i></span> JSON data copied to clipboard!`,
               className: "toast-factory-bot",
               duration: 3000,
               gravity: "bottom",
@@ -1602,8 +1574,8 @@
           }
         });
       } catch (error) {
-        console.error('Error generating FactoryBot code:', error);
-        alert('Error generating FactoryBot code. See console for details.');
+        console.error('Error generating JSON:', error);
+        alert('Error generating JSON. See console for details.');
       }
     };
     
