@@ -18,16 +18,16 @@ module Dbviewer
         direction: @order_direction,
         column_filters: @column_filters.reject { |_, v| v.blank? }
       )
-      @total_count = fetch_total_count(@table_name, query_params)
-      @records = fetch_table_records(@table_name, query_params)
-      @total_pages = calculate_total_pages(@total_count, @per_page)
-      @columns = fetch_table_columns(@table_name)
-      @metadata = fetch_table_metadata(@table_name)
 
-      if @records.nil?
-        column_names = @columns.map { |column| column[:name] }
-        @records = ActiveRecord::Result.new(column_names, [])
-      end
+      # Get all datatable data in one method call
+      datatable_data = fetch_datatable_data(@table_name, query_params)
+
+      # Assign to instance variables for view access
+      @total_count = datatable_data[:total_count]
+      @records = datatable_data[:records]
+      @total_pages = datatable_data[:total_pages]
+      @columns = datatable_data[:columns]
+      @metadata = datatable_data[:metadata]
 
       respond_to do |format|
         format.html # Default HTML response

@@ -441,7 +441,70 @@ module Dbviewer
       csv_data
     end
 
+    # Consolidated method to fetch all datatable-related data in one call
+    # Returns a hash containing all necessary datatable information
+    def fetch_datatable_data(table_name, query_params)
+      # Fetch all required data using functional programming patterns
+      columns = fetch_table_columns(table_name)
+
+      # Handle case where table has no columns (should rarely happen)
+      return default_datatable_structure(table_name) if columns.empty?
+
+      # Fetch records with error handling for null cases
+      records = begin
+        fetch_table_records(table_name, query_params)
+      rescue => e
+        Rails.logger.error("Error fetching table records for #{table_name}: #{e.message}")
+        nil
+      end
+
+      # Calculate total count - use filtered count if filters are present
+      total_count = begin
+        if query_params.column_filters.empty?
+          fetch_table_record_count(table_name)
+        else
+          fetch_filtered_record_count(table_name, query_params.column_filters)
+        end
+      rescue => e
+        Rails.logger.error("Error fetching record count for #{table_name}: #{e.message}")
+        0
+      end
+
+      # Calculate pagination data functionally with safety check
+      total_pages = total_count > 0 ? (total_count.to_f / query_params.per_page).ceil : 0
+
+      # Get metadata with error handling
+      metadata = fetch_table_metadata(table_name)
+
+      {
+        columns: columns,
+        records: records,
+        total_count: total_count,
+        total_pages: total_pages,
+        metadata: metadata,
+        current_page: query_params.page,
+        per_page: query_params.per_page,
+        order_by: query_params.order_by,
+        direction: query_params.direction
+      }
+    end
+
     private
+
+    # Default structure for tables with no data/columns
+    def default_datatable_structure(table_name)
+      {
+        columns: [],
+        records: [],
+        total_count: 0,
+        total_pages: 0,
+        metadata: {},
+        current_page: 1,
+        per_page: 25,
+        order_by: nil,
+        direction: "ASC"
+      }
+    end
 
     # Format cell values for CSV export to handle nil values and special characters
     def format_csv_value(value)
