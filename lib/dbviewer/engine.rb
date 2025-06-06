@@ -2,11 +2,6 @@ module Dbviewer
   class Engine < ::Rails::Engine
     isolate_namespace Dbviewer
 
-    # Autoload lib directory
-    lib_path = File.expand_path("..", __dir__)
-    config.autoload_paths << lib_path
-    config.eager_load_paths << lib_path
-
     # Register generators
     config.app_generators do |g|
       g.templates.unshift File.expand_path("../../generators/dbviewer/templates", __dir__)
