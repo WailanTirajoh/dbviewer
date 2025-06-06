@@ -3,8 +3,8 @@ module Dbviewer
     extend ActiveSupport::Concern
 
     # Fetch relationships between tables for ERD visualization
-    def fetch_table_relationships
-      @tables.flat_map { |table| extract_table_relationships_from_metadata(table[:name]) }
+    def fetch_table_relationships(tables)
+      tables.flat_map { |table| extract_table_relationships_from_metadata(table[:name]) }
     end
 
     # Get mini ERD data for a specific table and its relationships

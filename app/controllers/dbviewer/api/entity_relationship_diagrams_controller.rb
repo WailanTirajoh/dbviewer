@@ -4,7 +4,7 @@ module Dbviewer
       before_action :set_tables
 
       def relationships
-        @table_relationships = fetch_table_relationships
+        @table_relationships = fetch_table_relationships(@tables)
         render_success({
           relationships: @table_relationships,
           status: "success"
