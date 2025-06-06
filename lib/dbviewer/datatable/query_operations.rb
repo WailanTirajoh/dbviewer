@@ -8,13 +8,11 @@ module Dbviewer
       # Initialize with dependencies
       # @param connection [ActiveRecord::ConnectionAdapters::AbstractAdapter] The database connection
       # @param dynamic_model_factory [Dbviewer::Database::DynamicModelFactory] Factory for creating dynamic AR models
-      # @param query_executor [Dbviewer::Query::Executor] Executor for raw SQL queries
       # @param table_metadata_manager [Dbviewer::Database::MetadataManager] Manager for table metadata
-      def initialize(connection, dynamic_model_factory, query_executor, table_metadata_manager)
+      def initialize(connection, dynamic_model_factory, table_metadata_manager)
         @connection = connection
         @adapter_name = connection.adapter_name.downcase
         @dynamic_model_factory = dynamic_model_factory
-        @query_executor = query_executor
         @table_metadata_manager = table_metadata_manager
         @query_analyzer = ::Dbviewer::Query::Analyzer.new(connection)
       end
@@ -49,7 +47,7 @@ module Dbviewer
         column_names = table_columns(table_name).map { |c| c[:name] }
 
         # Format results
-        @query_executor.to_result_set(records, column_names)
+        to_result_set(records, column_names)
       rescue => e
         Rails.logger.error("[DBViewer] Error executing table query: #{e.message}")
         raise e
@@ -91,22 +89,6 @@ module Dbviewer
       end
 
       ## -- Delegator
-
-      # Execute a raw SQL query after validating for safety
-      # @param sql [String] SQL query to execute
-      # @return [ActiveRecord::Result] Result set with columns and rows
-      # @raise [StandardError] If the query is invalid or unsafe
-      def execute_query(sql)
-        @query_executor.execute_query(sql)
-      end
-
-      # Execute a SQLite PRAGMA command without adding a LIMIT clause
-      # @param pragma [String] PRAGMA command to execute (without the "PRAGMA" keyword)
-      # @return [ActiveRecord::Result] Result set with the PRAGMA value
-      # @raise [StandardError] If the query is invalid or cannot be executed
-      def execute_sqlite_pragma(pragma)
-        @query_executor.execute_sqlite_pragma(pragma)
-      end
 
       # Analyze query patterns and return performance recommendations
       # @param table_name [String] Name of the table
@@ -199,6 +181,39 @@ module Dbviewer
 
       def primary_key(table_name)
         @table_metadata_manager.primary_key(table_name)
+      end
+
+      # Convert ActiveRecord::Relation to a standard result format
+      # @param records [ActiveRecord::Relation] Records to convert
+      # @param column_names [Array<String>] Column names
+      # @return [ActiveRecord::Result] Result set with columns and rows
+      def to_result_set(records, column_names)
+        rows = records.map do |record|
+          column_names.map do |col|
+            # Handle serialized attributes
+            value = record[col]
+            serialize_if_needed(value)
+          end
+        end
+
+        ActiveRecord::Result.new(column_names, rows)
+      rescue => e
+        Rails.logger.error("[DBViewer] Error converting to result set: #{e.message}")
+        ActiveRecord::Result.new([], [])
+      end
+
+      # Serialize complex objects for display
+      # @param value [Object] Value to serialize
+      # @return [String, Object] Serialized value or original value
+      def serialize_if_needed(value)
+        case value
+        when Hash, Array
+          value.to_json rescue value.to_s
+        when Time, Date, DateTime
+          value.to_s
+        else
+          value
+        end
       end
     end
   end

@@ -17,7 +17,6 @@ module Dbviewer
         @table_query_operations = ::Dbviewer::Datatable::QueryOperations.new(
           @connection,
           @dynamic_model_factory,
-          @query_executor,
           @table_metadata_manager
         )
         reset_cache_if_needed
@@ -108,7 +107,7 @@ module Dbviewer
       # @return [ActiveRecord::Result] Result set with columns and rows
       # @raise [StandardError] If the query is invalid or unsafe
       def execute_query(sql)
-        @table_query_operations.execute_query(sql)
+        @query_executor.execute_query(sql)
       end
 
       # Execute a SQLite PRAGMA command without adding a LIMIT clause
@@ -116,7 +115,7 @@ module Dbviewer
       # @return [ActiveRecord::Result] Result set with the PRAGMA value
       # @raise [StandardError] If the query is invalid or cannot be executed
       def execute_sqlite_pragma(pragma)
-        @table_query_operations.execute_sqlite_pragma(pragma)
+        @query_executor.execute_sqlite_pragma(pragma)
       end
 
       # Get table indexes

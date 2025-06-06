@@ -373,7 +373,6 @@ graph TB
     subgraph "DBViewer Engine"
         Engine[Engine<br/>Rails::Engine]
         Config[Configuration<br/>Settings & Defaults]
-        Validator::Sql[Validator::Sql<br/>Query Validation]
     end
 
     subgraph "Controllers Layer"
@@ -382,6 +381,11 @@ graph TB
         LogsController[LogsController<br/>Query Logs]
         ERDController[ERDController<br/>Entity Relationships]
         APIController[API Controllers<br/>JSON Endpoints]
+        ConnectionsController[ConnectionsController<br/>Database Connections]
+    end
+
+    subgraph "Controller Concerns"
+        DatabaseOperations[DatabaseOperations<br/>Shared Database Logic]
     end
 
     subgraph "Database Namespace"
@@ -396,11 +400,13 @@ graph TB
         QueryLogger[Logger<br/>Query Logging]
         QueryAnalyzer[Analyzer<br/>Performance Analysis]
         QueryParser[Parser<br/>SQL Parsing]
+        NotificationSubscriber[NotificationSubscriber<br/>Query Notifications]
     end
 
     subgraph "Datatable Namespace"
-        QueryOperations[QueryOperations<br/>Table Queries]
+        QueryOperations[QueryOperations<br/>Table Queries & Filtering]
         QueryParams[QueryParams<br/>Parameter Handling]
+        ColumnFiltering[apply_single_column_filter<br/>Individual Filter Logic]
     end
 
     subgraph "Storage Namespace"
@@ -409,48 +415,71 @@ graph TB
         FileStorage[FileStorage<br/>File Storage]
     end
 
+    subgraph "Validation Namespace"
+        ValidatorSql[Validator::Sql<br/>Query Validation]
+    end
+
     %% Configuration Dependencies (Decoupled)
     Config -.->|"Dependency Injection"| Manager
     Manager -->|"cache_expiry"| CacheManager
     Manager -->|"config object"| QueryExecutor
 
-    %% Main Dependencies
+    %% Engine Initialization
     Engine --> HomeController
     Engine --> TablesController
     Engine --> LogsController
     Engine --> ERDController
+    Engine --> ConnectionsController
+    Engine -.->|"setup()"| QueryLogger
+    Engine -.->|"subscribe"| NotificationSubscriber
 
+    %% Controller Dependencies
+    TablesController --> DatabaseOperations
+    HomeController --> DatabaseOperations
+    ConnectionsController --> DatabaseOperations
+    APIController --> DatabaseOperations
+    LogsController -.->|"Get List"| QueryLogger
+
+    DatabaseOperations --> Manager
+    DatabaseOperations --> QueryOperations
+
+    %% Manager Dependencies
     Manager --> CacheManager
     Manager --> MetadataManager
     Manager --> DynamicModelFactory
     Manager --> QueryOperations
 
+    %% Cache Dependencies
     CacheManager --> DynamicModelFactory
     CacheManager --> MetadataManager
 
+    %% QueryOperations Dependencies (Refactored)
     QueryOperations --> DynamicModelFactory
-    QueryOperations --> QueryExecutor
     QueryOperations --> MetadataManager
+    QueryOperations --> QueryAnalyzer
+    QueryOperations --> ColumnFiltering
 
+    %% Storage Dependencies
     QueryLogger --> StorageBase
     StorageBase --> InMemoryStorage
     StorageBase --> FileStorage
 
-    TablesController --> Manager
-    HomeController --> Manager
-    LogsController --> QueryLogger
-    APIController --> Manager
-    APIController --> QueryLogger
-
-    %% Decoupled Configuration Flow
-    Engine -.->|"setup()"| QueryLogger
+    %% Configuration Flow
     Config -.->|"logging settings"| QueryLogger
+    Config -.->|"database connections"| Manager
 
+    %% Validation
+    ValidatorSql --> QueryExecutor
+
+    %% Styling
     class CacheManager,QueryLogger decoupled
-    class HomeController,TablesController,LogsController,ERDController,APIController controller
+    class HomeController,TablesController,LogsController,ERDController,APIController,ConnectionsController controller
+    class DatabaseOperations concern
     class Manager,MetadataManager,DynamicModelFactory database
-    class QueryExecutor,QueryAnalyzer,QueryParser query
+    class QueryExecutor,QueryAnalyzer,QueryParser,NotificationSubscriber query
     class StorageBase,InMemoryStorage,FileStorage storage
+    class ColumnFiltering filtering
+    class ValidatorSql validation
 ```
 
 ## 🤌🏻 Contributing

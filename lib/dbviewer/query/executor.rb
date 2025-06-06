@@ -53,41 +53,6 @@ module Dbviewer
         Rails.logger.error("[DBViewer] SQLite pragma error: #{e.message} for pragma: #{pragma}")
         raise e
       end
-
-      # Convert ActiveRecord::Relation to a standard result format
-      # @param records [ActiveRecord::Relation] Records to convert
-      # @param column_names [Array<String>] Column names
-      # @return [ActiveRecord::Result] Result set with columns and rows
-      def to_result_set(records, column_names)
-        rows = records.map do |record|
-          column_names.map do |col|
-            # Handle serialized attributes
-            value = record[col]
-            serialize_if_needed(value)
-          end
-        end
-
-        ActiveRecord::Result.new(column_names, rows)
-      rescue => e
-        Rails.logger.error("[DBViewer] Error converting to result set: #{e.message}")
-        ActiveRecord::Result.new([], [])
-      end
-
-      private
-
-      # Serialize complex objects for display
-      # @param value [Object] Value to serialize
-      # @return [String, Object] Serialized value or original value
-      def serialize_if_needed(value)
-        case value
-        when Hash, Array
-          value.to_json rescue value.to_s
-        when Time, Date, DateTime
-          value.to_s
-        else
-          value
-        end
-      end
     end
   end
 end
