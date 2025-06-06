@@ -14,32 +14,11 @@ module Dbviewer
 
     # Initialize the engine safely
     initializer "dbviewer.setup", after: :load_config_initializers do |app|
-      Dbviewer.init
       Dbviewer.setup
     end
 
     initializer "dbviewer.notifications" do
-      next unless Rails.env.development?
-
-      ActiveSupport::Notifications.subscribe("sql.active_record") do |*args|
-        event = ActiveSupport::Notifications::Event.new(*args)
-
-        next if skip_internal_query?(event)
-
-        Dbviewer::Query::Logger.instance.add(event)
-      end
-    end
-
-    private
-
-    def skip_internal_query?(event)
-      caller_locations = caller_locations(1)
-      return false unless caller_locations
-
-      excluded_caller_locations = caller_locations.filter do |caller_location|
-        !caller_location.path.include?("lib/dbviewer/engine.rb")
-      end
-      excluded_caller_locations.any? { |l| l.path.include?("dbviewer") }
+      Dbviewer::Query::NotificationSubscriber.subscribe
     end
   end
 end

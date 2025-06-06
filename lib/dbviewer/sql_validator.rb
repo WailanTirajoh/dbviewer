@@ -29,8 +29,8 @@ module Dbviewer
     def self.safe_query?(sql)
       return false if sql.blank?
 
-      # Get max query length from configuration if available
-      max_length = respond_to?(:max_query_length) ? max_query_length : MAX_QUERY_LENGTH
+      # Get max query length from configuration
+      max_length = Dbviewer.configuration.max_query_length || MAX_QUERY_LENGTH
       return false if sql.length > max_length
 
       normalized_sql = normalize(sql)
@@ -124,8 +124,8 @@ module Dbviewer
         raise SecurityError, "Empty query is not allowed"
       end
 
-      # Get max query length from configuration if available
-      max_length = respond_to?(:max_query_length) ? max_query_length : MAX_QUERY_LENGTH
+      # Get max query length from configuration
+      max_length = Dbviewer.configuration.max_query_length || MAX_QUERY_LENGTH
       if sql.length > max_length
         raise SecurityError, "Query exceeds maximum allowed length (#{max_length} chars)"
       end
