@@ -399,7 +399,7 @@ module Dbviewer
       @query = params[:query].present? ? params[:query].to_s : default_query
 
       # Validate query for security
-      unless ::Dbviewer::SqlValidator.safe_query?(@query)
+      unless ::Dbviewer::Validator::Sql.safe_query?(@query)
         @query = default_query
         flash.now[:warning] = "Only SELECT queries are allowed. Your query contained potentially unsafe operations. Using default query instead."
       end

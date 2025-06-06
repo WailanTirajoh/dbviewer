@@ -373,7 +373,7 @@ graph TB
     subgraph "DBViewer Engine"
         Engine[Engine<br/>Rails::Engine]
         Config[Configuration<br/>Settings & Defaults]
-        SqlValidator[SqlValidator<br/>Query Validation]
+        Validator::Sql[Validator::Sql<br/>Query Validation]
     end
 
     subgraph "Controllers Layer"

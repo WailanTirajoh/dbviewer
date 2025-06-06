@@ -16,7 +16,7 @@ module Dbviewer
       # @raise [StandardError] If the query is invalid or unsafe
       def execute_query(sql)
         # Validate and normalize the SQL
-        normalized_sql = ::Dbviewer::SqlValidator.validate!(sql.to_s)
+        normalized_sql = ::Dbviewer::Validator::Sql.validate!(sql.to_s)
 
         # Get max records from configuration
         max_records = @config.max_records || 10000
