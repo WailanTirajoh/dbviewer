@@ -56,8 +56,13 @@ module Dbviewer
       @columns = fetch_table_columns(@table_name)
       @tables = fetch_tables  # Fetch tables for sidebar
 
-      prepare_query
-      execute_query
+      @query = prepare_query(@table_name, params[:query])
+      @records = begin
+        execute_query(@query)
+      rescue => e
+        @error = "Error executing query: #{e.message}"
+        nil
+      end
 
       render :query
     end
