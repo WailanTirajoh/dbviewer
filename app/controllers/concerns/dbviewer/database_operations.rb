@@ -239,31 +239,33 @@ module Dbviewer
 
     # Fetch relationships between tables for ERD visualization
     def fetch_table_relationships
-      relationships = []
-
-      @tables.each do |table|
-        table_name = table[:name]
-
-        # Get foreign keys defined in this table pointing to others
-        begin
-          metadata = database_manager.table_metadata(table_name)
-          if metadata && metadata[:foreign_keys].present?
-            metadata[:foreign_keys].each do |fk|
-              relationships << {
-                from_table: table_name,
-                to_table: fk[:to_table],
-                from_column: fk[:column],
-                to_column: fk[:primary_key],
-                name: fk[:name]
-              }
-            end
-          end
-        rescue => e
-          Rails.logger.error("Error fetching relationships for #{table_name}: #{e.message}")
-        end
+      # Use functional approach: flat_map to extract all relationships from all tables
+      @tables.flat_map do |table|
+        extract_table_relationships_from_metadata(table[:name])
       end
+    end
 
-      relationships
+    private
+
+    # Extract relationships for a single table from its metadata
+    # @param table_name [String] The name of the table to process
+    # @return [Array<Hash>] Array of relationship hashes for this table
+    def extract_table_relationships_from_metadata(table_name)
+      metadata = database_manager.table_metadata(table_name)
+      return [] unless metadata&.dig(:foreign_keys)&.present?
+
+      metadata[:foreign_keys].map do |fk|
+        {
+          from_table: table_name,
+          to_table: fk[:to_table],
+          from_column: fk[:column],
+          to_column: fk[:primary_key],
+          name: fk[:name]
+        }
+      end
+    rescue => e
+      Rails.logger.error("Error fetching relationships for #{table_name}: #{e.message}")
+      [] # Return empty array to continue processing other tables
     end
 
     # Get mini ERD data for a specific table and its relationships
