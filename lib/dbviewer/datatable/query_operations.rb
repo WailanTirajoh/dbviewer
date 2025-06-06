@@ -145,7 +145,6 @@ module Dbviewer
         return query if column.end_with?("_operator")
 
         operator = column_filters["#{column}_operator"]
-        return query if operator.empty?
 
         if special_operators(query)[operator]
           return special_operators(query)[operator].call(column)
@@ -154,6 +153,9 @@ module Dbviewer
 
         if operator && operator_handlers(query)[operator]
           return operator_handlers(query)[operator].call(column, value)
+        else
+          # Default to eq no specific operator is provided
+          return query.where("#{column} = ?", value)
         end
 
         query
