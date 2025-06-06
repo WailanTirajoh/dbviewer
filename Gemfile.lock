@@ -92,10 +92,6 @@ GEM
       irb (~> 1.10)
       reline (>= 0.3.8)
     diff-lcs (1.6.2)
-    dotenv (3.1.8)
-    dotenv-rails (3.1.8)
-      dotenv (= 3.1.8)
-      railties (>= 6.1)
     drb (2.2.1)
     erb (5.0.1)
     erubi (1.13.1)
@@ -153,7 +149,6 @@ GEM
     parser (3.3.8.0)
       ast (~> 2.4.1)
       racc
-    pg (1.5.9)
     pp (0.6.2)
       prettyprint
     prettyprint (0.2.0)
@@ -298,8 +293,6 @@ PLATFORMS
 DEPENDENCIES
   dbviewer!
   debug (>= 1.0.0)
-  dotenv-rails
-  pg
   propshaft
   puma
   rspec-rails

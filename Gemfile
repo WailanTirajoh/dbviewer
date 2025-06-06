@@ -6,10 +6,6 @@ gemspec
 gem "puma"
 
 gem "sqlite3"
-gem "pg"
-
-# For loading environment variables from .env files
-gem "dotenv-rails", groups: [ :development, :test ]
 
 gem "propshaft"
 
