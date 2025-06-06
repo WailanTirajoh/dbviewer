@@ -607,7 +607,7 @@
     }
     
     [data-bs-theme="dark"] .navbar.bg-primary {
-      background: linear-gradient(to right, #212529, #1a1e21) !important;
+      background: linear-gradient(to right, #161819, #1a1d20) !important;
       border-bottom: 1px solid rgba(73, 80, 87, 0.5);
     }
     
@@ -657,12 +657,13 @@
     }
     
     [data-bs-theme="dark"] .list-group-item {
-      background-color: transparent;
+      background-color: #1a1d20;
       border-color: rgba(73, 80, 87, 0.3);
       color: #e9ecef;
     }
     
-    [data-bs-theme="dark"] .list-group-item.active {
+    [data-bs-theme="dark"] .list-group-item.active, 
+    [data-bs-theme="dark"] .list-group-item.active:hover {
       background-color: rgba(13, 110, 253, 0.15);
       border-color: rgba(73, 80, 87, 0.3);
       color: #6ea8fe;
@@ -670,7 +671,7 @@
     
     [data-bs-theme="dark"] .list-group-item-action:hover,
     [data-bs-theme="dark"] .list-group-item-action:focus {
-      background-color: rgba(255, 255, 255, 0.03);
+      background-color: rgba(255, 255, 255, 0.05);
       color: #f8f9fa;
     }
     
@@ -1055,12 +1056,6 @@
     
     [data-bs-theme="dark"] .text-danger {
       color: #ff6b6b !important;
-    }
-    
-    /* Styling for form controls in SQL logs page */
-    [data-bs-theme="dark"] .list-group-item {
-      background-color: #212529;
-      border-color: #495057;
     }
     
     /* Code block styling for SQL logs */
