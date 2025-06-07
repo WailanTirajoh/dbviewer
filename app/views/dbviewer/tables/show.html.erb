@@ -332,25 +332,27 @@
 
 <% content_for :sidebar_active do %>active<% end %>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div class="d-flex justify-content-between align-items-center">
-    <h1>Table: <%= @table_name %></h1>
-  </div>
-  <div class="d-flex gap-2">
-    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#tableStructureModal">
-      <i class="bi bi-table me-1"></i> Table Structure
-    </button>
-    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#miniErdModal">
-      <i class="bi bi-diagram-3 me-1"></i> View Relationships
-    </button>
-    <% if Dbviewer.configuration.enable_data_export %>
-        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#csvExportModal">
-          <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
-        </button>
-    <% end %>
-    <%= link_to query_table_path(@table_name), class: "btn btn-primary" do %>
-      <i class="bi bi-code-square me-1"></i> Run SQL Query
-    <% end %>
+<div class="mb-4">
+  <div class="d-block d-md-flex justify-content-between align-items-center">
+    <div class="mb-3 mb-md-0">
+      <h1>Table: <%= @table_name %></h1>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#tableStructureModal">
+        <i class="bi bi-table me-1"></i> Table Structure
+      </button>
+      <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#miniErdModal">
+        <i class="bi bi-diagram-3 me-1"></i> View Relationships
+      </button>
+      <% if Dbviewer.configuration.enable_data_export %>
+          <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#csvExportModal">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
+          </button>
+      <% end %>
+      <%= link_to query_table_path(@table_name), class: "btn btn-primary" do %>
+        <i class="bi bi-code-square me-1"></i> Run SQL Query
+      <% end %>
+    </div>
   </div>
 </div>
 

@@ -2,6 +2,7 @@
 <html data-bs-theme="light">
 <head>
   <title><%= content_for?(:title) ? yield(:title) + " - DB Viewer" : "DB Viewer" %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
 
@@ -1388,11 +1389,19 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary dbviewer-navbar fixed-top">
       <div class="container-fluid">
         <a class="navbar-brand" href="<%= dbviewer.root_path %>"><i class="bi bi-database-fill me-1"></i>DB Viewer</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
+        <div class="d-flex align-items-center">
+
+          <button type="button" class="theme-toggle border-0 px-2 d-lg-none me-3" aria-label="<%= theme_toggle_label %>">
+            <%= theme_toggle_icon %>
+          </button>
+          <button class="navbar-toggler border-0 px-2 d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#navbarOffcanvas"
+                  aria-controls="navbarOffcanvas" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+        </div>
+        
+        <!-- Visible navigation items on larger screens -->
+        <div class="collapse navbar-collapse d-none d-lg-flex" id="navbarNav">
           <ul class="navbar-nav">
             <li class="nav-item">
               <%= link_to raw('<i class="bi bi-table"></i> Tables'), dbviewer.tables_path, class: "nav-link #{tables_nav_class}" %>
@@ -1441,6 +1450,56 @@
           </ul>
         </div>
       </div>
+      
+      <!-- Offcanvas sidebar for mobile/tablet view that slides from right -->
+      <div class="offcanvas offcanvas-end d-lg-none" tabindex="-1" id="navbarOffcanvas" aria-labelledby="offcanvasNavbarLabel">
+        <div class="offcanvas-header text-light">
+          <h5 class="offcanvas-title" id="offcanvasNavbarLabel"><i class="bi bi-database-fill me-1"></i>DB Viewer</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+          <ul class="navbar-nav mb-2 mb-lg-0 fw-medium">
+        <li class="nav-item py-1">
+          <%= link_to raw('<i class="bi bi-table me-2"></i> Tables'), dbviewer.tables_path, class: "nav-link #{tables_nav_class}" %>
+        </li>
+        <li class="nav-item py-1">
+          <%= link_to raw('<i class="bi bi-diagram-3 me-2"></i> ERD'), dbviewer.entity_relationship_diagrams_path, class: "nav-link #{erd_nav_class}" %>
+        </li>
+        <% if Dbviewer.configuration.enable_query_logging %>
+          <li class="nav-item py-1">
+            <%= link_to raw('<i class="bi bi-journal-code me-2"></i> SQL Logs'), dbviewer.logs_path, class: "nav-link #{logs_nav_class}" %>
+          </li>
+        <% end %>
+        <li class="nav-item dropdown py-1">
+          <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="offcanvasDbDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-database me-2"></i> <%= (current_conn = available_connections.find { |c| c[:current] }) ? current_conn[:name] : "Database" %>
+          </a>
+          <ul class="dropdown-menu shadow-sm mt-2" aria-labelledby="offcanvasDbDropdown">
+            <% available_connections.each do |connection| %>
+          <li>
+            <%= button_to connection_path(connection[:key]), method: :post, class: "dropdown-item border-0 w-100 text-start #{'active' if connection[:current]}" do %>
+              <% if connection[:current] %>
+            <i class="bi bi-check2-circle me-2"></i>
+              <% else %>
+            <i class="bi bi-circle me-2"></i>
+              <% end %>
+              <%= connection[:name] %>
+            <% end %>
+          </li>
+            <% end %>
+            <li><hr class="dropdown-divider"></li>
+            <li><%= link_to "<i class='bi bi-gear'></i> Manage Connections".html_safe, connections_path, class: "dropdown-item" %></li>
+          </ul>
+        </li>
+        <li class="mt-4 pt-2 border-top">
+          <div class="d-flex align-items-center py-2">
+            <i class="bi bi-tools me-2 text-secondary"></i> 
+            <span class="text-secondary"><%= Rails.env %> environment</span>
+          </div>
+        </li>
+          </ul>
+        </div>
+      </div>
     </nav>
     <!-- Spacer to prevent content from hiding under fixed navbar -->
     <div class="dbviewer-navbar-spacer"></div>
@@ -1467,7 +1526,7 @@
           <% end %>
           
           <div class="d-flex d-lg-none align-items-center mb-3">
-            <button class="btn btn-sm btn-outline-primary dbviewer-sidebar-toggle" type="button">
+            <button class="btn btn-sm dbviewer-sidebar-toggle" type="button">
               <i class="bi bi-list me-1"></i> Tables
             </button>
           </div>
@@ -1587,6 +1646,52 @@
             overlay.classList.remove('active');
           }
         }, 250);
+      });
+      
+      // Offcanvas navigation enhancement
+      document.addEventListener('DOMContentLoaded', function() {
+        // Get the offcanvas element
+        const offcanvasElement = document.getElementById('navbarOffcanvas');
+        
+        // If offcanvas exists, enhance it
+        if (offcanvasElement) {
+          // Create Bootstrap offcanvas instance
+          const offcanvasInstance = new bootstrap.Offcanvas(offcanvasElement);
+          
+          // Auto-close offcanvas when links are clicked (on mobile)
+          const offcanvasLinks = offcanvasElement.querySelectorAll('.nav-link:not(.dropdown-toggle)');
+          offcanvasLinks.forEach(link => {
+            link.addEventListener('click', function() {
+              if (window.innerWidth < 992) {
+                offcanvasInstance.hide();
+              }
+            });
+          });
+          
+          // Ensure offcanvas is always hidden on desktop (>= 992px)
+          window.addEventListener('resize', function() {
+            if (window.innerWidth >= 992) {
+              offcanvasInstance.hide();
+            }
+          });
+          
+          // Make sure theme toggle works in offcanvas
+          const themeToggleBtn = offcanvasElement.querySelector('.theme-toggle');
+          if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', function() {
+              const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+              const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+              document.documentElement.setAttribute('data-bs-theme', newTheme);
+              localStorage.setItem('dbviewerTheme', newTheme);
+              
+              // Update icon
+              const darkModeIcon = '<i class="bi bi-moon-fill"></i>';
+              const lightModeIcon = '<i class="bi bi-sun-fill"></i>';
+              this.innerHTML = newTheme === 'dark' ? lightModeIcon : darkModeIcon;
+              this.setAttribute('aria-label', newTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+            });
+          }
+        }
       });
     });
   </script>
