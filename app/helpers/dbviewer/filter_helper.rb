@@ -78,30 +78,30 @@ module Dbviewer
         visible_field = form.text_field("column_filters[#{column_name}_display]",
           disabled: true,
           value: "",
-          class: "form-control form-control-sm column-filter rounded-0 disabled-filter",
+          class: "form-control form-control-sm column-filter border-end-1 border-start-0 rounded-0 disabled-filter",
           data: { column: "#{column_name}_display" })
 
         hidden_field + visible_field
       elsif column_type && column_type =~ /datetime/
         form.datetime_local_field("column_filters[#{column_name}]",
           value: value,
-          class: "form-control form-control-sm column-filter rounded-0",
+          class: "form-control form-control-sm column-filter border-end-1 border-start-0 rounded-0",
           data: { column: column_name })
       elsif column_type && column_type =~ /^date$/
         form.date_field("column_filters[#{column_name}]",
           value: value,
-          class: "form-control form-control-sm column-filter rounded-0",
+          class: "form-control form-control-sm column-filter border-end-1 border-start-0 rounded-0",
           data: { column: column_name })
       elsif column_type && column_type =~ /^time$/
         form.time_field("column_filters[#{column_name}]",
           value: value,
-          class: "form-control form-control-sm column-filter rounded-0",
+          class: "form-control form-control-sm column-filter border-end-1 border-start-0 rounded-0",
           data: { column: column_name })
       else
         form.text_field("column_filters[#{column_name}]",
           value: value,
           placeholder: "",
-          class: "form-control form-control-sm column-filter rounded-0",
+          class: "form-control form-control-sm column-filter border-end-1 border-start-0 rounded-0",
           data: { column: column_name })
       end
     end
@@ -119,7 +119,7 @@ module Dbviewer
       form.select("column_filters[#{column_name}_operator]",
         options_for_select(operator_options, selected_operator),
         { include_blank: false },
-        { class: "form-select form-select-sm operator-select" })
+        { class: "form-select form-select-sm operator-select border-end-1 border-start-0 border-bottom-0" })
     end
 
     # Render complete filter input group for a column

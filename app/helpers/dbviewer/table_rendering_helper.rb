@@ -7,7 +7,7 @@ module Dbviewer
       content_tag(:tr) do
         # Start with action column header (sticky first column)
         headers = [
-          content_tag(:th, class: "px-3 py-2 text-center action-column action-column-header", width: "60px", rowspan: 2) do
+          content_tag(:th, class: "px-3 py-2 text-center action-column action-column-header border-bottom-0", width: "60px", rowspan: 2) do
             content_tag(:span, "Actions")
           end
         ]
@@ -15,7 +15,7 @@ module Dbviewer
         # Add all data columns
         headers += records.columns.map do |column_name|
           is_sorted = order_by == column_name
-          content_tag(:th, class: "px-3 py-2 sortable-column #{is_sorted ? 'sorted' : ''}") do
+          content_tag(:th, class: "px-3 py-2 sortable-column border-bottom-0 #{is_sorted ? 'sorted' : ''}") do
             sortable_column_header(column_name, order_by, order_direction, table_name, current_page, per_page, column_filters)
           end
         end
@@ -30,7 +30,7 @@ module Dbviewer
 
       content_tag(:tr, class: "column-filters") do
         filters = records.columns.map do |column_name|
-          content_tag(:th, class: "p-0") do
+          content_tag(:th, class: "p-0 border-bottom-0") do
             render_column_filter(form, column_name, columns, column_filters)
           end
         end

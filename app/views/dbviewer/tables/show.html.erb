@@ -181,7 +181,7 @@
     left: 0;
     z-index: 40 !important; /* Even higher z-index to stay on top of everything */
     background-color: var(--bs-tertiary-bg, #f8f9fa) !important;
-    border-right: 1px solid var(--bs-border-color) !important; /* Added border for visual separation */
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.04) !important;
   }
   
   [data-bs-theme="dark"] .action-column-header {
@@ -206,7 +206,7 @@
     
     /* Fix action column for entire table */
     .action-column {
-      border-right: 1px solid var(--bs-border-color);
+      box-shadow: 2px 0 6px rgba(0, 0, 0, 0.04);
     }
     
     /* Ensure equal padding for all cells */
@@ -452,7 +452,7 @@
           <%= form.hidden_field :order_direction, value: @order_direction %>
           <%= form.hidden_field :page, value: 1 %> <!-- Reset to first page on filter -->
           
-          <table class="table table-bordered table-striped rounded-none">
+          <table class="table table-striped rounded-none">
               <thead class="dbviewer-table-header">
                 <%= render_sortable_header_row(@records, @order_by, @order_direction, @table_name, @current_page, @per_page, @column_filters) %>
                 <%= render_column_filters_row(form, @records, @columns, @column_filters) %>
@@ -477,7 +477,7 @@
       <div class="modal-body">
         <!-- Record Data Section -->
         <div class="table-responsive">
-          <table class="table table-bordered record-detail-table">
+          <table class="table record-detail-table">
             <thead>
               <tr>
                 <th width="30%">Column</th>
@@ -526,6 +526,42 @@
 </div>
 
 <style>
+  /* Borderless table styling */
+  .table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  
+  .table th,
+  .table td {
+    border: none;
+    border-bottom: 1px solid var(--bs-border-subtle, rgba(0, 0, 0, 0.05));
+  }
+  
+  .table thead th {
+    border-bottom: 2px solid var(--bs-border-subtle, rgba(0, 0, 0, 0.08));
+    font-weight: 500;
+  }
+  
+  /* Add a subtle hover effect on table rows */
+  .table tbody tr:hover {
+    background-color: var(--bs-tertiary-bg, rgba(0, 0, 0, 0.02));
+  }
+  
+  /* Dark mode compatibility */
+  [data-bs-theme="dark"] .table th,
+  [data-bs-theme="dark"] .table td {
+    border-bottom: 1px solid var(--bs-border-subtle, rgba(255, 255, 255, 0.05));
+  }
+  
+  [data-bs-theme="dark"] .table thead th {
+    border-bottom: 2px solid var(--bs-border-subtle, rgba(255, 255, 255, 0.08));
+  }
+  
+  [data-bs-theme="dark"] .table tbody tr:hover {
+    background-color: var(--bs-tertiary-bg, rgba(255, 255, 255, 0.03));
+  }
+  
   /* Column filter styling */
   .column-filters td {
     padding: 0.5rem;
@@ -541,8 +577,7 @@
     left: 0;
     z-index: 30; /* Increased z-index to ensure it stays on top */
     background-color: var(--bs-body-bg, #fff); /* Use body background color */
-    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
-    border-right: 1px solid var(--bs-border-color);
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.04);
   }
   
   .copy-factory-btn {

@@ -883,6 +883,14 @@
       background: linear-gradient(135deg, #0d6efd, #0a58ca);
       color: #ffffff;
     }
+
+    [data-bs-theme="light"] .offcanvas .nav-link {
+      color:rgb(78, 86, 95);
+    }
+
+    [data-bs-theme="dark"] .offcanvas .nav-link {
+      color:rgb(191, 191, 191);
+    }
     
     /* Enhanced table styling - Grafana-like compact design */
     .table {
@@ -1390,10 +1398,6 @@
       <div class="container-fluid">
         <a class="navbar-brand" href="<%= dbviewer.root_path %>"><i class="bi bi-database-fill me-1"></i>DB Viewer</a>
         <div class="d-flex align-items-center">
-
-          <button type="button" class="theme-toggle border-0 px-2 d-lg-none me-3" aria-label="<%= theme_toggle_label %>">
-            <%= theme_toggle_icon %>
-          </button>
           <button class="navbar-toggler border-0 px-2 d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#navbarOffcanvas"
                   aria-controls="navbarOffcanvas" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -1453,33 +1457,33 @@
       
       <!-- Offcanvas sidebar for mobile/tablet view that slides from right -->
       <div class="offcanvas offcanvas-end d-lg-none" tabindex="-1" id="navbarOffcanvas" aria-labelledby="offcanvasNavbarLabel">
-        <div class="offcanvas-header text-light">
-          <h5 class="offcanvas-title" id="offcanvasNavbarLabel"><i class="bi bi-database-fill me-1"></i>DB Viewer</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <div class="offcanvas-header bg-light-subtle">
+          <h5 class="offcanvas-title" id="offcanvasNavbarLabel"><i class="bi bi-database-fill me-2 text-primary"></i>DB Viewer</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
-        <div class="offcanvas-body">
+        <div class="offcanvas-body bg-body-tertiary">
           <ul class="navbar-nav mb-2 mb-lg-0 fw-medium">
         <li class="nav-item py-1">
-          <%= link_to raw('<i class="bi bi-table me-2"></i> Tables'), dbviewer.tables_path, class: "nav-link #{tables_nav_class}" %>
+          <%= link_to raw('<i class="bi bi-table me-2 text-primary"></i> Tables'), dbviewer.tables_path, class: "nav-link rounded #{tables_nav_class}" %>
         </li>
         <li class="nav-item py-1">
-          <%= link_to raw('<i class="bi bi-diagram-3 me-2"></i> ERD'), dbviewer.entity_relationship_diagrams_path, class: "nav-link #{erd_nav_class}" %>
+          <%= link_to raw('<i class="bi bi-diagram-3 me-2 text-primary"></i> ERD'), dbviewer.entity_relationship_diagrams_path, class: "nav-link rounded #{erd_nav_class}" %>
         </li>
         <% if Dbviewer.configuration.enable_query_logging %>
           <li class="nav-item py-1">
-            <%= link_to raw('<i class="bi bi-journal-code me-2"></i> SQL Logs'), dbviewer.logs_path, class: "nav-link #{logs_nav_class}" %>
+            <%= link_to raw('<i class="bi bi-journal-code me-2 text-primary"></i> SQL Logs'), dbviewer.logs_path, class: "nav-link rounded #{logs_nav_class}" %>
           </li>
         <% end %>
         <li class="nav-item dropdown py-1">
-          <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="offcanvasDbDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-database me-2"></i> <%= (current_conn = available_connections.find { |c| c[:current] }) ? current_conn[:name] : "Database" %>
+          <a class="nav-link dropdown-toggle d-flex align-items-center rounded" href="#" id="offcanvasDbDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-database me-2 text-primary"></i> <%= (current_conn = available_connections.find { |c| c[:current] }) ? current_conn[:name] : "Database" %>
           </a>
           <ul class="dropdown-menu shadow-sm mt-2" aria-labelledby="offcanvasDbDropdown">
             <% available_connections.each do |connection| %>
           <li>
             <%= button_to connection_path(connection[:key]), method: :post, class: "dropdown-item border-0 w-100 text-start #{'active' if connection[:current]}" do %>
               <% if connection[:current] %>
-            <i class="bi bi-check2-circle me-2"></i>
+            <i class="bi bi-check2-circle me-2 text-primary"></i>
               <% else %>
             <i class="bi bi-circle me-2"></i>
               <% end %>
@@ -1488,7 +1492,7 @@
           </li>
             <% end %>
             <li><hr class="dropdown-divider"></li>
-            <li><%= link_to "<i class='bi bi-gear'></i> Manage Connections".html_safe, connections_path, class: "dropdown-item" %></li>
+            <li><%= link_to "<i class='bi bi-gear me-2'></i> Manage Connections".html_safe, connections_path, class: "dropdown-item" %></li>
           </ul>
         </li>
         <li class="mt-4 pt-2 border-top">
@@ -1648,51 +1652,74 @@
         }, 250);
       });
       
-      // Offcanvas navigation enhancement
-      document.addEventListener('DOMContentLoaded', function() {
-        // Get the offcanvas element
-        const offcanvasElement = document.getElementById('navbarOffcanvas');
+      // Offcanvas enhancement for theme synchronization
+      const offcanvasElement = document.getElementById('navbarOffcanvas');
+      if (offcanvasElement) {
+        // Get all theme toggles
+        const allThemeToggles = document.querySelectorAll('.theme-toggle');
         
-        // If offcanvas exists, enhance it
-        if (offcanvasElement) {
-          // Create Bootstrap offcanvas instance
-          const offcanvasInstance = new bootstrap.Offcanvas(offcanvasElement);
-          
-          // Auto-close offcanvas when links are clicked (on mobile)
-          const offcanvasLinks = offcanvasElement.querySelectorAll('.nav-link:not(.dropdown-toggle)');
-          offcanvasLinks.forEach(link => {
-            link.addEventListener('click', function() {
-              if (window.innerWidth < 992) {
-                offcanvasInstance.hide();
+        // Handle theme change from any toggle button
+        allThemeToggles.forEach(toggleBtn => {
+          toggleBtn.addEventListener('click', function() {
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            
+            // Update all theme toggle buttons to maintain consistency
+            allThemeToggles.forEach(btn => {
+              // Update icon in all theme toggle buttons
+              if (currentTheme === 'dark') {
+                btn.querySelector('span').innerHTML = '<i class="bi bi-sun-fill"></i>';
+                btn.setAttribute('aria-label', 'Switch to light mode');
+              } else {
+                btn.querySelector('span').innerHTML = '<i class="bi bi-moon-fill"></i>';
+                btn.setAttribute('aria-label', 'Switch to dark mode');
               }
             });
           });
-          
-          // Ensure offcanvas is always hidden on desktop (>= 992px)
-          window.addEventListener('resize', function() {
-            if (window.innerWidth >= 992) {
-              offcanvasInstance.hide();
-            }
-          });
-          
-          // Make sure theme toggle works in offcanvas
-          const themeToggleBtn = offcanvasElement.querySelector('.theme-toggle');
-          if (themeToggleBtn) {
-            themeToggleBtn.addEventListener('click', function() {
-              const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
-              const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-              document.documentElement.setAttribute('data-bs-theme', newTheme);
-              localStorage.setItem('dbviewerTheme', newTheme);
-              
-              // Update icon
-              const darkModeIcon = '<i class="bi bi-moon-fill"></i>';
-              const lightModeIcon = '<i class="bi bi-sun-fill"></i>';
-              this.innerHTML = newTheme === 'dark' ? lightModeIcon : darkModeIcon;
-              this.setAttribute('aria-label', newTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
-            });
+        });
+        
+        // Function to sync offcanvas colors with current theme
+        function syncOffcanvasWithTheme() {
+          const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+          if (currentTheme === 'dark') {
+            offcanvasElement.querySelector('.offcanvas-header').classList.remove('bg-light-subtle');
+            offcanvasElement.querySelector('.offcanvas-header').classList.add('bg-dark-subtle');
+          } else {
+            offcanvasElement.querySelector('.offcanvas-header').classList.remove('bg-dark-subtle');
+            offcanvasElement.querySelector('.offcanvas-header').classList.add('bg-light-subtle');
           }
         }
-      });
+        
+        // Sync on page load
+        document.addEventListener('DOMContentLoaded', syncOffcanvasWithTheme);
+        
+        // Listen for theme changes
+        document.addEventListener('dbviewerThemeChanged', syncOffcanvasWithTheme);
+        
+        // Handle link click in offcanvas (auto-close on mobile)
+        const offcanvasLinks = offcanvasElement.querySelectorAll('.nav-link:not(.dropdown-toggle)');
+        offcanvasLinks.forEach(link => {
+          link.addEventListener('click', function() {
+            if (window.innerWidth < 992) {
+              bootstrap.Offcanvas.getInstance(offcanvasElement).hide();
+            }
+          });
+        });
+        
+        // Fix offcanvas backdrop on desktop
+        window.addEventListener('resize', function() {
+          if (window.innerWidth >= 992) {
+            const offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasElement);
+            if (offcanvasInstance) {
+              offcanvasInstance.hide();
+            }
+            // Also remove any backdrop
+            const backdrop = document.querySelector('.offcanvas-backdrop');
+            if (backdrop) {
+              backdrop.remove();
+            }
+          }
+        });
+      }
     });
   </script>
 </body>
