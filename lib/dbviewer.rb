@@ -10,7 +10,6 @@ require "dbviewer/storage/file_storage"
 
 require "dbviewer/query/executor"
 require "dbviewer/query/analyzer"
-require "dbviewer/query/collection"
 require "dbviewer/query/logger"
 require "dbviewer/query/notification_subscriber"
 require "dbviewer/query/parser"
