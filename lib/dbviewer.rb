@@ -1,7 +1,6 @@
 require "dbviewer/version"
 require "dbviewer/configuration"
 require "dbviewer/engine"
-require "dbviewer/validator"
 require "dbviewer/validator/sql"
 
 require "dbviewer/storage/base"
