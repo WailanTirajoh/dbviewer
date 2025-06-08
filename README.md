@@ -9,42 +9,18 @@ It's designed for development, debugging, and database analysis, offering a clea
 
 ## ✨ Features
 
-- **Dashboard**: View a comprehensive dashboard with database analytics, largest tables, most complex tables, and recent SQL queries
-- **Table Overview**: View a list of all tables with record count, column count, and quick access links
-- **Detailed Schema Information**:
-  - View columns with their types, nullability, defaults, and primary key indicators
-  - Examine table indexes and their uniqueness constraints
-  - Explore foreign key relationships between tables
-- **Entity Relationship Diagram (ERD)**:
-  - Interactive visualization of database schema and table relationships
-  - Zoomable and pannable diagram to explore complex database structures
-  - Full table details including all columns and their data types
-  - Visual representation of foreign key relationships between tables
-- **Data Browsing**:
-  - Browse table records with customizable pagination (10, 20, 50, or 100 records per page)
-  - Sort data by any column in ascending or descending order
-  - Navigate through large datasets with an intuitive pagination interface
-  - Scrollable table with fixed headers for improved navigation
-  - Single-line cell display with ellipsis for wide content (tooltips on hover)
-  - Export table data to CSV format (configurable via `enable_data_export` option)
-- **SQL Queries**:
-  - Run custom SELECT queries against your database in a secure, read-only environment
-  - View table structure reference while writing queries
-  - Protection against potentially harmful SQL operations
-  - Query execution statistics and timing
-- **Multiple Database Connections**:
-  - Connect to multiple databases within your application
-  - Switch between connections on-the-fly to view different database schemas
-  - Add new database connections from the UI without code changes
-  - Test connections to verify they're working properly
-- **Enhanced UI Features**:
-  - Responsive, Bootstrap-based interface that works on desktop and mobile
-  - Fixed header navigation with quick access to all features
-  - Modern sidebar layout with improved filtering and scrollable table list
-  - Clean tabbed interface for exploring different aspects of table structure
-  - Advanced table filtering with keyboard navigation support
-  - Proper formatting for various data types (dates, JSON, arrays, etc.)
-  - Enhanced data presentation with appropriate styling
+- **Dashboard**
+- **Table Overview**
+- **Detailed Schema Information**
+- **Entity Relationship Diagram (ERD)**
+- **Data Browsing**
+- **SQL Queries**
+- **Multiple Database Connections**
+- **Enhanced UI Features**
+
+## 🧪 Demo Application
+
+You can explore a live demo of DBViewer at [https://dbviewer-demo.wailantirajoh.tech/](https://dbviewer-demo.wailantirajoh.tech/). This demo showcases all the features of DBViewer on a sample database, allowing you to try out the tool before installing it in your own application.
 
 ## 📸 Screenshots
 
