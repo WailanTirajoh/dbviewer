@@ -1,0 +1,181 @@
+#erd-container {
+  overflow: auto;
+  height: calc(100vh - 125px);
+  padding: 20px;
+  position: relative;
+}
+
+.mermaid {
+  display: flex;
+  justify-content: center;
+  min-width: 100%;
+}
+
+/* Loading state styling */
+#erd-loading {
+  background-color: var(--bs-body-bg);
+}
+
+#erd-loading .text-center p {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+#erd-loading .text-center small {
+  font-size: 0.875rem;
+}
+
+/* Error state styling */
+#erd-error {
+  max-width: 600px;
+  margin: 2rem auto;
+}
+
+#erd-error h5 {
+  color: var(--bs-danger);
+  margin-bottom: 0.75rem;
+}
+
+#erd-error-details {
+  font-size: 0.8rem;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+/* SVG Pan Zoom styles */
+.svg-pan-zoom_viewport {
+  transition: 0.2s;
+}
+
+/* Make sure SVG maintains its size */
+#erd-container svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  min-width: 800px;
+  min-height: 600px;
+}
+
+/* Override mermaid defaults for a better look */
+.entityBox {
+  fill: #f8f9fa;
+  stroke: #6c757d;
+}
+
+.entityLabel,
+.mermaid .label {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-size: 20px !important;
+}
+
+/* Dark mode overrides - comprehensive styling like mini ERD */
+[data-bs-theme="dark"] .entityBox {
+  fill: #2d3748;
+  stroke: #6ea8fe;
+}
+
+[data-bs-theme="dark"] .entityLabel,
+[data-bs-theme="dark"] .mermaid .label {
+  color: #f8f9fa;
+}
+
+[data-bs-theme="dark"] #erd-error-details {
+  background-color: var(--bs-dark) !important;
+  color: var(--bs-light);
+  border-color: var(--bs-border-color);
+}
+
+/* Dark mode: Update mermaid diagram elements */
+[data-bs-theme="dark"] .mermaid .er .entityBox {
+  fill: #2d3748 !important;
+  stroke: #6ea8fe !important;
+  stroke-width: 1.5px !important;
+}
+
+[data-bs-theme="dark"] .mermaid .er .entityLabel {
+  fill: #f8f9fa !important;
+  color: #f8f9fa !important;
+}
+
+[data-bs-theme="dark"] .mermaid .er .relationshipLine {
+  stroke: #6ea8fe !important;
+  stroke-width: 2px !important;
+}
+
+[data-bs-theme="dark"] .mermaid .er .relationshipLabel {
+  fill: #f8f9fa !important;
+  color: #f8f9fa !important;
+}
+
+[data-bs-theme="dark"] .mermaid .er .attributeBoxEven,
+[data-bs-theme="dark"] .mermaid .er .attributeBoxOdd {
+  fill: #374151 !important;
+}
+
+[data-bs-theme="dark"] .mermaid text {
+  fill: #f8f9fa !important;
+}
+
+/* Loading indicator dark mode */
+[data-bs-theme="dark"] #erd-loading {
+  background-color: var(--bs-dark);
+  color: var(--bs-light);
+}
+
+[data-bs-theme="dark"] #erd-loading .spinner-border {
+  color: #6ea8fe;
+}
+
+/* Zoom percentage display styling */
+#zoomPercentage {
+  font-size: 0.9rem;
+  font-weight: 500;
+  width: 45px;
+  display: inline-block;
+  text-align: center;
+}
+
+/* Data loading badge styling */
+#data-loading-badge {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+#data-loading-badge .badge {
+  font-size: 0.75rem;
+  padding: 0.4rem 0.6rem;
+}
+
+/* Mermaid override for text size */
+.mermaid .entityLabel div {
+  font-size: 20px !important;
+}
+
+.mermaid .er.relationshipLabel {
+  font-size: 20px !important;
+}
+
+/* Enhanced table highlighting for current table */
+.current-table-highlight rect {
+  fill: var(--bs-primary-bg-subtle) !important;
+  stroke: var(--bs-primary) !important;
+  stroke-width: 2px !important;
+}
+
+[data-bs-theme="dark"] .current-table-highlight rect {
+  fill: #2c3034 !important;
+  stroke: #6ea8fe !important;
+  stroke-width: 2px !important;
+}

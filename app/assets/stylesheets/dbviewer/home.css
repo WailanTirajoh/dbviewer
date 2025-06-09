@@ -1,0 +1,229 @@
+/* ================================================
+     CSS Custom Properties (CSS Variables)
+     ================================================ */
+:root {
+  /* Colors */
+  --dbviewer-code-bg: rgba(0, 0, 0, 0.05);
+  --dbviewer-code-border: rgba(0, 0, 0, 0.1);
+  --dbviewer-muted-color: #6c757d;
+  --dbviewer-success-color: #28a745;
+  --dbviewer-danger-color: #dc3545;
+  --dbviewer-warning-color: #ffc107;
+
+  /* Skeleton loader colors */
+  --skeleton-base-color: #f0f0f0;
+  --skeleton-highlight-color: #e0e0e0;
+
+  /* Typography */
+  --dbviewer-monospace-font: "Courier New", Courier, monospace;
+  --dbviewer-code-font-size: 0.85rem;
+
+  /* Spacing and sizing */
+  --dbviewer-border-radius: 4px;
+  --dbviewer-border-radius-sm: 3px;
+  --dbviewer-padding-sm: 2px 4px;
+}
+
+/* ================================================
+     Dark Mode Support
+     ================================================ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --dbviewer-code-bg: rgba(255, 255, 255, 0.1);
+    --dbviewer-code-border: rgba(255, 255, 255, 0.15);
+    --dbviewer-muted-color: #adb5bd;
+    --skeleton-base-color: #2a2a2a;
+    --skeleton-highlight-color: #404040;
+  }
+}
+
+/* Bootstrap dark mode support */
+[data-bs-theme="dark"] {
+  --dbviewer-code-bg: rgba(255, 255, 255, 0.1);
+  --dbviewer-code-border: rgba(255, 255, 255, 0.15);
+  --dbviewer-muted-color: #adb5bd;
+  --skeleton-base-color: #2a2a2a;
+  --skeleton-highlight-color: #404040;
+}
+
+/* ================================================
+     SQL Query Styling
+     ================================================ */
+.sql-query-code {
+  font-family: var(--dbviewer-monospace-font);
+  font-size: var(--dbviewer-code-font-size);
+  background-color: var(--dbviewer-code-bg);
+  padding: var(--dbviewer-padding-sm);
+  border-radius: var(--dbviewer-border-radius-sm);
+  border: 1px solid var(--dbviewer-code-border);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.sql-query-code:hover {
+  background-color: var(--dbviewer-code-bg);
+  filter: brightness(0.95);
+}
+
+/* ================================================
+     Query Performance Indicators
+     ================================================ */
+.query-duration {
+  color: var(--dbviewer-success-color);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s ease;
+}
+
+.query-duration-slow {
+  color: var(--dbviewer-danger-color);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s ease;
+}
+
+.query-timestamp {
+  color: var(--dbviewer-muted-color);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s ease;
+}
+
+/* ================================================
+     Empty States and Messages
+     ================================================ */
+.empty-data-message {
+  color: var(--dbviewer-muted-color);
+  transition: color 0.2s ease;
+}
+
+.empty-data-message p {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.empty-data-message small {
+  opacity: 0.8;
+}
+
+/* ================================================
+     Loading States
+     ================================================ */
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ================================================
+     Skeleton Loader System
+     ================================================ */
+.skeleton-loader {
+  display: inline-block;
+  height: 1.2em;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base-color) 25%,
+    var(--skeleton-highlight-color) 37%,
+    var(--skeleton-base-color) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.2s ease-in-out infinite;
+  border-radius: var(--dbviewer-border-radius);
+}
+
+/* Skeleton loader variants */
+.skeleton-loader.number-loader {
+  width: 2.5em;
+  height: 1.5em;
+  margin-bottom: 0.2em;
+}
+
+.skeleton-loader.table-cell-loader {
+  width: 6em;
+  height: 1.2em;
+}
+
+.skeleton-loader.records-loader {
+  width: 3em;
+  height: 1.2em;
+}
+
+.skeleton-loader.query-cell-loader {
+  width: 12em;
+  height: 1.2em;
+}
+
+.skeleton-loader.duration-cell-loader {
+  width: 4em;
+  height: 1.2em;
+}
+
+.skeleton-loader.time-cell-loader {
+  width: 7em;
+  height: 1.2em;
+}
+
+/* ================================================
+     Animations
+     ================================================ */
+@keyframes skeleton-loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+/* ================================================
+     Table Enhancements
+     ================================================ */
+.table-hover tbody tr:hover .sql-query-code {
+  background-color: var(--dbviewer-code-bg);
+  filter: brightness(0.9);
+}
+
+/* ================================================
+     Responsive Design
+     ================================================ */
+@media (max-width: 768px) {
+  .sql-query-code {
+    font-size: 0.75rem;
+    padding: 1px 3px;
+  }
+
+  .query-cell-loader {
+    width: 8em;
+  }
+
+  .duration-cell-loader {
+    width: 3em;
+  }
+
+  .time-cell-loader {
+    width: 5em;
+  }
+}
+
+/* ================================================
+     Accessibility Improvements
+     ================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-loader {
+    animation: none;
+    background: var(--skeleton-base-color);
+  }
+
+  .sql-query-code,
+  .query-duration,
+  .query-duration-slow,
+  .query-timestamp,
+  .empty-data-message {
+    transition: none;
+  }
+}
+
+/* Focus states for better keyboard navigation */
+.sql-query-code:focus-visible {
+  outline: 2px solid var(--dbviewer-success-color);
+  outline-offset: 2px;
+}

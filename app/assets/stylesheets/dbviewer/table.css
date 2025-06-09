@@ -1,0 +1,1144 @@
+/* Column sorting styles */
+.sortable-column {
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.2s ease;
+  background-color: inherit;
+}
+
+.sortable-column:hover {
+  background-color: #f5f5f5;
+}
+
+.sortable-column.sorted {
+  background-color: #f0f0f0;
+}
+
+.sortable-column .column-sort-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  padding: 4px 0;
+}
+
+.sortable-column .column-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sortable-column .sort-icon-container {
+  flex: 0 0 auto;
+  width: 20px;
+  text-align: center;
+  margin-left: 4px;
+}
+
+.sortable-column .sort-icon {
+  font-size: 0.8em;
+  opacity: 0.7;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.sortable-column:hover .sort-icon.invisible {
+  visibility: visible !important;
+  opacity: 0.3;
+}
+
+/* Fix scrolling issues with sticky header */
+.dbviewer-table-header {
+  position: sticky !important;
+  top: 0;
+  z-index: 10;
+  background-color: var(--bs-table-striped-bg, #f2f2f2) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.075);
+}
+
+[data-bs-theme="dark"] .dbviewer-table-header {
+  background-color: var(--bs-dark-bg-subtle, #343a40) !important;
+}
+
+/* Ensure proper layering for sticky elements */
+.dbviewer-table-header th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+/* Increase z-index for the intersection point of sticky header and sticky column */
+.dbviewer-table-header th.action-column {
+  z-index: 40 !important;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure thead has higher z-index than tbody */
+thead tr th.action-column {
+  z-index: 40 !important;
+}
+
+tbody tr td.action-column {
+  z-index: 30 !important;
+}
+
+/* Improve mobile display for sort headers */
+@media (max-width: 767.98px) {
+  .sortable-column .column-sort-link {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .sortable-column .sort-icon-container {
+    width: 16px;
+  }
+}
+
+/* Dark mode compatibility */
+[data-bs-theme="dark"] .sortable-column:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-bs-theme="dark"] .sortable-column.sorted {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Column filter styling */
+.column-filters td {
+  padding: 0.5rem;
+  background-color: var(--bs-tertiary-bg, #f8f9fa);
+}
+
+/* Styling for disabled input fields (IS NULL, IS NOT NULL) */
+.column-filter:disabled,
+.disabled-filter {
+  background-color: var(--bs-tertiary-bg, #f0f0f0);
+  border-color: var(--bs-border-color, #dee2e6);
+  color: var(--bs-secondary-color, #6c757d);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Action column styling */
+.action-column {
+  width: 100px; /* Increased from 60px to accommodate two buttons */
+  min-width: 100px; /* Ensure minimum width */
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  z-index: 15;
+  background-color: var(--bs-table-striped-bg, #f2f2f2);
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+}
+
+.copy-factory-btn {
+  padding: 0.1rem 0.4rem;
+  width: 32px;
+}
+
+.copy-factory-btn:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+/* Ensure proper background color for actions column in dark mode */
+[data-bs-theme="dark"] .action-column {
+  background-color: var(--bs-dark-bg-subtle, #343a40);
+}
+
+/* Maintain zebra striping with sticky action column */
+.table-striped > tbody > tr:nth-of-type(odd) > .action-column {
+  background-color: var(--bs-table-striped-bg, #f8f9fa);
+}
+
+[data-bs-theme="dark"]
+  .table-striped
+  > tbody
+  > tr:nth-of-type(odd)
+  > .action-column {
+  background-color: var(--bs-dark-bg-subtle, #343a40);
+}
+
+.view-record-btn {
+  padding: 0.1rem 0.4rem;
+  width: 32px;
+}
+
+.view-record-btn:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+/* Make action column header sticky as well */
+.action-column-header {
+  position: sticky;
+  left: 0;
+  z-index: 40 !important; /* Even higher z-index to stay on top of everything */
+  background-color: var(--bs-tertiary-bg, #f8f9fa) !important;
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-bs-theme="dark"] .action-column-header {
+  background-color: var(--bs-dark-bg-subtle, #343a40) !important;
+}
+
+[data-bs-theme="dark"] .action-column-header {
+  background-color: var(--bs-dark-bg-subtle, #343a40) !important;
+}
+
+/* Make action column filter cell sticky as well */
+.action-column-filter {
+  position: sticky;
+  left: 0;
+  z-index: 40 !important;
+  background-color: var(--bs-tertiary-bg, #f8f9fa) !important;
+}
+
+[data-bs-theme="dark"] .action-column-filter {
+  background-color: var(--bs-tertiary-bg, #2b3035) !important;
+}
+
+/* Fix action column for entire table */
+.action-column {
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.04);
+}
+
+/* Ensure equal padding for all cells */
+.action-column-header,
+.action-column-filter {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+/* Relationship section styles */
+#relationshipsSection {
+  border-top: 1px solid var(--bs-border-color, #dee2e6);
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+}
+
+#relationshipsSection h6 {
+  color: var(--bs-primary, #0d6efd);
+  font-weight: 600;
+  border-bottom: 2px solid var(--bs-primary, #0d6efd);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.relationship-section h6 {
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(
+    135deg,
+    var(--bs-primary-bg-subtle, #cfe2ff),
+    transparent
+  );
+  border-left: 3px solid var(--bs-primary, #0d6efd);
+  border-radius: 0.25rem;
+}
+
+.relationship-section .table {
+  margin-bottom: 0;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+}
+
+.relationship-section .table th {
+  background-color: var(--bs-light, #f8f9fa);
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-bottom: 2px solid var(--bs-border-color, #dee2e6);
+}
+
+.relationship-section .table td {
+  vertical-align: middle;
+  font-size: 0.875rem;
+}
+
+.relationship-section .btn {
+  font-size: 0.8rem;
+  padding: 0.375rem 0.75rem;
+}
+
+.relationship-section .btn-outline-primary:hover {
+  transform: translateX(2px);
+  transition: transform 0.2s ease;
+}
+
+.relationship-section .btn-outline-success:hover {
+  transform: translateX(2px);
+  transition: transform 0.2s ease;
+}
+
+/* Dark mode relationship styles */
+[data-bs-theme="dark"] #relationshipsSection {
+  border-top-color: var(--bs-border-color, #495057);
+}
+
+[data-bs-theme="dark"] .relationship-section h6 {
+  background: linear-gradient(
+    135deg,
+    var(--bs-primary-bg-subtle, #031633),
+    transparent
+  );
+}
+
+[data-bs-theme="dark"] .relationship-section .table th {
+  background-color: var(--bs-dark-bg-subtle, #343a40);
+  color: var(--bs-light, #f8f9fa);
+}
+
+[data-bs-theme="dark"] .relationship-section .table {
+  border-color: var(--bs-border-color, #495057);
+}
+
+/* Responsive relationship tables */
+@media (max-width: 767.98px) {
+  .relationship-section .table th,
+  .relationship-section .table td {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.25rem;
+  }
+
+  .relationship-section .btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+}
+
+/* Borderless table styling */
+.table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table th,
+.table td {
+  border: none;
+  border-bottom: 1px solid var(--bs-border-subtle, rgba(0, 0, 0, 0.05));
+}
+
+.table thead th {
+  border-bottom: 2px solid var(--bs-border-subtle, rgba(0, 0, 0, 0.08));
+  font-weight: 500;
+}
+
+/* Add a subtle hover effect on table rows */
+.table tbody tr:hover {
+  background-color: var(--bs-tertiary-bg, rgba(0, 0, 0, 0.02));
+}
+
+/* Dark mode compatibility */
+[data-bs-theme="dark"] .table th,
+[data-bs-theme="dark"] .table td {
+  border-bottom: 1px solid var(--bs-border-subtle, rgba(255, 255, 255, 0.05));
+}
+
+[data-bs-theme="dark"] .table thead th {
+  border-bottom: 2px solid var(--bs-border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+[data-bs-theme="dark"] .table tbody tr:hover {
+  background-color: var(--bs-tertiary-bg, rgba(255, 255, 255, 0.03));
+}
+
+/* Column filter styling */
+.column-filters td {
+  padding: 0.5rem;
+  background-color: var(--bs-tertiary-bg, #f8f9fa);
+}
+
+/* Action column styling */
+.action-column {
+  width: 100px; /* Increased from 60px to accommodate two buttons */
+  min-width: 100px; /* Ensure minimum width */
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  z-index: 30; /* Increased z-index to ensure it stays on top */
+  background-color: var(--bs-body-bg, #fff); /* Use body background color */
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.04);
+}
+
+.copy-factory-btn {
+  padding: 0.1rem 0.4rem;
+  width: 32px;
+}
+
+.copy-factory-btn:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+/* Ensure proper background color for actions column in dark mode */
+[data-bs-theme="dark"] .action-column {
+  background-color: var(
+    --bs-body-bg,
+    #212529
+  ); /* Use body background in dark mode */
+}
+
+/* Maintain zebra striping with sticky action column */
+.table-striped > tbody > tr:nth-of-type(odd) > .action-column {
+  background-color: var(--bs-tertiary-bg, #f8f9fa);
+}
+
+.table-striped > tbody > tr:nth-of-type(even) > .action-column {
+  background-color: var(--bs-body-bg, #fff);
+}
+
+[data-bs-theme="dark"]
+  .table-striped
+  > tbody
+  > tr:nth-of-type(odd)
+  > .action-column {
+  background-color: var(--bs-tertiary-bg, #2b3035);
+}
+
+[data-bs-theme="dark"]
+  .table-striped
+  > tbody
+  > tr:nth-of-type(even)
+  > .action-column {
+  background-color: var(--bs-body-bg, #212529);
+}
+
+.view-record-btn {
+  padding: 0.1rem 0.4rem;
+  width: 32px;
+}
+
+.view-record-btn:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+/* Record detail modal styling */
+.record-detail-table tr:first-child th,
+.record-detail-table tr:first-child td {
+  border-top: none;
+}
+
+.record-detail-table .code-block {
+  background-color: var(--bs-light);
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  overflow-x: auto;
+  max-height: 200px;
+}
+
+/* Relationships section styling */
+#relationshipsSection {
+  border-top: 1px solid var(--bs-border-color);
+  padding-top: 1rem;
+}
+
+#relationshipsSection h6 {
+  color: var(--bs-emphasis-color);
+  margin-bottom: 1rem;
+}
+
+[data-bs-theme="dark"] #relationshipsSection {
+  border-top-color: #495057;
+}
+
+.relationships-table .btn-outline-primary {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.relationships-table code {
+  background-color: var(--bs-gray-100);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.125rem;
+  font-size: 0.875rem;
+}
+
+[data-bs-theme="dark"] .relationships-table code {
+  background-color: var(--bs-gray-800);
+  color: var(--bs-gray-100);
+}
+
+[data-bs-theme="dark"] .record-detail-table .code-block {
+  background-color: var(--bs-dark);
+}
+
+/* Fullscreen table styles */
+.table-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9999 !important;
+  background: var(--bs-body-bg) !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.table-fullscreen .card-body {
+  flex: 1 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.table-fullscreen .table-responsive {
+  flex: 1 !important;
+  overflow: auto !important;
+}
+
+.table-fullscreen .card-header {
+  flex-shrink: 0 !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10000 !important;
+  background: var(--bs-body-bg) !important;
+  border-bottom: 1px solid var(--bs-border-color) !important;
+}
+
+/* Hide pagination in fullscreen mode */
+.table-fullscreen .pagination-container {
+  display: none !important;
+}
+
+/* Adjust table header in fullscreen */
+.table-fullscreen .dbviewer-table-header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 100 !important;
+}
+
+/* Ensure body doesn't scroll when table is fullscreen */
+body.table-fullscreen-active {
+  overflow: hidden !important;
+}
+
+/* Fullscreen button hover effect */
+#fullscreen-toggle:hover {
+  background-color: var(--bs-secondary-bg) !important;
+  border-color: var(--bs-secondary-border-subtle) !important;
+}
+
+/* Smooth transitions */
+#table-section {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Floating creation filter button */
+.floating-creation-filter {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 1050;
+}
+
+.floating-filter-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  position: relative;
+  background: var(--bs-primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.4);
+}
+
+.floating-filter-btn:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(var(--bs-primary-rgb), 0.5) !important;
+  background: var(--bs-primary) !important;
+  color: white !important;
+}
+
+.floating-filter-btn:active {
+  transform: translateY(-1px) scale(1.02);
+  transition: all 0.1s ease;
+}
+
+.floating-filter-btn:focus {
+  outline: 2px solid rgba(var(--bs-primary-rgb), 0.5);
+  outline-offset: 2px;
+}
+
+/* Badge for active filter indicator */
+.floating-filter-btn .badge {
+  font-size: 0.6rem;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bs-success) !important;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Better datetime input styling for the floating filter */
+#creationFilterOffcanvas .form-control {
+  border-radius: 6px;
+  border: 1px solid var(--bs-border-color);
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  transition: all 0.15s ease-in-out;
+}
+
+#creationFilterOffcanvas .form-control:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+  background-color: var(--bs-body-bg);
+}
+
+/* Offcanvas enhancements */
+#creationFilterOffcanvas {
+  backdrop-filter: blur(10px);
+}
+
+#creationFilterOffcanvas .offcanvas-header {
+  background: var(--bs-body-bg);
+  border-bottom: 1px solid var(--bs-border-color);
+  padding: 1.25rem;
+}
+
+#creationFilterOffcanvas .offcanvas-body {
+  background: var(--bs-body-bg);
+  padding: 1.25rem;
+}
+
+#creationFilterOffcanvas .offcanvas-title {
+  color: var(--bs-body-color);
+  font-weight: 600;
+}
+
+/* Dark mode specific enhancements */
+[data-bs-theme="dark"] .floating-filter-btn {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(var(--bs-primary-rgb), 0.2);
+}
+
+[data-bs-theme="dark"] .floating-filter-btn:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(var(--bs-primary-rgb), 0.3) !important;
+}
+
+[data-bs-theme="dark"] #creationFilterOffcanvas .offcanvas-header {
+  background: var(--bs-dark);
+  border-bottom-color: var(--bs-border-color-translucent);
+}
+
+[data-bs-theme="dark"] #creationFilterOffcanvas .offcanvas-body {
+  background: var(--bs-dark);
+}
+
+[data-bs-theme="dark"] #creationFilterOffcanvas .form-control {
+  background-color: var(--bs-body-bg);
+  border-color: var(--bs-border-color-translucent);
+}
+
+[data-bs-theme="dark"] #creationFilterOffcanvas .form-control:focus {
+  background-color: var(--bs-body-bg);
+  border-color: var(--bs-primary);
+}
+
+/* Date range picker styling */
+#floatingCreationFilterRange {
+  cursor: pointer;
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  border: 1px solid var(--bs-border-color);
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out,
+    background-color 0.15s ease-in-out;
+}
+
+#floatingCreationFilterRange:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+  background-color: var(--bs-body-bg);
+}
+
+#floatingCreationFilterRange::placeholder {
+  color: var(--bs-secondary-color);
+  opacity: 0.7;
+}
+
+/* Enhanced dark mode support for input */
+[data-bs-theme="dark"] #floatingCreationFilterRange {
+  background-color: var(--bs-body-bg);
+  border-color: var(--bs-border-color-translucent);
+  color: var(--bs-body-color);
+}
+
+[data-bs-theme="dark"] #floatingCreationFilterRange:focus {
+  background-color: var(--bs-body-bg);
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Preset buttons styling */
+.preset-btn {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.75rem;
+  text-align: left;
+  justify-content: flex-start;
+  border: 1px solid var(--bs-border-color);
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.preset-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--bs-primary-rgb), 0.1),
+    transparent
+  );
+  transition: left 0.3s ease;
+}
+
+.preset-btn:hover {
+  background-color: var(--bs-primary);
+  color: white;
+  border-color: var(--bs-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(var(--bs-primary-rgb), 0.2);
+}
+
+.preset-btn:hover::before {
+  left: 100%;
+}
+
+.preset-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(var(--bs-primary-rgb), 0.2);
+}
+
+.preset-btn i {
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.preset-btn:hover i {
+  opacity: 1;
+}
+
+/* Dark mode enhancements for preset buttons */
+[data-bs-theme="dark"] .preset-btn {
+  background-color: var(--bs-dark);
+  border-color: var(--bs-border-color-translucent);
+  color: var(--bs-body-color);
+}
+
+[data-bs-theme="dark"] .preset-btn:hover {
+  background-color: var(--bs-primary);
+  color: white;
+  border-color: var(--bs-primary);
+  box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb), 0.3);
+}
+
+/* Flatpickr theme adjustments */
+.flatpickr-calendar {
+  border-radius: 8px;
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--bs-border-color);
+  background: var(--bs-body-bg);
+  font-family: var(--bs-body-font-family);
+}
+
+.flatpickr-months {
+  background: var(--bs-body-bg);
+  border-bottom: 1px solid var(--bs-border-color);
+  border-radius: 8px 8px 0 0;
+}
+
+.flatpickr-month {
+  color: var(--bs-body-color);
+  fill: var(--bs-body-color);
+}
+
+.flatpickr-current-month {
+  color: var(--bs-body-color);
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-month {
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+.flatpickr-weekdays {
+  background: var(--bs-body-bg);
+}
+
+.flatpickr-weekday {
+  color: var(--bs-secondary-color);
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.flatpickr-day {
+  color: var(--bs-body-color);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.flatpickr-day:hover {
+  background: var(--bs-primary-bg-subtle);
+  color: var(--bs-primary);
+  border-color: var(--bs-primary-border-subtle);
+}
+
+.flatpickr-day.selected {
+  background: var(--bs-primary);
+  color: white;
+  border-color: var(--bs-primary);
+  box-shadow: 0 2px 4px rgba(var(--bs-primary-rgb), 0.3);
+}
+
+.flatpickr-day.selected:hover {
+  background: var(--bs-primary);
+  color: white;
+}
+
+.flatpickr-day.inRange {
+  background: var(--bs-primary-bg-subtle);
+  color: var(--bs-primary);
+  border-color: transparent;
+}
+
+.flatpickr-day.startRange {
+  background: var(--bs-primary);
+  color: white;
+  border-radius: 4px 0 0 4px;
+}
+
+.flatpickr-day.endRange {
+  background: var(--bs-primary);
+  color: white;
+  border-radius: 0 4px 4px 0;
+}
+
+.flatpickr-day.startRange.endRange {
+  border-radius: 4px;
+}
+
+.flatpickr-day.today {
+  border-color: var(--bs-primary);
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+
+.flatpickr-day.today:hover {
+  background: var(--bs-primary);
+  color: white;
+}
+
+.flatpickr-day.disabled {
+  color: var(--bs-secondary-color);
+  opacity: 0.5;
+}
+
+.flatpickr-time {
+  background: var(--bs-body-bg);
+  border-radius: 0 0 8px 8px;
+}
+
+.flatpickr-time input {
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.flatpickr-time input:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+  outline: 0;
+}
+
+.flatpickr-time .flatpickr-time-separator {
+  color: var(--bs-body-color);
+}
+
+.flatpickr-prev-month,
+.flatpickr-next-month {
+  color: var(--bs-body-color);
+  fill: var(--bs-body-color);
+  transition: color 0.2s ease;
+}
+
+.flatpickr-prev-month:hover,
+.flatpickr-next-month:hover {
+  color: var(--bs-primary);
+  fill: var(--bs-primary);
+}
+
+/* Dark mode specific enhancements */
+[data-bs-theme="dark"] .flatpickr-calendar {
+  background: var(--bs-dark);
+  border-color: var(--bs-border-color-translucent);
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.4);
+}
+
+[data-bs-theme="dark"] .flatpickr-months {
+  background: var(--bs-dark);
+  border-bottom-color: var(--bs-border-color-translucent);
+}
+
+[data-bs-theme="dark"] .flatpickr-weekdays {
+  background: var(--bs-dark);
+}
+
+/* Enhanced dark mode day styling for better contrast */
+[data-bs-theme="dark"] .flatpickr-day {
+  color: #e9ecef !important;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+[data-bs-theme="dark"] .flatpickr-day:hover {
+  background: rgba(var(--bs-primary-rgb), 0.25) !important;
+  color: #ffffff !important;
+  border-color: rgba(var(--bs-primary-rgb), 0.4);
+}
+
+[data-bs-theme="dark"] .flatpickr-day.inRange {
+  background: rgba(var(--bs-primary-rgb), 0.2) !important;
+  color: #ffffff !important;
+  border-color: transparent;
+}
+
+[data-bs-theme="dark"] .flatpickr-day.selected {
+  background: var(--bs-primary) !important;
+  color: #ffffff !important;
+  border-color: var(--bs-primary);
+  box-shadow: 0 2px 6px rgba(var(--bs-primary-rgb), 0.4);
+}
+
+[data-bs-theme="dark"] .flatpickr-day.selected:hover {
+  background: var(--bs-primary) !important;
+  color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .flatpickr-day.startRange {
+  background: var(--bs-primary) !important;
+  color: #ffffff !important;
+  border-radius: 4px 0 0 4px;
+}
+
+[data-bs-theme="dark"] .flatpickr-day.endRange {
+  background: var(--bs-primary) !important;
+  color: #ffffff !important;
+  border-radius: 0 4px 4px 0;
+}
+
+[data-bs-theme="dark"] .flatpickr-day.startRange.endRange {
+  border-radius: 4px;
+}
+
+[data-bs-theme="dark"] .flatpickr-day.today {
+  border-color: var(--bs-primary) !important;
+  color: var(--bs-primary) !important;
+  font-weight: 600;
+  background: rgba(var(--bs-primary-rgb), 0.1);
+}
+
+[data-bs-theme="dark"] .flatpickr-day.today:hover {
+  background: var(--bs-primary) !important;
+  color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .flatpickr-day.disabled {
+  color: #6c757d !important;
+  opacity: 0.4;
+  background: transparent !important;
+}
+
+/* Dark mode other day states */
+[data-bs-theme="dark"] .flatpickr-day.nextMonthDay,
+[data-bs-theme="dark"] .flatpickr-day.prevMonthDay {
+  color: #6c757d !important;
+  opacity: 0.6;
+}
+
+[data-bs-theme="dark"] .flatpickr-day.nextMonthDay:hover,
+[data-bs-theme="dark"] .flatpickr-day.prevMonthDay:hover {
+  background: rgba(var(--bs-primary-rgb), 0.15) !important;
+  color: #adb5bd !important;
+}
+
+[data-bs-theme="dark"] .flatpickr-time {
+  background: var(--bs-dark);
+  border-top-color: var(--bs-border-color-translucent);
+}
+
+[data-bs-theme="dark"] .flatpickr-time input {
+  background: var(--bs-body-bg);
+  border-color: var(--bs-border-color-translucent);
+  color: #e9ecef !important;
+}
+
+.flatpickr-calendar.hasTime .flatpickr-time {
+  border-top: var(--bs-border-color-translucent);
+}
+
+.flatpickr-next-month {
+  color: var(--bs-body-color);
+  fill: var(--bs-body-color);
+}
+
+span.flatpickr-weekday {
+  color: var(--bs-secondary-color);
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+[data-bs-theme="dark"] .flatpickr-time input:focus {
+  border-color: var(--bs-primary);
+  background: var(--bs-body-bg);
+  color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .flatpickr-time .flatpickr-time-separator {
+  color: #e9ecef !important;
+}
+
+/* Better focus states */
+.flatpickr-day:focus {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: -2px;
+  z-index: 10;
+}
+
+/* Animation for calendar appearance */
+.flatpickr-calendar.open {
+  animation: flatpickr-slideDown 0.2s ease-out;
+}
+
+@keyframes flatpickr-slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Small alert styling */
+.alert-sm {
+  padding: 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Responsive adjustments - hide on smaller screens */
+@media (max-width: 991.98px) {
+  .floating-creation-filter {
+    display: none !important;
+  }
+}
+
+/* Flatpickr positioning and responsive adjustments */
+.flatpickr-calendar.arrowTop:before,
+.flatpickr-calendar.arrowTop:after {
+  border-bottom-color: var(--bs-border-color);
+}
+
+.flatpickr-calendar.arrowBottom:before,
+.flatpickr-calendar.arrowBottom:after {
+  border-top-color: var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .flatpickr-calendar.arrowTop:before,
+[data-bs-theme="dark"] .flatpickr-calendar.arrowTop:after {
+  border-bottom-color: var(--bs-border-color-translucent);
+}
+
+[data-bs-theme="dark"] .flatpickr-calendar.arrowBottom:before,
+[data-bs-theme="dark"] .flatpickr-calendar.arrowBottom:after {
+  border-top-color: var(--bs-border-color-translucent);
+}
+
+/* Ensure calendar stays within viewport on mobile */
+@media (max-width: 576px) {
+  .flatpickr-calendar {
+    max-width: calc(100vw - 20px);
+    font-size: 14px;
+  }
+
+  .flatpickr-day {
+    height: 35px;
+    line-height: 35px;
+  }
+
+  .flatpickr-time input {
+    font-size: 14px;
+  }
+}
+
+/* Improved accessibility */
+.flatpickr-calendar {
+  font-family: inherit;
+}
+
+.flatpickr-day[aria-label] {
+  position: relative;
+}
+
+/* Smooth scroll behavior for time inputs */
+.flatpickr-time input {
+  scroll-behavior: smooth;
+}
+
+/* Enhanced visual feedback for interactive elements */
+.flatpickr-prev-month,
+.flatpickr-next-month {
+  border-radius: 4px;
+  padding: 4px;
+  margin: 2px;
+}
+
+.flatpickr-prev-month:hover,
+.flatpickr-next-month:hover {
+  background: rgba(var(--bs-primary-rgb), 0.1);
+}
+
+/* Relationship count styling */
+.relationship-count .badge {
+  min-width: 80px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.relationship-count .spinner-border-sm {
+  width: 0.875rem;
+  height: 0.875rem;
+}

@@ -1,21 +1,1460 @@
-/*
- * This is a manifest file that'll be compiled into application.css, which will include all the files
- * listed below.
- *
- * Any CSS and SCSS file within this directory, lib/assets/stylesheets, vendor/assets/stylesheets,
- * or any plugin's vendor/assets/stylesheets directory can be referenced here using a relative path.
- *
- * You're free to add application-wide styles to this file and they'll appear at the bottom of the
- * compiled file so the styles you add here take precedence over styles defined in any other CSS/SCSS
- * files in this directory. Styles in this file should be added after the last require_* statement.
- * It is generally better to create a new file per style scope.
- *
- *= require_self
- *= require dbviewer/enhanced
- *= require dbviewer/dbviewer
- */
+/* Base styles and typography */
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  color: #464c54; /* More subdued text color for light theme */
+  background-color: #f5f6f9; /* Subtle gray background */
+}
 
-/* 
- * Note: Critical styles are also included inline in the application layout
- * to ensure the UI is functional even if asset compilation fails
- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+/* Core layout styles - Grafana-like compact layout */
+.dbviewer-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.dbviewer-navbar {
+  height: 48px;
+} /* Reduced height for more compact header */
+.dbviewer-navbar-spacer {
+  height: 48px;
+} /* Creates space for the fixed navbar */
+.dbviewer-content {
+  display: flex;
+  flex: 1;
+  min-height: calc(100vh - 48px);
+  padding-top: 0;
+}
+
+/* Smooth theme transitions */
+html {
+  transition: background-color 0.2s ease;
+}
+
+body {
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+/* Smooth theme transitions */
+html {
+  transition: background-color 0.2s ease;
+}
+
+body {
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+/* Sidebar styles - enhanced for elegance with Grafana-like compact design */
+.dbviewer-sidebar {
+  width: 240px; /* More compact sidebar width */
+  height: calc(100vh - 48px);
+  position: fixed;
+  top: 48px; /* Positioned right below the fixed navbar */
+  left: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease-in-out, background-color 0.2s ease,
+    border-color 0.2s ease;
+  overflow: hidden;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.04); /* Subtler shadow */
+}
+
+/* Dark mode overrides */
+[data-bs-theme="light"] .dbviewer-sidebar {
+  background: #ffffff;
+  border-right: 1px solid rgba(222, 226, 230, 0.6);
+}
+
+[data-bs-theme="dark"] .dbviewer-sidebar {
+  background: #1a1d20;
+  border-right: 1px solid rgba(73, 80, 87, 0.3);
+}
+
+.dbviewer-sidebar-header {
+  padding: 0.8rem 1rem; /* Reduced padding for more compact header */
+  font-weight: 600;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  display: flex;
+}
+
+[data-bs-theme="light"] .dbviewer-sidebar-header {
+  border-bottom: 1px solid rgba(222, 226, 230, 0.6);
+  background: linear-gradient(to right, #f8f9fa, #f1f3f5);
+}
+
+[data-bs-theme="dark"] .dbviewer-sidebar-header {
+  border-bottom: 1px solid rgba(73, 80, 87, 0.3);
+  background: linear-gradient(to right, #343a40, #2c3034);
+}
+
+.dbviewer-sidebar-header h5 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 80%;
+  cursor: default;
+  position: relative;
+}
+
+/* Tooltip for database name */
+.dbviewer-sidebar-header h5[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: 0;
+  top: 100%;
+  z-index: 1000;
+  background-color: #343a40;
+  color: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  white-space: normal;
+  max-width: 250px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  margin-top: 6px;
+}
+
+.dbviewer-sidebar-top {
+  flex-shrink: 0;
+  padding-bottom: 0.25rem;
+}
+
+[data-bs-theme="light"] .dbviewer-sidebar-top {
+  background: #f8f9fa;
+  border-bottom: 1px solid #eaeaea;
+}
+
+[data-bs-theme="dark"] .dbviewer-sidebar-top {
+  background: #1a1d20;
+  border-bottom: 1px solid rgba(73, 80, 87, 0.3);
+}
+
+.dbviewer-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.25rem 0; /* Reduced padding */
+  height: 100%;
+  /* Improved scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.dbviewer-sidebar-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dbviewer-sidebar-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dbviewer-sidebar-content::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+[data-bs-theme="dark"] .dbviewer-sidebar-content::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.dbviewer-main {
+  flex: 1;
+  margin-left: 240px; /* Reduced sidebar width */
+  padding: 1.2rem 1.5rem; /* Reduced padding for more compact look */
+  padding-top: 0.8rem; /* Adjusted for fixed header */
+  min-width: 0;
+  animation: fadeIn 0.5s ease-in-out;
+  transition: all 0.3s ease;
+  background: var(--bs-body-bg);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Enhanced mobile responsiveness with smooth animations */
+@media (max-width: 991.98px) {
+  .dbviewer-sidebar {
+    transform: translateX(-100%);
+    box-shadow: none;
+    transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+
+  .dbviewer-sidebar.active {
+    transform: translateX(0);
+    box-shadow: 5px 0 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .dbviewer-main {
+    margin-left: 0;
+    padding: 1.25rem;
+    transition: padding 0.3s ease;
+  }
+
+  /* Improved overlay for mobile sidebar */
+  .dbviewer-sidebar-overlay {
+    position: fixed;
+    top: 60px; /* Start below the fixed navbar */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    backdrop-filter: blur(2px);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+
+  [data-bs-theme="light"] .dbviewer-sidebar-overlay {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  [data-bs-theme="dark"] .dbviewer-sidebar-overlay {
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .dbviewer-sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Toggle button styling */
+  .dbviewer-sidebar-toggle {
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border: none;
+    background: var(--bs-primary);
+    color: white;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .dbviewer-sidebar-toggle:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  body.dbviewer-sidebar-open {
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .dbviewer-sidebar {
+    width: 230px;
+  }
+  .dbviewer-main {
+    padding: 1rem;
+  }
+  .dbviewer-sidebar-header h5 {
+    max-width: 70%;
+    font-size: 1rem;
+  }
+
+  /* Make tables more responsive */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .stat-card-bg {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Extra small screens - more compact for small devices */
+@media (max-width: 575.98px) {
+  .dbviewer-main {
+    padding: 0.6rem;
+  }
+  h1,
+  .h1 {
+    font-size: 1.6rem;
+  }
+  h2,
+  .h2 {
+    font-size: 1.4rem;
+  }
+  h3,
+  .h3 {
+    font-size: 1.2rem;
+  }
+
+  .btn-sm {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .card-body {
+    padding: 0.75rem;
+  }
+}
+
+/* Table filter input - enhanced */
+.dbviewer-table-filter-container {
+  position: relative;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.dbviewer-table-filter-icon {
+  position: absolute;
+  left: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  font-size: 0.85rem;
+  padding: 0.25rem;
+  width: 1.5rem;
+  text-align: center;
+  z-index: 2;
+  transition: color 0.2s ease;
+}
+
+.dbviewer-table-filter {
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem 0.65rem 2.5rem;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  font-size: 0.9rem;
+}
+
+.dbviewer-table-filter:focus {
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+  border-color: #86b7fe;
+}
+
+[data-bs-theme="dark"] .dbviewer-table-filter {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .dbviewer-table-filter:focus {
+  border-color: rgba(134, 183, 254, 0.7);
+}
+
+/* Table structure and visualization components - Grafana-inspired */
+.dbviewer-card {
+  border-radius: 3px; /* Smaller border radius for Grafana look */
+  transition: all 0.2s ease;
+  overflow: hidden;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05); /* Subtler shadow */
+  height: 100%;
+}
+
+.dbviewer-card:hover {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px); /* Subtler hover effect */
+}
+
+/* Improved card headers - more compact */
+.dbviewer-card .card-header {
+  font-weight: 600;
+  padding: 0.7rem 1rem; /* Reduced padding */
+  border-bottom-width: 1px;
+  font-size: 0.95rem; /* Slightly smaller font */
+}
+
+/* Card body padding - more compact */
+.dbviewer-card .card-body {
+  padding: 0.9rem 1rem; /* Reduced padding */
+}
+
+[data-bs-theme="light"] .dbviewer-card {
+  border: none;
+  background: #ffffff;
+}
+
+[data-bs-theme="dark"] .dbviewer-card {
+  border: none;
+  background: #212529;
+}
+
+.dbviewer-scrollable {
+  max-height: 700px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.dbviewer-scrollable::-webkit-scrollbar {
+  width: 5px;
+  height: 8px;
+}
+
+.dbviewer-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dbviewer-scrollable::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+[data-bs-theme="dark"] .dbviewer-scrollable::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.dbviewer-scrollable thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  width: 100%;
+}
+
+/* Ensure the scrollable table headers have solid backgrounds */
+[data-bs-theme="light"] .dbviewer-scrollable thead {
+  background-color: #f1f3f5;
+}
+
+[data-bs-theme="dark"] .dbviewer-scrollable thead {
+  background-color: #343a40;
+}
+
+/* Ensure individual th cells also have proper background */
+.dbviewer-scrollable thead th {
+  background-color: transparent;
+}
+
+/* Specific fix for sticky table headers to ensure solid backgrounds */
+.table-responsive .table thead,
+.dbviewer-scrollable .table thead {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+/* Additional specificity for table headers in dark mode */
+[data-bs-theme="light"] .table-responsive .table thead th,
+[data-bs-theme="light"] .dbviewer-scrollable .table thead th {
+  background-color: #f1f3f5;
+}
+
+[data-bs-theme="dark"] .table-responsive .table thead th,
+[data-bs-theme="dark"] .dbviewer-scrollable .table thead th {
+  background-color: #343a40;
+}
+
+/* Ensure borders appear properly with sticky headers */
+.table thead th {
+  box-shadow: inset 0 1px 0 var(--bs-border-color),
+    inset 0 -1px 0 var(--bs-border-color);
+}
+
+/* Enhanced badge styling */
+.badge {
+  font-weight: 500;
+  padding: 0.4em 0.6em;
+  border-radius: 6px;
+  letter-spacing: 0.01em;
+  font-size: 0.75em;
+  text-transform: none;
+}
+
+[data-bs-theme="dark"] .bg-secondary-subtle {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #f8f9fa !important;
+}
+
+[data-bs-theme="light"] .bg-secondary-subtle {
+  background-color: #e9ecef !important;
+  color: #495057 !important;
+}
+
+/* Table header styling */
+.dbviewer-table-header {
+  background-color: #f1f3f5;
+}
+
+[data-bs-theme="dark"] .dbviewer-table-header {
+  background-color: #343a40;
+}
+
+/* List group styling for dark mode */
+[data-bs-theme="dark"] .list-group-item {
+  background-color: var(--bs-dark);
+  border-color: rgba(255, 255, 255, 0.08); /* Subtler border */
+  color: var(--bs-light);
+}
+
+[data-bs-theme="dark"] .dbviewer-table-header {
+  position: sticky;
+  top: 0;
+  background: #343a40;
+  z-index: 1;
+}
+
+/* Equal height for timeline and structure cards - Grafana-inspired compact layout */
+.two-column-layout .card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.two-column-layout .card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem;
+} /* Reduced padding */
+.two-column-layout .chart-container {
+  flex: 1;
+  min-height: 220px;
+} /* Reduced min-height */
+.two-column-layout .structure-container {
+  padding: 0;
+}
+.two-column-layout .tab-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.two-column-layout .tab-pane {
+  flex: 1;
+  overflow: hidden;
+}
+.two-column-layout .table-responsive {
+  overflow-x: auto;
+}
+
+[data-bs-theme="light"] .two-column-layout .sticky-top {
+  top: 0;
+  z-index: 999;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+[data-bs-theme="dark"] .two-column-layout .sticky-top {
+  top: 0;
+  z-index: 999;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Enhanced dark mode toggle */
+.theme-toggle {
+  background: transparent;
+  border: none;
+  padding: 0.4rem 0.6rem;
+  margin-right: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  opacity: 0.85;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+}
+
+.theme-toggle:hover {
+  opacity: 1;
+  transform: rotate(15deg) scale(1.1);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.theme-toggle:active {
+  transform: rotate(30deg) scale(0.9);
+}
+
+.theme-toggle .bi-sun,
+[data-bs-theme="dark"] .theme-toggle .bi-moon {
+  display: none;
+}
+
+[data-bs-theme="dark"] .theme-toggle .bi-sun {
+  display: inline-block;
+}
+
+.theme-toggle .bi-moon {
+  display: inline-block;
+}
+
+.theme-toggle i {
+  font-size: 1.2rem;
+}
+
+/* Header styles for a more professional Grafana-like look */
+.navbar {
+  transition: all 0.3s ease;
+  padding: 0 0.75rem; /* Reduced horizontal padding */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05); /* Subtler shadow */
+  min-height: 48px; /* Fixed height */
+}
+
+.navbar-brand {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-size: 1.1rem; /* Smaller brand */
+  padding: 0.1rem 0; /* Reduced padding */
+}
+
+.nav-link {
+  font-weight: 500;
+  padding: 0.35rem 0.65rem !important; /* Reduced padding */
+  border-radius: 2px; /* Smaller radius for Grafana look */
+  transition: all 0.2s ease;
+  margin: 0 1px; /* Reduced margin */
+  font-size: 0.9rem; /* Smaller font */
+}
+
+.nav-link.active {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.nav-link:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="light"] .navbar.bg-primary {
+  background: linear-gradient(to right, #0d6efd, #0b5ed7) !important;
+}
+
+[data-bs-theme="dark"] .navbar.bg-primary {
+  background: linear-gradient(to right, #161819, #1a1d20) !important;
+  border-bottom: 1px solid rgba(73, 80, 87, 0.5);
+}
+
+/* Enhanced list group styling */
+.list-group-item {
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+  padding: 0.5rem 0.85rem; /* Reduced padding for compact look */
+  transition: all 0.15s ease-in-out;
+  position: relative;
+  font-weight: 500;
+  font-size: 0.85rem; /* Smaller font for Grafana-like appearance */
+}
+
+.list-group-item:first-child {
+  border-top: 0;
+}
+
+.list-group-item-action {
+  border-left: 3px solid transparent;
+}
+
+.list-group-item-action:hover {
+  border-left-color: rgba(13, 110, 253, 0.3);
+}
+
+.list-group-item.active {
+  border-left-color: #0d6efd;
+  font-weight: 600;
+  position: relative;
+}
+
+[data-bs-theme="light"] .list-group-item {
+  background-color: transparent;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-bs-theme="light"] .list-group-item.active {
+  background-color: rgba(13, 110, 253, 0.08);
+  color: #0d6efd;
+}
+
+[data-bs-theme="light"] .list-group-item-action:hover,
+[data-bs-theme="light"] .list-group-item-action:focus {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+[data-bs-theme="dark"] .list-group-item {
+  background-color: #1a1d20;
+  border-color: rgba(73, 80, 87, 0.3);
+  color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .list-group-item.active,
+[data-bs-theme="dark"] .list-group-item.active:hover {
+  background-color: rgba(13, 110, 253, 0.15);
+  border-color: rgba(73, 80, 87, 0.3);
+  color: #6ea8fe;
+}
+
+[data-bs-theme="dark"] .list-group-item-action:hover,
+[data-bs-theme="dark"] .list-group-item-action:focus {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #f8f9fa;
+}
+
+[data-bs-theme="dark"] .list-group-item.text-muted {
+  color: #adb5bd !important;
+}
+
+/* Make card headers in dark mode look better */
+[data-bs-theme="dark"] .card-header {
+  background-color: #2c3034;
+  border-bottom: 1px solid #495057;
+}
+
+/* Empty data messages */
+[data-bs-theme="light"] .empty-data-message {
+  color: #6c757d;
+}
+
+[data-bs-theme="dark"] .empty-data-message {
+  color: #adb5bd;
+}
+
+/* Enhanced button styling - Grafana-inspired */
+.btn {
+  font-weight: 500;
+  padding: 0.4rem 0.85rem; /* Reduced padding */
+  border-radius: 2px; /* Smaller radius for Grafana look */
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.btn-sm {
+  padding: 0.25rem 0.6rem; /* Reduced padding */
+  font-size: 0.8rem; /* Smaller font size */
+}
+
+.btn-lg {
+  padding: 0.5rem 1rem; /* Reduced padding */
+  font-size: 0.95rem; /* Smaller font size */
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  border: none;
+  background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #0b5ed7, #0a58ca);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.25);
+}
+
+.btn-outline-primary {
+  border-width: 1px;
+}
+
+.btn-outline-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.15);
+}
+
+[data-bs-theme="dark"] .btn-outline-primary {
+  border-color: rgba(13, 110, 253, 0.7);
+  color: #6ea8fe;
+}
+
+[data-bs-theme="dark"] .btn-outline-primary:hover {
+  background-color: rgba(13, 110, 253, 0.2);
+  color: #6ea8fe;
+}
+
+/* Query timestamp */
+[data-bs-theme="light"] .query-timestamp {
+  color: #6c757d;
+}
+
+[data-bs-theme="dark"] .query-timestamp {
+  color: #adb5bd;
+}
+
+/* Code blocks in tables */
+[data-bs-theme="dark"] table code {
+  color: #e685b5;
+  background-color: rgba(230, 133, 181, 0.1);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+/* Table links */
+[data-bs-theme="dark"] .table a {
+  color: #6ea8fe;
+  text-decoration: none;
+}
+
+[data-bs-theme="dark"] .table a:hover {
+  color: #8bb9fe;
+  text-decoration: underline;
+}
+
+/* Enhanced code blocks and SQL query styling - Grafana-inspired */
+pre,
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  border-radius: 2px; /* Smaller radius */
+  transition: all 0.2s ease;
+}
+
+pre {
+  padding: 0.75rem; /* Reduced padding */
+  margin-bottom: 0.75rem; /* Reduced margin */
+  border-radius: 2px; /* Smaller radius */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+code {
+  font-size: 0.825em; /* Smaller font */
+  padding: 0.15em 0.3em; /* Reduced padding */
+}
+
+/* SQL query code in tables */
+code.sql-query-code {
+  display: inline-block;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 3px 6px;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+[data-bs-theme="light"] pre {
+  background-color: #f8f9fa;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+[data-bs-theme="light"] code {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #d63384;
+}
+
+[data-bs-theme="light"] code.sql-query-code {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #0550a0;
+}
+
+[data-bs-theme="dark"] pre {
+  background-color: #2c3034;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-bs-theme="dark"] code {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ff8bd0;
+}
+
+[data-bs-theme="dark"] code.sql-query-code {
+  background-color: rgba(0, 123, 255, 0.1);
+  color: #65cdff;
+}
+
+/* Query duration styling */
+.query-duration {
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.875rem;
+}
+
+[data-bs-theme="light"] .query-duration-slow {
+  color: #dc3545;
+  font-weight: 500;
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.875rem;
+}
+
+[data-bs-theme="dark"] .query-duration-slow {
+  color: #ff6b6b;
+  font-weight: 500;
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.875rem;
+}
+
+/* Enhanced database name badge */
+.database-name-badge {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+  padding: 0.35em 0.65em;
+  border-radius: 6px;
+  box-shadow: 0 1px 5px rgba(13, 110, 253, 0.3);
+  transition: all 0.2s ease;
+}
+
+.database-name-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.4);
+}
+
+[data-bs-theme="light"] .database-name-badge {
+  background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+  color: #ffffff;
+}
+
+[data-bs-theme="dark"] .database-name-badge {
+  background: linear-gradient(135deg, #0d6efd, #0a58ca);
+  color: #ffffff;
+}
+
+[data-bs-theme="light"] .offcanvas .nav-link {
+  color: rgb(78, 86, 95);
+}
+
+[data-bs-theme="dark"] .offcanvas .nav-link {
+  color: rgb(191, 191, 191);
+}
+
+/* Enhanced table styling - Grafana-like compact design */
+.table {
+  margin-bottom: 0;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table thead {
+  background-color: #f1f3f5;
+}
+
+.table thead th {
+  padding: 0.65rem 0.75rem; /* Reduced padding */
+  font-weight: 600;
+  border-top: 0;
+  vertical-align: middle;
+  letter-spacing: 0.01em;
+  font-size: 0.78rem; /* Smaller font */
+  text-transform: uppercase;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background-color: inherit; /* Ensure it inherits from parent thead */
+}
+
+.table tbody td {
+  padding: 0.5rem 0.75rem; /* Reduced padding */
+  vertical-align: middle;
+  border-color: var(--bs-border-color);
+  font-size: 0.85rem; /* Smaller font */
+}
+
+.table tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+[data-bs-theme="light"] .table thead {
+  background-color: #f1f3f5;
+}
+
+[data-bs-theme="light"] .table thead th {
+  color: #495057;
+  border-color: #dee2e6;
+  border-bottom: 2px solid #dee2e6;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+[data-bs-theme="dark"] .table thead {
+  background-color: #343a40;
+}
+
+[data-bs-theme="dark"] .table thead th {
+  color: #e9ecef;
+  border-color: #495057;
+  border-bottom: 2px solid #495057;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+[data-bs-theme="dark"] .table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Zebra striping */
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: rgba(0, 0, 0, 0.015);
+}
+
+[data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Card title colors */
+[data-bs-theme="dark"] .card-title {
+  color: #f8f9fa;
+}
+
+/* SQL logs specific styling */
+[data-bs-theme="dark"] pre.sql-query {
+  background-color: #2c3034;
+  border-color: #495057;
+}
+
+[data-bs-theme="dark"] pre.sql-query code {
+  color: #ff8bd0;
+}
+
+/* Badge text colors for better contrast in dark mode */
+[data-bs-theme="dark"] .badge.bg-info {
+  color: #000 !important;
+}
+
+/* Badge styling - More Grafana-like */
+.badge {
+  padding: 0.3em 0.5em;
+  font-size: 0.75em;
+  border-radius: 2px;
+}
+
+/* Enhanced alert styling - Grafana-inspired */
+.alert {
+  border-radius: 2px; /* Smaller radius for Grafana look */
+  border-width: 0;
+  padding: 0.7rem 1rem; /* Reduced padding */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
+  border-left: 3px solid transparent; /* Thinner border */
+}
+
+.alert-info {
+  background-color: rgba(13, 202, 240, 0.1);
+  border-left-color: #0dcaf0;
+  color: #087990;
+}
+
+.alert-danger {
+  background-color: rgba(220, 53, 69, 0.1);
+  border-left-color: #dc3545;
+  color: #b02a37;
+}
+
+.alert-success {
+  background-color: rgba(25, 135, 84, 0.1);
+  border-left-color: #198754;
+  color: #146c43;
+}
+
+.alert-warning {
+  background-color: rgba(255, 193, 7, 0.1);
+  border-left-color: #ffc107;
+  color: #997404;
+}
+
+[data-bs-theme="dark"] .alert-info {
+  background-color: rgba(13, 202, 240, 0.15);
+  border-left-color: #0dcaf0;
+  color: #9eeaf9;
+}
+
+[data-bs-theme="dark"] .alert-danger {
+  background-color: rgba(220, 53, 69, 0.15);
+  border-left-color: #dc3545;
+  color: #ea868f;
+}
+
+[data-bs-theme="dark"] .alert-success {
+  background-color: rgba(25, 135, 84, 0.15);
+  border-left-color: #198754;
+  color: #75b798;
+}
+
+[data-bs-theme="dark"] .alert-warning {
+  background-color: rgba(255, 193, 7, 0.15);
+  border-left-color: #ffc107;
+  color: #ffda6a;
+}
+
+/* Background colors for card headers in dark mode */
+[data-bs-theme="dark"] .bg-danger-subtle {
+  background-color: rgba(220, 53, 69, 0.2) !important;
+}
+
+[data-bs-theme="dark"] .bg-info-subtle {
+  background-color: rgba(13, 202, 240, 0.2) !important;
+}
+
+/* Text colors for card headers in dark mode */
+[data-bs-theme="dark"] .text-info {
+  color: #0dcaf0 !important;
+}
+
+[data-bs-theme="dark"] .text-danger {
+  color: #ff6b6b !important;
+}
+
+/* Code block styling for SQL logs */
+[data-bs-theme="light"] .code-block {
+  background-color: #f8f9fa;
+}
+
+[data-bs-theme="dark"] .code-block {
+  background-color: #2c3034;
+}
+
+/* Pattern code styling */
+[data-bs-theme="dark"] .pattern-code {
+  color: #f783ac;
+}
+
+/* Query binds styling */
+[data-bs-theme="light"] .query-binds-summary {
+  color: #6c757d;
+}
+
+[data-bs-theme="dark"] .query-binds-summary {
+  color: #adb5bd;
+}
+
+[data-bs-theme="dark"] .query-binds {
+  color: #20c997;
+}
+
+/* Enhanced code syntax highlighting */
+[data-bs-theme="dark"] code.syntax-highlighted {
+  color: #ff8bd0;
+}
+
+/* Request ID styling */
+[data-bs-theme="light"] .request-id {
+  color: #6c757d;
+}
+
+[data-bs-theme="dark"] .request-id {
+  color: #adb5bd;
+}
+
+[data-bs-theme="dark"] .stat-card-bg {
+  background-color: #2c3034;
+}
+
+.stat-card-bg {
+  background-color: var(--bs-light);
+}
+
+/* Enhanced stat cards and metric icons - Grafana-inspired */
+.stat-card-bg {
+  background: #ffffff;
+  border-radius: 3px; /* Smaller radius for Grafana look */
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.stat-card-bg:hover {
+  transform: translateY(-1px); /* Subtler hover */
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-bs-theme="dark"] .stat-card-bg {
+  background-color: #212529;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+}
+
+/* Enhanced metric icon styling - Grafana-inspired */
+.metric-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px; /* Smaller radius */
+  width: 50px; /* Smaller icon */
+  height: 50px; /* Smaller icon */
+  min-width: 50px; /* Smaller icon */
+  text-align: center;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--bs-primary-rgb), 0.15) 0%,
+    rgba(var(--bs-primary-rgb), 0.08) 100%
+  );
+  color: var(--bs-primary);
+  font-size: 1.4rem; /* Smaller icon */
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 5px rgba(var(--bs-primary-rgb), 0.08);
+}
+
+.stat-card-bg:hover .metric-icon {
+  transform: scale(1.05);
+}
+
+[data-bs-theme="dark"] .metric-icon {
+  background: linear-gradient(
+    135deg,
+    rgba(13, 110, 253, 0.3) 0%,
+    rgba(13, 110, 253, 0.15) 100%
+  );
+  color: #6ea8fe;
+  box-shadow: 0 3px 10px rgba(13, 110, 253, 0.15);
+}
+
+/* Enhanced navbar toggler */
+.navbar-toggler {
+  border: none;
+  padding: 0.25rem 0.5rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  margin-right: 0.5rem;
+}
+
+.navbar-toggler:focus {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
+}
+
+.navbar-toggler:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.navbar-toggler-icon {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+/* Page transitions and animations */
+.dbviewer-main-content {
+  animation: fadeInContent 0.4s ease-out;
+}
+
+@keyframes fadeInContent {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Subtle hover animations */
+.nav-link,
+.list-group-item,
+.btn,
+.card,
+a {
+  transition: all 0.2s ease;
+}
+
+/* Improved table hover effect - Grafana-like */
+.table-hover > tbody > tr:hover {
+  transition: all 0.15s ease;
+}
+
+[data-bs-theme="light"] .table-hover > tbody > tr:hover {
+  background-color: rgba(13, 110, 253, 0.03); /* Subtler hover */
+}
+
+[data-bs-theme="dark"] .table-hover > tbody > tr:hover {
+  background-color: rgba(13, 110, 253, 0.05); /* Subtler hover */
+}
+
+/* Grafana-inspired grid layout adjustments */
+.row {
+  margin-right: -0.5rem;
+  margin-left: -0.5rem;
+}
+
+.row > [class^="col-"] {
+  padding-right: 0.5rem;
+  padding-left: 0.5rem;
+}
+
+/* Button press effect */
+.btn:active,
+.nav-link:active,
+.list-group-item:active {
+  transform: scale(0.97);
+}
+
+/* Focus styles for accessibility */
+:focus-visible {
+  outline: 3px solid rgba(13, 110, 253, 0.25);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Improved scrollbar for the entire app */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+html::-webkit-scrollbar {
+  width: 8px;
+}
+
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+[data-bs-theme="dark"] html::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Grafana-like panel enhancements */
+body {
+  color: #464c54; /* More subdued text color for light theme */
+  background-color: #f5f6f9; /* Subtle gray background */
+}
+
+[data-bs-theme="dark"] body {
+  background-color: #161719; /* Darker background for dark theme */
+  color: #d8d9da; /* Softer text color for dark theme */
+}
+
+/* Make font sizes consistently smaller for more compact look */
+body {
+  font-size: 0.875rem;
+}
+
+h1,
+.h1 {
+  font-size: 1.6rem;
+}
+h2,
+.h2 {
+  font-size: 1.4rem;
+}
+h3,
+.h3 {
+  font-size: 1.2rem;
+}
+h4,
+.h4 {
+  font-size: 1.1rem;
+}
+h5,
+.h5 {
+  font-size: 1rem;
+}
+
+/* Unify panel appearance */
+.card,
+.list-group {
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.06);
+  border: none;
+  border-radius: 2px;
+}
+
+[data-bs-theme="dark"] .card,
+[data-bs-theme="dark"] .list-group {
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.15);
+  background-color: #212124;
+}
+
+/* Improved tab styling */
+.nav-tabs {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.nav-tabs .nav-link {
+  border: none;
+  border-bottom: 2px solid transparent;
+  background-color: transparent;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: -1px;
+  font-size: 0.9rem;
+}
+
+.nav-tabs .nav-link.active {
+  border-bottom-color: var(--bs-primary);
+  color: var(--bs-primary);
+}
+
+[data-bs-theme="dark"] .nav-tabs {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Remove excessive margins between elements */
+.row + .row,
+.card + .card {
+  margin-top: 0.75rem;
+}
+
+/* Elegant form controls */
+.form-control,
+.form-select {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.875rem;
+  height: auto;
+  border-radius: 2px;
+}
+
+/* Add this right above the style closing tag */
+
+/* Toast styling customizations */
+.toastify {
+  padding: 12px 20px;
+  color: white;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--bs-body-font-family);
+  font-size: 0.95rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  max-width: 350px;
+}
+
+.toast-factory-bot {
+  background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.toast-icon {
+  margin-right: 10px;
+  font-size: 1.25em;
+}
+
+/* Dark mode toast styling */
+[data-bs-theme="dark"] .toast-factory-bot {
+  background: linear-gradient(135deg, #157347, #13795b);
+}
+
+/* Toast animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}

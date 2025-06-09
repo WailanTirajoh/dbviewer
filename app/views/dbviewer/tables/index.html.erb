@@ -50,50 +50,6 @@
   </div>
 </div>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Table search functionality
-    const searchInput = document.getElementById('tableSearch');
-    if (searchInput) {
-      searchInput.addEventListener('keyup', function() {
-        const filter = this.value.toLowerCase();
-        const tableRows = document.querySelectorAll('tbody tr');
-        
-        tableRows.forEach(function(row) {
-          const tableName = row.querySelector('td:first-child').textContent.toLowerCase();
-          if (tableName.includes(filter)) {
-            row.style.display = '';
-          } else {
-            row.style.display = 'none';
-          }
-        });
-      });
-    }
-    
-    // Update table styling when theme changes
-    function updateTableStyling() {
-      const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-      const tables = document.querySelectorAll('.table');
-      
-      tables.forEach(table => {
-        if (isDarkMode) {
-          table.classList.add('table-dark');
-        } else {
-          table.classList.remove('table-dark');
-        }
-      });
-    }
-    
-    // Initial styling
-    updateTableStyling();
-    
-    // Listen for theme changes
-    document.addEventListener('dbviewerThemeChanged', function(event) {
-      updateTableStyling();
-    });
-  });
-</script>
-
 <style>
   /* Dark mode table styles */
   [data-bs-theme="dark"] .table {
