@@ -1,0 +1,64 @@
+/* SQL query styling with dark mode support */
+.sql-query {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 100px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+  border-radius: 3px;
+  padding: 0.5rem;
+}
+
+/* Dark mode compatible styling */
+.sql-code-block {
+  background-color: var(--bs-secondary-bg);
+}
+
+[data-bs-theme="dark"] .sql-code-block {
+  background-color: var(--bs-tertiary-bg);
+}
+
+/* Request group header styling */
+.request-group-header {
+  border-top: 2px solid var(--bs-border-color);
+}
+
+.request-header-bg {
+  background-color: var(--bs-secondary-bg);
+}
+
+.request-group-header:first-child {
+  border-top: none;
+}
+
+/* Collapsed section styling */
+details summary {
+  cursor: pointer;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Rotate icon when expanded */
+.collapsed-section[aria-expanded="true"] .bi-chevron-down {
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
+}
+
+.collapsed-section[aria-expanded="false"] .bi-chevron-down {
+  transform: rotate(0deg);
+  transition: transform 0.3s ease;
+}
+
+/* Code styling */
+.pattern-code,
+.query-binds {
+  background-color: var(--bs-secondary-bg);
+  border: 1px solid var(--bs-border-color);
+}
+
+/* Empty data message */
+.empty-data-message {
+  color: var(--bs-secondary-color);
+}

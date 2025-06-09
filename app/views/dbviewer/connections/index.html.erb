@@ -87,33 +87,3 @@
     <% end %>
   </div>
 </div>
-
-<script>
-  // Form validation script
-  document.addEventListener('DOMContentLoaded', function() {
-    const forms = document.querySelectorAll('.needs-validation')
-    
-    // Loop over them and prevent submission
-    Array.from(forms).forEach(form => {
-      form.addEventListener('submit', event => {
-        if (!form.checkValidity()) {
-          event.preventDefault()
-          event.stopPropagation()
-        }
-        
-        form.classList.add('was-validated')
-      }, false)
-    })
-    
-    // Auto-generate a key from the name
-    const nameInput = document.getElementById('connection_name')
-    const keyInput = document.getElementById('connection_key')
-    
-    nameInput.addEventListener('input', function() {
-      keyInput.value = this.value
-        .toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_]/g, '')
-    })
-  })
-</script>
