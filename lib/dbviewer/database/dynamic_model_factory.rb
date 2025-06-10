@@ -83,6 +83,22 @@ module Dbviewer
 
           # Disable timestamps for better compatibility
           self.record_timestamps = false
+
+          # Make the model read-only to prevent accidental data modifications
+          def readonly?
+            true
+          end
+
+          # Disable write operations at the class level
+          class << self
+            def delete_all(*)
+              raise ActiveRecord::ReadOnlyRecord, "#{name} is a read-only model"
+            end
+
+            def update_all(*)
+              raise ActiveRecord::ReadOnlyRecord, "#{name} is a read-only model"
+            end
+          end
         end)
       end
     end
