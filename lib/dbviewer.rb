@@ -21,6 +21,8 @@ require "dbviewer/database/metadata_manager"
 require "dbviewer/datatable/query_operations"
 require "dbviewer/datatable/query_params"
 
+require "propshaft"
+
 module Dbviewer
   # Main module for the database viewer
 
