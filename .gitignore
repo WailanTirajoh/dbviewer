@@ -9,6 +9,7 @@
 /test/dummy/storage/
 /test/dummy/tmp/
 /test/dummy/.env
+/test/dummy/dbviewer_development-*
 *.gem
 .env
 .env.*
