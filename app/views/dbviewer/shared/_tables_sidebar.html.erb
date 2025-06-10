@@ -11,23 +11,7 @@
                 title: table[:name],
                 class: "list-group-item list-group-item-action d-flex align-items-center #{'active' if current_table?(table[:name])}", 
                 tabindex: "0", 
-                data: { table_name: table[:name] },
-                onkeydown: "
-                  if(event.key === 'ArrowDown') { 
-                    event.preventDefault();
-                    let next = this.nextElementSibling;
-                    while(next && next.classList.contains('d-none')) {
-                      next = next.nextElementSibling;
-                    }
-                    if(next) next.focus();
-                  } else if(event.key === 'ArrowUp') { 
-                    event.preventDefault();
-                    let prev = this.previousElementSibling;
-                    while(prev && prev.classList.contains('d-none')) {
-                      prev = prev.previousElementSibling;
-                    }
-                    if(prev) prev.focus();
-                  }" do %>
+                data: { table_name: table[:name] } do %>
       <div class="d-flex justify-content-between align-items-center w-100">
         <div class="text-truncate">
           <i class="bi bi-table me-2 small"></i>
