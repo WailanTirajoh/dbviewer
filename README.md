@@ -151,9 +151,13 @@ end
 
 Each connection needs to reference an ActiveRecord class that establishes a database connection. For more details, see [Multiple Database Connections](docs/multiple_connections.md).
 
-## 🪵 Query Logging
+## 🪵 Query Logging (Development Only)
 
-DBViewer includes a powerful SQL query logging system that captures and analyzes database queries. You can access this log through the `/dbviewer/logs` endpoint. The logging system offers two storage backends:
+DBViewer includes a powerful SQL query logging system that captures and analyzes database queries. You can access this log through the `/dbviewer/logs` endpoint. 
+
+For performance reason, active record query logging are **disabled** on non development environtment
+
+The logging system offers two storage backends:
 
 ### Disabling Query Logging
 
@@ -209,34 +213,6 @@ end
 
 When credentials are provided, all DBViewer routes will be protected by HTTP Basic Authentication.
 Without valid credentials, users will be prompted for a username and password before they can access any DBViewer page.
-
-## 🌱 Production Access
-
-With the addition of Basic Authentication, DBViewer can now be used in any environment including production. We recommend the following for production deployments:
-
-1. **Always** enable HTTP Basic Authentication with strong credentials:
-
-   ```ruby
-   Dbviewer.configure do |config|
-     config.admin_credentials = {
-       username: "unique_username",
-       password: SecureRandom.hex(16)  # Generate a strong random password
-     }
-   end
-   ```
-
-2. Mount the engine in your routes file:
-
-   ```ruby
-   # In any environment, with Basic Auth protection
-   mount Dbviewer::Engine, at: "/dbviewer"
-   ```
-
-3. Access the tool through your regular application URL:
-
-   ```
-   https://yourdomain.com/dbviewer
-   ```
 
 ## 📝 Security Note
 
