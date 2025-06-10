@@ -37,7 +37,7 @@ You can explore a live demo of DBViewer at [https://dbviewer-demo.wailantirajoh.
 Add this line to your application's Gemfile:
 
 ```ruby
-gem "dbviewer", group: :development
+gem "dbviewer"
 ```
 
 And then execute:
@@ -260,10 +260,10 @@ The simplest way to update is using Bundler:
 
   ```ruby
   # For the latest version
-  gem "dbviewer", group: :development
+  gem "dbviewer"
 
   # Or specify a version
-  gem "dbviewer", "~> 0.3.2", group: :development
+  gem "dbviewer", "~> 0.7.2"
   ```
 
 - Run bundle update:
