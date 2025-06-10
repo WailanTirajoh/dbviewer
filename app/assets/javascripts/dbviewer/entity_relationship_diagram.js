@@ -100,37 +100,35 @@ document.addEventListener("DOMContentLoaded", function () {
   let relationshipsLoaded = false;
 
   // Function to fetch relationships asynchronously
-  function fetchRelationships() {
+  async function fetchRelationships() {
     const apiPath = document.getElementById("relationships_api_path").value;
-    return fetch(apiPath, {
-      headers: {
-        Accept: "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        relationships = data.relationships || [];
-        relationshipsLoaded = true;
-        updateRelationshipsStatus(true);
-        return relationships;
-      })
-      .catch((error) => {
-        console.error("Error fetching relationships:", error);
-        relationshipsLoaded = true; // Mark as loaded even on error to prevent infinite loading
-        updateRelationshipsStatus(true);
-        return [];
+    try {
+      const response = await fetch(apiPath, {
+        headers: {
+          Accept: "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      relationships = data.relationships || [];
+      relationshipsLoaded = true;
+      updateRelationshipsStatus(true);
+      return relationships;
+    } catch (error) {
+      console.error("Error fetching relationships:", error);
+      relationshipsLoaded = true; // Mark as loaded even on error to prevent infinite loading
+      updateRelationshipsStatus(true);
+      return [];
+    }
   }
 
   // Function to update loading status
   function updateLoadingStatus(message) {
-    const loadingElement = document.getElementById("erd-loading");
     const loadingPhase = document.getElementById("loading-phase");
     if (loadingPhase) {
       loadingPhase.textContent = message;
@@ -196,6 +194,35 @@ document.addEventListener("DOMContentLoaded", function () {
   const tablePath = document.getElementById("tables_path").value;
 
   // First pass: add all tables with minimal info and start loading columns
+  // Function to fetch column data for a table
+  async function fetchTableColumns(tableName) {
+    try {
+      const response = await fetch(`${tablePath}/${tableName}?format=json`, {
+        headers: {
+          Accept: "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      });
+
+      const data = await response.json();
+
+      if (data && data.columns) {
+        tableColumns[tableName] = data.columns;
+        columnsLoadedCount++;
+
+        // Update progress bar
+        updateTableProgress(columnsLoadedCount, totalTables);
+
+        checkIfReadyToUpdate();
+      }
+    } catch (error) {
+      console.error(`Error fetching columns for table ${tableName}:`, error);
+      columnsLoadedCount++;
+      updateTableProgress(columnsLoadedCount, totalTables);
+      checkIfReadyToUpdate();
+    }
+  }
+
   tables.forEach(function (table) {
     const tableName = table.name;
     mermaidDefinition += `  ${tableName} {\n`;
@@ -203,30 +230,7 @@ document.addEventListener("DOMContentLoaded", function () {
     mermaidDefinition += "  }\n";
 
     // Start loading column data asynchronously
-    fetch(`${tablePath}/${tableName}?format=json`, {
-      headers: {
-        Accept: "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data && data.columns) {
-          tableColumns[tableName] = data.columns;
-          columnsLoadedCount++;
-
-          // Update progress bar
-          updateTableProgress(columnsLoadedCount, totalTables);
-
-          checkIfReadyToUpdate();
-        }
-      })
-      .catch((error) => {
-        console.error(`Error fetching columns for table ${tableName}:`, error);
-        columnsLoadedCount++;
-        updateTableProgress(columnsLoadedCount, totalTables);
-        checkIfReadyToUpdate();
-      });
+    fetchTableColumns(tableName);
   });
 
   // Function to check if we're ready to update the diagram with full data
