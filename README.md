@@ -153,9 +153,7 @@ Each connection needs to reference an ActiveRecord class that establishes a data
 
 ## 🪵 Query Logging (Development Only)
 
-DBViewer includes a powerful SQL query logging system that captures and analyzes database queries. You can access this log through the `/dbviewer/logs` endpoint. 
-
-For performance reason, active record query logging are **disabled** on non development environtment
+DBViewer includes a powerful SQL query logging system that captures and analyzes database queries. You can access this log through the `/dbviewer/logs` endpoint.
 
 The logging system offers two storage backends:
 
