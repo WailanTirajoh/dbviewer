@@ -7,11 +7,5 @@ module Dbviewer
         key: current_connection_key
       }
     end
-
-    private
-
-    def set_tables
-      @tables = fetch_tables(include_record_counts: true)
-    end
   end
 end
