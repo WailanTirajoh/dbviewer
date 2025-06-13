@@ -1,204 +1,224 @@
 # frozen_string_literal: true
 
+require_relative "sql/validation_result"
+require_relative "sql/validation_config"
+require_relative "sql/query_normalizer"
+require_relative "sql/threat_detector"
+
 module Dbviewer
   module Validator
     # Sql class handles SQL query validation and normalization
     # to ensure queries are safe (read-only) and properly formatted.
     # This helps prevent potentially destructive SQL operations.
     class Sql
-      # List of SQL keywords that could modify data or schema
-      FORBIDDEN_KEYWORDS = %w[
-        UPDATE INSERT DELETE DROP ALTER CREATE TRUNCATE REPLACE
-        RENAME GRANT REVOKE LOCK UNLOCK COMMIT ROLLBACK
-        SAVEPOINT INTO CALL EXECUTE EXEC
-      ]
-
-      # List of SQL keywords that should only be allowed in specific contexts
-      CONDITIONAL_KEYWORDS = {
-        # JOIN is allowed, but we should check for suspicious patterns
-        "JOIN" => /\bJOIN\b/i,
-        # UNION is allowed, but potential for injection
-        "UNION" => /\bUNION\b/i,
-        # WITH is allowed for CTEs, but need to ensure it's not a data modification
-        "WITH" => /\bWITH\b/i
-      }
-
-      # Maximum allowed query length
-      MAX_QUERY_LENGTH = 10000
-
-      # Determines if a query is safe (read-only)
-      # @param sql [String] The SQL query to validate
-      # @return [Boolean] true if the query is safe, false otherwise
-      def self.safe_query?(sql)
-        return false if sql.blank?
-
-        # Get max query length from configuration
-        max_length = Dbviewer.configuration.max_query_length || MAX_QUERY_LENGTH
-        return false if sql.length > max_length
-
-        # Check for suspicious patterns BEFORE normalization (so we can catch comments)
-        return false if has_suspicious_patterns?(sql)
-
-        # Additional specific checks for common SQL injection patterns BEFORE normalization
-        return false if has_injection_patterns?(sql)
-
-        normalized_sql = normalize(sql)
-
-        # Case-insensitive check for SELECT or WITH (for CTEs) at the beginning
-        return false unless normalized_sql =~ /\A\s*(SELECT|WITH)\s+/i
-
-        # Check for forbidden keywords that might be used in subqueries or other SQL constructs
-        FORBIDDEN_KEYWORDS.each do |keyword|
-          # Look for the keyword with word boundaries to avoid false positives
-          return false if normalized_sql =~ /\b#{keyword}\b/i
+      # Core validation methods
+      class << self
+        # Determines if a query is safe (read-only)
+        # @param sql [String] The SQL query to validate
+        # @return [Boolean] true if the query is safe, false otherwise
+        def safe_query?(sql)
+          result = validate_query(sql, allow_pragma: false)
+          result.success?
         end
 
-        # Check for multiple statements (;) which could allow executing multiple commands
-        statements = normalized_sql.split(";").reject(&:blank?)
-        return false if statements.size > 1
+        # Validates a query and raises an exception if it's unsafe
+        # @param sql [String] The SQL query to validate
+        # @raise [SecurityError] if the query is unsafe
+        # @return [String] The normalized SQL query if it's safe
+        def validate!(sql)
+          result = validate_query(sql, allow_pragma: true)
 
-        true
-      end
+          if result.failure?
+            raise SecurityError, result.error_message
+          end
 
-      # Check for suspicious patterns in SQL that might indicate an attack
-      # @param sql [String] Normalized SQL query
-      # @return [Boolean] true if suspicious patterns found, false otherwise
-      def self.has_suspicious_patterns?(sql)
-        # Check for SQL comment sequences that might be used to hide malicious code
-        return true if sql =~ /\s+--/ || sql =~ /\/\*/
-
-        # Check for string concatenation which might be used for injection
-        return true if sql =~ /\|\|/ || sql =~ /CONCAT\s*\(/i
-
-        # Check for excessive number of quotes which might indicate injection
-        single_quotes = sql.count("'")
-        double_quotes = sql.count('"')
-        return true if single_quotes > 20 || double_quotes > 20
-
-        # Check for hex/binary data which might hide malicious code
-        return true if sql =~ /0x[0-9a-f]{16,}/i
-
-        false
-      end
-
-      # Check for specific SQL injection patterns
-      # @param sql [String] Normalized SQL query
-      # @return [Boolean] true if injection patterns found, false otherwise
-      def self.has_injection_patterns?(sql)
-        # Check for typical SQL injection test patterns
-        return true if sql =~ /'\s*OR\s*'.*'\s*=\s*'/i
-        return true if sql =~ /'\s*OR\s*1\s*=\s*1/i
-        return true if sql =~ /\s+OR\s+1\s*=\s*1/i  # Without quotes
-        return true if sql =~ /'\s*;\s*--/i
-
-        # Check for attempts to determine database type
-        return true if sql =~ /@@version/i
-        return true if sql =~ /version\(\)/i
-
-        # Check for dangerous functions that could access files or system
-        return true if sql =~ /\bLOAD_FILE\s*\(/i
-        return true if sql =~ /\bINTO\s+OUTFILE\b/i
-        return true if sql =~ /\bINTO\s+DUMPFILE\b/i
-
-        false
-      end
-
-      # Normalize SQL by removing comments and extra whitespace
-      # @param sql [String] The SQL query to normalize
-      # @return [String] The normalized SQL query
-      def self.normalize(sql)
-        return "" if sql.nil?
-
-        begin
-          # Remove SQL comments (both -- and /* */ styles)
-          normalized = sql.gsub(/--.*$/, "")             # Remove -- style comments
-                  .gsub(/\/\*.*?\*\//m, "")       # Remove /* */ style comments
-                  .gsub(/\s+/, " ")               # Normalize whitespace
-                  .strip                          # Remove leading/trailing whitespace
-
-          # Replace multiple spaces with a single space
-          normalized.gsub(/\s{2,}/, " ")
-        rescue => e
-          Rails.logger.error("[DBViewer] SQL normalization error: #{e.message}")
-          ""
-        end
-      end
-
-      # Validates a query and raises an exception if it's unsafe
-      # @param sql [String] The SQL query to validate
-      # @raise [SecurityError] if the query is unsafe
-      # @return [String] The normalized SQL query if it's safe
-      def self.validate!(sql)
-        if sql.blank?
-          raise SecurityError, "Empty query is not allowed"
+          result.normalized_sql
         end
 
-        # Get max query length from configuration
-        max_length = Dbviewer.configuration.max_query_length || MAX_QUERY_LENGTH
-        if sql.length > max_length
-          raise SecurityError, "Query exceeds maximum allowed length (#{max_length} chars)"
-        end
+        # Check if a query is using a specific database feature
+        # @param sql [String] The SQL query
+        # @param feature [Symbol] The feature to check for (:join, :subquery, :order_by, etc.)
+        # @return [Boolean] true if the feature is used in the query
+        def uses_feature?(sql, feature)
+          normalized = QueryNormalizer.normalize(sql)
 
-        # Check for suspicious patterns BEFORE normalization (so we can catch comments)
-        if has_suspicious_patterns?(sql)
-          raise SecurityError, "Query contains suspicious patterns that may indicate SQL injection"
-        end
-
-        # Additional specific checks for common SQL injection patterns BEFORE normalization
-        if has_injection_patterns?(sql)
-          raise SecurityError, "Query contains patterns commonly associated with SQL injection attempts"
-        end
-
-        normalized_sql = normalize(sql)
-
-        # Special case for SQLite PRAGMA statements which are safe read-only commands
-        if normalized_sql =~ /\A\s*PRAGMA\s+[a-z0-9_]+(\([^)]*\))?\s*\z/i
-          return normalized_sql
-        end
-
-        unless normalized_sql =~ /\A\s*(SELECT|WITH)\s+/i
-          raise SecurityError, "Query must begin with SELECT or WITH for security reasons"
-        end
-
-        FORBIDDEN_KEYWORDS.each do |keyword|
-          if normalized_sql =~ /\b#{keyword}\b/i
-            raise SecurityError, "Forbidden keyword '#{keyword}' detected in query"
+          case feature
+          when :subquery
+            detect_subqueries(normalized)
+          else
+            pattern = ValidationConfig::FEATURE_PATTERNS[feature]
+            pattern ? !!(normalized =~ pattern) : false
           end
         end
 
-        # Check for multiple statements
-        statements = normalized_sql.split(";").reject(&:blank?)
-        if statements.size > 1
-          raise SecurityError, "Multiple SQL statements are not allowed"
+        private
+
+        # Main validation logic that returns a structured result
+        # @param sql [String] The SQL query to validate
+        # @param allow_pragma [Boolean] Whether to allow PRAGMA statements
+        # @return [ValidationResult] Validation result with status and details
+        def validate_query(sql, allow_pragma: true)
+          # Step 1: Basic input validation
+          basic_validation_result = perform_basic_validation(sql)
+          return basic_validation_result if basic_validation_result
+
+          # Step 2: Security threat detection (before normalization)
+          threat_validation_result = perform_threat_validation(sql)
+          return threat_validation_result if threat_validation_result
+
+          # Step 3: Normalize the query
+          normalized_sql = QueryNormalizer.normalize(sql)
+
+          # Step 4: Handle special cases (PRAGMA) - only if allowed
+          if allow_pragma
+            pragma_result = handle_pragma_statements(normalized_sql)
+            return pragma_result if pragma_result
+          end
+
+          # Step 5: Validate query structure and keywords
+          structure_validation_result = perform_structure_validation(normalized_sql)
+          return structure_validation_result if structure_validation_result
+
+          # Step 6: Check for multiple statements
+          multiple_statements_result = validate_single_statement(normalized_sql)
+          return multiple_statements_result if multiple_statements_result
+
+          # Success case
+          ValidationResult.new(
+            valid?: true,
+            normalized_sql: normalized_sql
+          )
         end
 
-        normalized_sql
-      end
+        # Perform basic input validation (null, empty, length)
+        def perform_basic_validation(sql)
+          if sql.nil? || sql.strip.empty?
+            return ValidationResult.new(
+              valid?: false,
+              error_message: "Empty query is not allowed"
+            )
+          end
 
-      # Check if a query is using a specific database feature that might need special handling
-      # @param sql [String] The SQL query
-      # @param feature [Symbol] The feature to check for (:join, :subquery, :order_by, etc.)
-      # @return [Boolean] true if the feature is used in the query
-      def self.uses_feature?(sql, feature)
-        normalized = normalize(sql)
-        case feature
-        when :join
-          !!(normalized =~ /\b(INNER|LEFT|RIGHT|FULL|CROSS)?\s*JOIN\b/i)
-        when :subquery
-          # Check if there are parentheses that likely contain a subquery
-          normalized.count("(") > normalized.count(")")
-        when :order_by
-          !!(normalized =~ /\bORDER\s+BY\b/i)
-        when :group_by
-          !!(normalized =~ /\bGROUP\s+BY\b/i)
-        when :having
-          !!(normalized =~ /\bHAVING\b/i)
-        when :union
-          !!(normalized =~ /\bUNION\b/i)
-        when :window_function
-          !!(normalized =~ /\bOVER\s*\(/i)
-        else
-          false
+          max_length = get_max_query_length
+          if sql.length > max_length
+            return ValidationResult.new(
+              valid?: false,
+              error_message: "Query exceeds maximum allowed length (#{max_length} chars)"
+            )
+          end
+
+          nil # No validation errors
+        end
+
+        # Perform security threat detection
+        def perform_threat_validation(sql)
+          if ThreatDetector.has_suspicious_patterns?(sql)
+            return ValidationResult.new(
+              valid?: false,
+              error_message: "Query contains suspicious patterns that may indicate SQL injection"
+            )
+          end
+
+          if ThreatDetector.has_injection_patterns?(sql)
+            return ValidationResult.new(
+              valid?: false,
+              error_message: "Query contains patterns commonly associated with SQL injection attempts"
+            )
+          end
+
+          nil # No security threats detected
+        end
+
+        # Handle special PRAGMA statements for SQLite
+        def handle_pragma_statements(normalized_sql)
+          if pragma_statement?(normalized_sql)
+            return ValidationResult.new(
+              valid?: true,
+              normalized_sql: normalized_sql
+            )
+          end
+
+          nil # Not a PRAGMA statement
+        end
+
+        # Validate query structure and forbidden keywords
+        def perform_structure_validation(normalized_sql)
+          unless valid_query_start?(normalized_sql)
+            return ValidationResult.new(
+              valid?: false,
+              error_message: "Query must begin with SELECT or WITH for security reasons"
+            )
+          end
+
+          forbidden_keyword = detect_forbidden_keywords(normalized_sql)
+          if forbidden_keyword
+            return ValidationResult.new(
+              valid?: false,
+              error_message: "Forbidden keyword '#{forbidden_keyword}' detected in query"
+            )
+          end
+
+          nil # Structure validation passed
+        end
+
+        # Validate that query contains only a single statement
+        def validate_single_statement(normalized_sql)
+          statements = normalized_sql.split(";").reject { |s| s.nil? || s.strip.empty? }
+          if statements.size > 1
+            return ValidationResult.new(
+              valid?: false,
+              error_message: "Multiple SQL statements are not allowed"
+            )
+          end
+
+          nil # Single statement validation passed
+        end
+
+        # Helper methods
+        def get_max_query_length
+          # Try to get from configuration if available, otherwise use default
+          if defined?(Dbviewer) && Dbviewer.respond_to?(:configuration) && Dbviewer.configuration.respond_to?(:max_query_length)
+            Dbviewer.configuration.max_query_length || ValidationConfig::DEFAULT_MAX_QUERY_LENGTH
+          else
+            ValidationConfig::DEFAULT_MAX_QUERY_LENGTH
+          end
+        end
+
+        def pragma_statement?(normalized_sql)
+          normalized_sql =~ /\A\s*PRAGMA\s+[a-z0-9_]+(\([^)]*\))?\s*\z/i
+        end
+
+        def valid_query_start?(normalized_sql)
+          normalized_sql =~ /\A\s*(SELECT|WITH)\s+/i
+        end
+
+        def detect_forbidden_keywords(normalized_sql)
+          ValidationConfig::FORBIDDEN_KEYWORDS.find do |keyword|
+            normalized_sql =~ /\b#{keyword}\b/i
+          end
+        end
+
+        def detect_subqueries(normalized_sql)
+          # Check if there are unbalanced parentheses that likely contain subqueries
+          normalized_sql.count("(") > normalized_sql.count(")")
+        end
+
+        # Method missing handler for backward compatibility with legacy method calls
+        def method_missing(method_name, *args, **kwargs, &block)
+          case method_name
+          when :has_suspicious_patterns?
+            ThreatDetector.has_suspicious_patterns?(*args)
+          when :has_injection_patterns?
+            ThreatDetector.has_injection_patterns?(*args)
+          when :normalize
+            QueryNormalizer.normalize(*args)
+          else
+            super
+          end
+        end
+
+        def respond_to_missing?(method_name, include_private = false)
+          [ :has_suspicious_patterns?, :has_injection_patterns?, :normalize ].include?(method_name) || super
         end
       end
     end
