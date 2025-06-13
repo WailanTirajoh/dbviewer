@@ -7,13 +7,15 @@ require "dbviewer/storage/base"
 require "dbviewer/storage/in_memory_storage"
 require "dbviewer/storage/file_storage"
 
+require "dbviewer/cache/base"
+require "dbviewer/cache/in_memory"
+
 require "dbviewer/query/executor"
 require "dbviewer/query/analyzer"
 require "dbviewer/query/logger"
 require "dbviewer/query/notification_subscriber"
 require "dbviewer/query/parser"
 
-require "dbviewer/database/cache_manager"
 require "dbviewer/database/dynamic_model_factory"
 require "dbviewer/database/manager"
 require "dbviewer/database/metadata_manager"

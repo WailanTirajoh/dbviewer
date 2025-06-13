@@ -10,7 +10,7 @@ module Dbviewer
       def initialize(connection_key = nil)
         @connection_key = connection_key || Dbviewer.configuration.current_connection
         ensure_connection
-        @cache_manager = ::Dbviewer::Database::CacheManager.new(configuration.cache_expiry)
+        @cache_manager = ::Dbviewer::Cache::InMemory.new(configuration.cache_expiry)
         @table_metadata_manager = ::Dbviewer::Database::MetadataManager.new(@connection, @cache_manager)
         @dynamic_model_factory = ::Dbviewer::Database::DynamicModelFactory.new(@connection, @cache_manager)
         @query_executor = ::Dbviewer::Query::Executor.new(@connection, configuration)

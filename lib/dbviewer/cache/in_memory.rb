@@ -1,16 +1,8 @@
 module Dbviewer
-  module Database
-    # CacheManager handles caching concerns for the DatabaseManager
+  module Cache
+    # InMemory cache storage for Dbviewer
     # It provides an abstraction layer for managing caches efficiently
-    class CacheManager
-      # Initialize the cache manager
-      # @param cache_expiry [Integer] Cache expiration time in seconds (default: 300)
-      def initialize(cache_expiry = 300)
-        @cache_expiry = cache_expiry
-        @unified_cache = {}
-        @cache_last_reset = Time.now
-      end
-
+    class InMemory < Dbviewer::Cache::Base
       # Fetch data from cache or execute block if not found/expired
       # @param key [String] Cache key
       # @param options [Hash] Options for the cache entry
