@@ -340,9 +340,13 @@ graph TB
 
     subgraph "Database Namespace"
         Manager[Manager<br/>Database Operations]
-        CacheManager[CacheManager<br/>Caching Layer]
         MetadataManager[MetadataManager<br/>Schema Information]
         DynamicModelFactory[DynamicModelFactory<br/>ActiveRecord Models]
+    end
+
+    subgraph "Cache Namespace"
+        CacheBase[Base<br/>Cache Interface]
+        InMemoryCache[InMemory<br/>In-Memory Cache Storage]
     end
 
     subgraph "Query Namespace"
@@ -371,7 +375,7 @@ graph TB
 
     %% Configuration Dependencies (Decoupled)
     Config -.->|"Dependency Injection"| Manager
-    Manager -->|"cache_expiry"| CacheManager
+    Manager -->|"cache_expiry"| InMemoryCache
     Manager -->|"config object"| QueryExecutor
 
     %% Engine Initialization
@@ -394,14 +398,14 @@ graph TB
     DatabaseOperations --> QueryOperations
 
     %% Manager Dependencies
-    Manager --> CacheManager
+    Manager --> InMemoryCache
     Manager --> MetadataManager
     Manager --> DynamicModelFactory
     Manager --> QueryOperations
 
     %% Cache Dependencies
-    CacheManager --> DynamicModelFactory
-    CacheManager --> MetadataManager
+    InMemoryCache --> DynamicModelFactory
+    InMemoryCache --> MetadataManager
 
     %% QueryOperations Dependencies (Refactored)
     QueryOperations --> DynamicModelFactory
@@ -422,10 +426,11 @@ graph TB
     ValidatorSql --> QueryExecutor
 
     %% Styling
-    class CacheManager,QueryLogger decoupled
+    class InMemoryCache,QueryLogger decoupled
     class HomeController,TablesController,LogsController,ERDController,APIController,ConnectionsController controller
     class DatabaseOperations concern
     class Manager,MetadataManager,DynamicModelFactory database
+    class CacheBase,InMemoryCache cache
     class QueryExecutor,QueryAnalyzer,QueryParser,NotificationSubscriber query
     class StorageBase,InMemoryStorage,FileStorage storage
     class ColumnFiltering filtering
