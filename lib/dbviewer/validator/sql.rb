@@ -35,22 +35,6 @@ module Dbviewer
           result.normalized_sql
         end
 
-        # Check if a query is using a specific database feature
-        # @param sql [String] The SQL query
-        # @param feature [Symbol] The feature to check for (:join, :subquery, :order_by, etc.)
-        # @return [Boolean] true if the feature is used in the query
-        def uses_feature?(sql, feature)
-          normalized = QueryNormalizer.normalize(sql)
-
-          case feature
-          when :subquery
-            detect_subqueries(normalized)
-          else
-            pattern = ValidationConfig::FEATURE_PATTERNS[feature]
-            pattern ? !!(normalized =~ pattern) : false
-          end
-        end
-
         private
 
         # Main validation logic that returns a structured result

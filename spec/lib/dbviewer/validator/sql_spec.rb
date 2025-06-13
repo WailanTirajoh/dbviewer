@@ -397,43 +397,6 @@ RSpec.describe Dbviewer::Validator::Sql do
     end
   end
 
-  describe '.uses_feature?' do
-    it 'detects JOIN usage' do
-      expect(described_class.uses_feature?('SELECT * FROM users JOIN posts ON users.id = posts.user_id', :join)).to be true
-      expect(described_class.uses_feature?('SELECT * FROM users LEFT JOIN posts ON users.id = posts.user_id', :join)).to be true
-      expect(described_class.uses_feature?('SELECT * FROM users', :join)).to be false
-    end
-
-    it 'detects ORDER BY usage' do
-      expect(described_class.uses_feature?('SELECT * FROM users ORDER BY name', :order_by)).to be true
-      expect(described_class.uses_feature?('SELECT * FROM users', :order_by)).to be false
-    end
-
-    it 'detects GROUP BY usage' do
-      expect(described_class.uses_feature?('SELECT COUNT(*) FROM users GROUP BY status', :group_by)).to be true
-      expect(described_class.uses_feature?('SELECT * FROM users', :group_by)).to be false
-    end
-
-    it 'detects HAVING usage' do
-      expect(described_class.uses_feature?('SELECT COUNT(*) FROM users GROUP BY status HAVING COUNT(*) > 1', :having)).to be true
-      expect(described_class.uses_feature?('SELECT * FROM users', :having)).to be false
-    end
-
-    it 'detects UNION usage' do
-      expect(described_class.uses_feature?('SELECT name FROM users UNION SELECT name FROM admins', :union)).to be true
-      expect(described_class.uses_feature?('SELECT * FROM users', :union)).to be false
-    end
-
-    it 'detects window functions' do
-      expect(described_class.uses_feature?('SELECT name, ROW_NUMBER() OVER (ORDER BY id) FROM users', :window_function)).to be true
-      expect(described_class.uses_feature?('SELECT * FROM users', :window_function)).to be false
-    end
-
-    it 'returns false for unknown features' do
-      expect(described_class.uses_feature?('SELECT * FROM users', :unknown_feature)).to be false
-    end
-  end
-
   describe 'configuration integration' do
     it 'respects max_query_length from configuration' do
       # Mock the configuration
