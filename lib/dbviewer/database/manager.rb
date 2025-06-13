@@ -19,7 +19,6 @@ module Dbviewer
           @dynamic_model_factory,
           @table_metadata_manager
         )
-        reset_cache_if_needed
       end
 
       # Get configuration from class method or Dbviewer
@@ -132,11 +131,6 @@ module Dbviewer
         @table_metadata_manager.fetch_foreign_keys(table_name)
       end
 
-      # Clear all caches - useful when schema changes are detected
-      def clear_all_caches
-        @cache_manager.clear_all
-      end
-
       # Calculate the total size of the database schema
       # @return [Integer, nil] Database size in bytes or nil if unsupported
       def fetch_schema_size
@@ -201,11 +195,6 @@ module Dbviewer
 
         @adapter_name = @connection.adapter_name.downcase
         @connection
-      end
-
-      # Reset caches if they've been around too long
-      def reset_cache_if_needed
-        @cache_manager.reset_if_needed
       end
     end
   end

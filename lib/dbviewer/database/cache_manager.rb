@@ -7,71 +7,45 @@ module Dbviewer
       # @param cache_expiry [Integer] Cache expiration time in seconds (default: 300)
       def initialize(cache_expiry = 300)
         @cache_expiry = cache_expiry
-        @dynamic_models = {}
-        @table_columns_cache = {}
-        @table_metadata_cache = {}
+        @unified_cache = {}
         @cache_last_reset = Time.now
       end
 
-      # Get a model from cache or return nil
-      # @param table_name [String] Name of the table
-      # @return [Class, nil] The cached model or nil if not found
-      def get_model(table_name)
-        @dynamic_models[table_name]
+      # Fetch data from cache or execute block if not found/expired
+      # @param key [String] Cache key
+      # @param options [Hash] Options for the cache entry
+      # @option options [Integer] :expires_in Custom expiry time in seconds
+      # @yield Block to execute if cache miss or expired
+      # @return [Object] Cached value or result of block execution
+      def fetch(key, options = {}, &block)
+        cache_entry = @unified_cache[key]
+        custom_expiry = options[:expires_in] || @cache_expiry
+        return cache_entry[:value] if cache_entry && !cache_expired?(cache_entry, custom_expiry)
+
+        result = block.call
+        @unified_cache[key] = {
+          value: result,
+          created_at: Time.now
+        }
+        result
       end
 
-      # Store a model in the cache
-      # @param table_name [String] Name of the table
-      # @param model [Class] ActiveRecord model class
-      def store_model(table_name, model)
-        @dynamic_models[table_name] = model
+      # Delete a specific cache entry by key
+      # @param key [String] Cache key to delete
+      # @return [Object, nil] The deleted value or nil if not found
+      def delete(key)
+        deleted_entry = @unified_cache.delete(key)
+        deleted_entry&.fetch(:value)
       end
 
-      # Get column information from cache
-      # @param table_name [String] Name of the table
-      # @return [Array<Hash>, nil] The cached column information or nil if not found
-      def get_columns(table_name)
-        @table_columns_cache[table_name]
-      end
+      private
 
-      # Store column information in cache
-      # @param table_name [String] Name of the table
-      # @param columns [Array<Hash>] Column information
-      def store_columns(table_name, columns)
-        @table_columns_cache[table_name] = columns
-      end
-
-      # Get table metadata from cache
-      # @param table_name [String] Name of the table
-      # @return [Hash, nil] The cached metadata or nil if not found
-      def get_metadata(table_name)
-        @table_metadata_cache[table_name]
-      end
-
-      # Store table metadata in cache
-      # @param table_name [String] Name of the table
-      # @param metadata [Hash] Table metadata
-      def store_metadata(table_name, metadata)
-        @table_metadata_cache[table_name] = metadata
-      end
-
-      # Reset caches if they've been around too long
-      def reset_if_needed
-        if Time.now - @cache_last_reset > @cache_expiry
-          @table_columns_cache = {}
-          @table_metadata_cache = {}
-          @cache_last_reset = Time.now
-          Rails.logger.debug("[DBViewer] Cache reset due to expiry after #{@cache_expiry} seconds")
-        end
-      end
-
-      # Clear all caches - useful when schema changes are detected
-      def clear_all
-        @dynamic_models = {}
-        @table_columns_cache = {}
-        @table_metadata_cache = {}
-        @cache_last_reset = Time.now
-        Rails.logger.debug("[DBViewer] All caches cleared")
+      # Check if a cache entry is expired
+      # @param cache_entry [Hash] Cache entry with :created_at timestamp
+      # @param expiry_time [Integer] Expiry time in seconds
+      # @return [Boolean] True if expired, false otherwise
+      def cache_expired?(cache_entry, expiry_time)
+        Time.now - cache_entry[:created_at] > expiry_time
       end
     end
   end

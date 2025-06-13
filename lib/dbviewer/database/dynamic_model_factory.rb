@@ -14,12 +14,10 @@ module Dbviewer
       # @param table_name [String] Name of the table
       # @return [Class] ActiveRecord model class for the table
       def get_model_for(table_name)
-        cached_model = @cache_manager.get_model(table_name)
-        return cached_model if cached_model
-
-        model = create_model_for(table_name)
-        @cache_manager.store_model(table_name, model)
-        model
+        # Cache models for shorter time since they might need refreshing more frequently
+        @cache_manager.fetch("model-#{table_name}", expires_in: 300) do
+          create_model_for(table_name)
+        end
       end
 
       private

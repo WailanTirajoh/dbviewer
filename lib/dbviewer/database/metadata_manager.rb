@@ -20,40 +20,33 @@ module Dbviewer
       # @param table_name [String] Name of the table
       # @return [Array<Hash>] List of column details
       def table_columns(table_name)
-        cached_columns = @cache_manager.get_columns(table_name)
-        return cached_columns if cached_columns
-
-        columns = @connection.columns(table_name).map do |column|
-          {
-            name: column.name,
-            type: column.type,
-            null: column.null,
-            default: column.default,
-            primary: column.name == primary_key(table_name)
-          }
+        # Cache columns for longer since schema changes are infrequent
+        @cache_manager.fetch("columns-#{table_name}", expires_in: 600) do
+          @connection.columns(table_name).map do |column|
+            {
+              name: column.name,
+              type: column.type,
+              null: column.null,
+              default: column.default,
+              primary: column.name == primary_key(table_name)
+            }
+          end
         end
-
-        # Cache the result
-        @cache_manager.store_columns(table_name, columns)
-        columns
       end
 
       # Get detailed metadata about a table
       # @param table_name [String] Name of the table
       # @return [Hash] Table metadata
       def table_metadata(table_name)
-        cached_metadata = @cache_manager.get_metadata(table_name)
-        return cached_metadata if cached_metadata
-
-        metadata = {
-          primary_key: primary_key(table_name),
-          indexes: fetch_indexes(table_name),
-          foreign_keys: fetch_foreign_keys(table_name),
-          reverse_foreign_keys: fetch_reverse_foreign_keys(table_name)
-        }
-
-        @cache_manager.store_metadata(table_name, metadata)
-        metadata
+        # Cache metadata for longer since schema relationships change infrequently
+        @cache_manager.fetch("metadata-#{table_name}", expires_in: 600) do
+          {
+            primary_key: primary_key(table_name),
+            indexes: fetch_indexes(table_name),
+            foreign_keys: fetch_foreign_keys(table_name),
+            reverse_foreign_keys: fetch_reverse_foreign_keys(table_name)
+          }
+        end
       end
 
       # Get the primary key of a table
