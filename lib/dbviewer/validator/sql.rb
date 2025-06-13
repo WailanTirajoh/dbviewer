@@ -36,10 +36,16 @@ module Dbviewer
         max_length = Dbviewer.configuration.max_query_length || MAX_QUERY_LENGTH
         return false if sql.length > max_length
 
+        # Check for suspicious patterns BEFORE normalization (so we can catch comments)
+        return false if has_suspicious_patterns?(sql)
+
+        # Additional specific checks for common SQL injection patterns BEFORE normalization
+        return false if has_injection_patterns?(sql)
+
         normalized_sql = normalize(sql)
 
-        # Case-insensitive check for SELECT at the beginning
-        return false unless normalized_sql =~ /\A\s*SELECT\s+/i
+        # Case-insensitive check for SELECT or WITH (for CTEs) at the beginning
+        return false unless normalized_sql =~ /\A\s*(SELECT|WITH)\s+/i
 
         # Check for forbidden keywords that might be used in subqueries or other SQL constructs
         FORBIDDEN_KEYWORDS.each do |keyword|
@@ -47,15 +53,9 @@ module Dbviewer
           return false if normalized_sql =~ /\b#{keyword}\b/i
         end
 
-        # Check for suspicious patterns that might indicate SQL injection attempts
-        return false if has_suspicious_patterns?(normalized_sql)
-
         # Check for multiple statements (;) which could allow executing multiple commands
         statements = normalized_sql.split(";").reject(&:blank?)
         return false if statements.size > 1
-
-        # Additional specific checks for common SQL injection patterns
-        return false if has_injection_patterns?(normalized_sql)
 
         true
       end
@@ -88,11 +88,17 @@ module Dbviewer
         # Check for typical SQL injection test patterns
         return true if sql =~ /'\s*OR\s*'.*'\s*=\s*'/i
         return true if sql =~ /'\s*OR\s*1\s*=\s*1/i
+        return true if sql =~ /\s+OR\s+1\s*=\s*1/i  # Without quotes
         return true if sql =~ /'\s*;\s*--/i
 
         # Check for attempts to determine database type
         return true if sql =~ /@@version/i
         return true if sql =~ /version\(\)/i
+
+        # Check for dangerous functions that could access files or system
+        return true if sql =~ /\bLOAD_FILE\s*\(/i
+        return true if sql =~ /\bINTO\s+OUTFILE\b/i
+        return true if sql =~ /\bINTO\s+DUMPFILE\b/i
 
         false
       end
@@ -133,15 +139,25 @@ module Dbviewer
           raise SecurityError, "Query exceeds maximum allowed length (#{max_length} chars)"
         end
 
+        # Check for suspicious patterns BEFORE normalization (so we can catch comments)
+        if has_suspicious_patterns?(sql)
+          raise SecurityError, "Query contains suspicious patterns that may indicate SQL injection"
+        end
+
+        # Additional specific checks for common SQL injection patterns BEFORE normalization
+        if has_injection_patterns?(sql)
+          raise SecurityError, "Query contains patterns commonly associated with SQL injection attempts"
+        end
+
         normalized_sql = normalize(sql)
 
         # Special case for SQLite PRAGMA statements which are safe read-only commands
-        if normalized_sql =~ /\A\s*PRAGMA\s+[a-z0-9_]+\s*\z/i
+        if normalized_sql =~ /\A\s*PRAGMA\s+[a-z0-9_]+(\([^)]*\))?\s*\z/i
           return normalized_sql
         end
 
-        unless normalized_sql =~ /\A\s*SELECT\s+/i
-          raise SecurityError, "Query must begin with SELECT for security reasons"
+        unless normalized_sql =~ /\A\s*(SELECT|WITH)\s+/i
+          raise SecurityError, "Query must begin with SELECT or WITH for security reasons"
         end
 
         FORBIDDEN_KEYWORDS.each do |keyword|
@@ -150,18 +166,10 @@ module Dbviewer
           end
         end
 
-        if has_suspicious_patterns?(normalized_sql)
-          raise SecurityError, "Query contains suspicious patterns that may indicate SQL injection"
-        end
-
         # Check for multiple statements
         statements = normalized_sql.split(";").reject(&:blank?)
         if statements.size > 1
           raise SecurityError, "Multiple SQL statements are not allowed"
-        end
-
-        if has_injection_patterns?(normalized_sql)
-          raise SecurityError, "Query contains patterns commonly associated with SQL injection attempts"
         end
 
         normalized_sql
@@ -175,20 +183,20 @@ module Dbviewer
         normalized = normalize(sql)
         case feature
         when :join
-          normalized =~ /\b(INNER|LEFT|RIGHT|FULL|CROSS)?\s*JOIN\b/i
+          !!(normalized =~ /\b(INNER|LEFT|RIGHT|FULL|CROSS)?\s*JOIN\b/i)
         when :subquery
           # Check if there are parentheses that likely contain a subquery
           normalized.count("(") > normalized.count(")")
         when :order_by
-          normalized =~ /\bORDER\s+BY\b/i
+          !!(normalized =~ /\bORDER\s+BY\b/i)
         when :group_by
-          normalized =~ /\bGROUP\s+BY\b/i
+          !!(normalized =~ /\bGROUP\s+BY\b/i)
         when :having
-          normalized =~ /\bHAVING\b/i
+          !!(normalized =~ /\bHAVING\b/i)
         when :union
-          normalized =~ /\bUNION\b/i
+          !!(normalized =~ /\bUNION\b/i)
         when :window_function
-          normalized =~ /\bOVER\s*\(/i
+          !!(normalized =~ /\bOVER\s*\(/i)
         else
           false
         end
