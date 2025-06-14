@@ -1,5 +1,5 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
-require File.expand_path("../../test/dummy/config/environment.rb", __FILE__)
+require File.expand_path("../../sample/app/config/environment.rb", __FILE__)
 require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
 # require_relative '../config/environment'

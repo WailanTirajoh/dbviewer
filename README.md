@@ -326,21 +326,21 @@ If you prefer to set up manually:
 bundle install
 
 # Set up the dummy app database
-cd test/dummy
+cd sample/app
 bin/rails db:prepare
 bin/rails db:migrate
 bin/rails db:seed
 cd ../..
 
 # Prepare test environment
-cd test/dummy && bin/rails db:test:prepare && cd ../..
+cd sample/app && bin/rails db:test:prepare && cd ../..
 ```
 
 ### Development Commands
 
 ```bash
 # Start the development server
-cd test/dummy && bin/rails server
+cd sample/app && bin/rails server
 
 # Run tests
 bundle exec rspec
@@ -357,7 +357,7 @@ gem build dbviewer.gemspec
 
 ### Testing Your Changes
 
-1. Start the dummy Rails application: `cd test/dummy && bin/rails server`
+1. Start the dummy Rails application: `cd sample/app && bin/rails server`
 2. Visit `http://localhost:3000/dbviewer` to test your changes
 3. The dummy app includes sample data across multiple tables to test various DBViewer features
 
