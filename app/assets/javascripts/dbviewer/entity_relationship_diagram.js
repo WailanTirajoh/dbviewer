@@ -9,6 +9,15 @@ document.addEventListener("DOMContentLoaded", function () {
     return;
   }
 
+  // Helper function to debounce rapid function calls
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+
   // Initialize mermaid with theme detection like mini ERD
   mermaid.initialize({
     startOnLoad: true,
@@ -102,6 +111,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Function to fetch relationships asynchronously
   async function fetchRelationships() {
     const apiPath = document.getElementById("relationships_api_path").value;
+    updateRelationshipsStatus(false, "Requesting relationships data...");
     try {
       const response = await fetch(apiPath, {
         headers: {
@@ -114,15 +124,19 @@ document.addEventListener("DOMContentLoaded", function () {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      updateRelationshipsStatus(false, "Processing relationships data...");
       const data = await response.json();
       relationships = data.relationships || [];
       relationshipsLoaded = true;
-      updateRelationshipsStatus(true);
+      updateRelationshipsStatus(
+        true,
+        `Loaded ${relationships.length} relationships`
+      );
       return relationships;
     } catch (error) {
       console.error("Error fetching relationships:", error);
       relationshipsLoaded = true; // Mark as loaded even on error to prevent infinite loading
-      updateRelationshipsStatus(true);
+      updateRelationshipsStatus(true, "Failed to load relationships", true);
       return [];
     }
   }
@@ -155,20 +169,31 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Function to update relationships status
-  function updateRelationshipsStatus(loaded) {
+  function updateRelationshipsStatus(loaded, message, isError = false) {
     const relationshipsStatus = document.getElementById("relationships-status");
     if (relationshipsStatus) {
-      if (loaded) {
+      if (loaded && !isError) {
         relationshipsStatus.innerHTML = `
             <i class="bi bi-check-circle text-success me-2"></i>
-            <small class="text-success">Relationships loaded</small>
+            <small class="text-success">${
+              message || "Relationships loaded"
+            }</small>
+          `;
+      } else if (loaded && isError) {
+        relationshipsStatus.innerHTML = `
+            <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+            <small class="text-warning">${
+              message || "Error loading relationships"
+            }</small>
           `;
       } else {
         relationshipsStatus.innerHTML = `
             <div class="spinner-border spinner-border-sm text-secondary me-2" role="status">
               <span class="visually-hidden">Loading...</span>
             </div>
-            <small class="text-muted">Loading relationships...</small>
+            <small class="text-muted">${
+              message || "Loading relationships..."
+            }</small>
           `;
       }
     }
@@ -189,9 +214,22 @@ document.addEventListener("DOMContentLoaded", function () {
   updateLoadingStatus("Loading table details...");
 
   // Start fetching relationships immediately
-  updateRelationshipsStatus(false);
+  updateRelationshipsStatus(false, "Loading relationships...");
   const relationshipsPromise = fetchRelationships();
   const tablePath = document.getElementById("tables_path").value;
+
+  // Function to fetch tables in batches for better performance
+  async function fetchTablesInBatches(tables, batchSize = 5) {
+    const batches = [];
+    for (let i = 0; i < tables.length; i += batchSize) {
+      batches.push(tables.slice(i, i + batchSize));
+    }
+
+    for (const batch of batches) {
+      await Promise.all(batch.map((table) => fetchTableColumns(table.name)));
+      // This creates a visual effect of tables loading in batches
+    }
+  }
 
   // First pass: add all tables with minimal info and start loading columns
   // Function to fetch column data for a table
@@ -203,6 +241,12 @@ document.addEventListener("DOMContentLoaded", function () {
           "X-Requested-With": "XMLHttpRequest",
         },
       });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch table ${tableName}: ${response.status}`
+        );
+      }
 
       const data = await response.json();
 
@@ -217,21 +261,28 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     } catch (error) {
       console.error(`Error fetching columns for table ${tableName}:`, error);
+      // Add better error handling
+      showError(
+        "Table Loading Error",
+        `Failed to load columns for table ${tableName}`,
+        error.message
+      );
       columnsLoadedCount++;
       updateTableProgress(columnsLoadedCount, totalTables);
       checkIfReadyToUpdate();
     }
   }
 
+  // Generate initial table representation
   tables.forEach(function (table) {
     const tableName = table.name;
     mermaidDefinition += `  ${tableName} {\n`;
     mermaidDefinition += `    string id\n`;
     mermaidDefinition += "  }\n";
-
-    // Start loading column data asynchronously
-    fetchTableColumns(tableName);
   });
+
+  // Start loading column data asynchronously in batches
+  fetchTablesInBatches(tables);
 
   // Function to check if we're ready to update the diagram with full data
   function checkIfReadyToUpdate() {
@@ -381,17 +432,53 @@ document.addEventListener("DOMContentLoaded", function () {
     panZoomInstance.zoom(1);
 
     // Add event listeners for zoom controls
-    document.getElementById("zoomIn").addEventListener("click", function () {
-      panZoomInstance.zoomIn();
+    document.getElementById("zoomIn").addEventListener(
+      "click",
+      debounce(function () {
+        panZoomInstance.zoomIn();
+      }, 100)
+    );
+
+    document.getElementById("zoomOut").addEventListener(
+      "click",
+      debounce(function () {
+        panZoomInstance.zoomOut();
+      }, 100)
+    );
+
+    document.getElementById("resetView").addEventListener(
+      "click",
+      debounce(function () {
+        panZoomInstance.reset();
+      }, 100)
+    );
+
+    // Add keyboard shortcuts for zoom controls
+    document.addEventListener("keydown", (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === "+" || e.key === "=") {
+          e.preventDefault();
+          panZoomInstance.zoomIn();
+        } else if (e.key === "-") {
+          e.preventDefault();
+          panZoomInstance.zoomOut();
+        } else if (e.key === "0") {
+          e.preventDefault();
+          panZoomInstance.reset();
+        }
+      }
     });
 
-    document.getElementById("zoomOut").addEventListener("click", function () {
-      panZoomInstance.zoomOut();
-    });
-
-    document.getElementById("resetView").addEventListener("click", function () {
-      panZoomInstance.reset();
-    });
+    // Improve ARIA attributes
+    document
+      .getElementById("zoomIn")
+      .setAttribute("aria-label", "Zoom in diagram");
+    document
+      .getElementById("zoomOut")
+      .setAttribute("aria-label", "Zoom out diagram");
+    document
+      .getElementById("resetView")
+      .setAttribute("aria-label", "Reset diagram view");
 
     // Update initial percentage display
     const zoomDisplay = document.getElementById("zoomPercentage");
@@ -447,12 +534,18 @@ document.addEventListener("DOMContentLoaded", function () {
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 
       // Create download link and trigger download
+      const objectURL = URL.createObjectURL(blob);
       const downloadLink = document.createElement("a");
-      downloadLink.href = URL.createObjectURL(blob);
+      downloadLink.href = objectURL;
       downloadLink.download = `database_erd_${timestamp}.svg`;
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
+
+      // Clean up object URL
+      setTimeout(() => {
+        URL.revokeObjectURL(objectURL);
+      }, 100);
     } catch (error) {
       console.error("Error downloading SVG:", error);
       alert("Error downloading SVG. Please check console for details.");
@@ -520,12 +613,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Convert canvas to PNG and trigger download
         canvas.toBlob(function (blob) {
+          const objectURL = URL.createObjectURL(blob);
           const downloadLink = document.createElement("a");
-          downloadLink.href = URL.createObjectURL(blob);
+          downloadLink.href = objectURL;
           downloadLink.download = `database_erd_${timestamp}.png`;
           document.body.appendChild(downloadLink);
           downloadLink.click();
           document.body.removeChild(downloadLink);
+
+          // Clean up object URL
+          setTimeout(() => {
+            URL.revokeObjectURL(objectURL);
+          }, 100);
         }, "image/png");
 
         // Clean up
@@ -554,4 +653,38 @@ document.addEventListener("DOMContentLoaded", function () {
       e.preventDefault();
       downloadAsPNG();
     });
+
+  // Add theme observer to update diagram when theme changes
+  function setupThemeObserver() {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === "data-bs-theme") {
+          const newTheme =
+            document.documentElement.getAttribute("data-bs-theme");
+          mermaid.initialize({
+            theme: newTheme === "dark" ? "dark" : "default",
+            // Keep other settings
+            securityLevel: "loose",
+            er: {
+              diagramPadding: 20,
+              layoutDirection: "TB",
+              minEntityWidth: 100,
+              minEntityHeight: 75,
+              entityPadding: 15,
+              stroke: "gray",
+              fill: "honeydew",
+              fontSize: 20,
+            },
+          });
+          // Trigger redraw if diagram is already displayed
+          if (diagramReady) {
+            updateDiagramWithFullData();
+          }
+        }
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+  }
+
+  setupThemeObserver();
 });
