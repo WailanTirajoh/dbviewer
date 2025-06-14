@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   // Helper function to format numbers with commas
   function numberWithDelimiter(number) {
     return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -22,13 +22,6 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("tables-count").classList.remove("d-none");
     document.getElementById("tables-count").textContent =
       data.total_tables || 0;
-  }
-
-  function updateRelationshipsCount(data) {
-    document.getElementById("relationships-loading").classList.add("d-none");
-    document.getElementById("relationships-count").classList.remove("d-none");
-    document.getElementById("relationships-count").textContent =
-      data.total_relationships || 0;
   }
 
   function updateDatabaseSize(data) {
@@ -186,102 +179,113 @@ document.addEventListener("DOMContentLoaded", function () {
     `;
   }
 
-  // Load tables count data
-  fetch(document.getElementById("api_tables_path").value, {
-    headers: {
-      Accept: "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-    },
-  })
-    .then((response) => {
+  async function fetchTableCount() {
+    try {
+      const response = await fetch(
+        document.getElementById("api_tables_path").value,
+        {
+          headers: {
+            Accept: "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      return response.json();
-    })
-    .then((data) => {
+      const data = await response.json();
       updateTablesCount(data);
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error("Error loading tables count:", error);
       const loading = document.getElementById("tables-loading");
       const count = document.getElementById("tables-count");
       loading.classList.add("d-none");
       count.classList.remove("d-none");
       count.innerHTML = '<span class="text-danger">Error</span>';
-    });
+    }
+  }
 
-  // Load database size data
-  fetch(document.getElementById("size_api_database_path").value, {
-    headers: {
-      Accept: "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-    },
-  })
-    .then((response) => {
+  async function fetchDatabaseSize() {
+    try {
+      const response = await fetch(
+        document.getElementById("size_api_database_path").value,
+        {
+          headers: {
+            Accept: "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      return response.json();
-    })
-    .then((data) => {
+      const data = await response.json();
       updateDatabaseSize(data);
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error("Error loading database size:", error);
       const loading = document.getElementById("size-loading");
       const count = document.getElementById("size-count");
       loading.classList.add("d-none");
       count.classList.remove("d-none");
       count.innerHTML = '<span class="text-danger">Error</span>';
-    });
+    }
+  }
 
-  // Load records data separately
-  fetch(document.getElementById("records_api_tables_path").value, {
-    headers: {
-      Accept: "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-    },
-  })
-    .then((response) => {
+  async function fetchRecordsCount() {
+    try {
+      const response = await fetch(
+        document.getElementById("records_api_tables_path").value,
+        {
+          headers: {
+            Accept: "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      return response.json();
-    })
-    .then((recordsData) => {
-      updateRecordsData(recordsData);
-    })
-    .catch((error) => {
-      console.error("Error loading records data:", error);
-      // Update records-related UI with error state
-      const recordsLoading = document.getElementById("records-loading");
-      const recordsCount = document.getElementById("records-count");
-      recordsLoading.classList.add("d-none");
-      recordsCount.classList.remove("d-none");
-      recordsCount.innerHTML = '<span class="text-danger">Error</span>';
+      const data = await response.json();
+      updateRecordsData(data);
+    } catch (error) {
+      console.error("Error loading records count:", error);
+      const loading = document.getElementById("records-loading");
+      const count = document.getElementById("records-count");
+      loading.classList.add("d-none");
+      count.classList.remove("d-none");
+      count.innerHTML = '<span class="text-danger">Error</span>';
+    }
+  }
 
-      showError("largest-tables-container", error.message);
-    });
-
-  // Load recent queries data
-  fetch(document.getElementById("recent_api_queries_path").value, {
-    headers: {
-      Accept: "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-    },
-  })
-    .then((response) => {
+  async function fetchRecentQueries() {
+    try {
+      const response = await fetch(
+        document.getElementById("recent_api_queries_path").value,
+        {
+          headers: {
+            Accept: "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      return response.json();
-    })
-    .then((data) => {
+      const data = await response.json();
       updateRecentQueries(data);
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error("Error loading recent queries:", error);
       showError("recent-queries-container", error.message);
-    });
+    }
+  }
+  // Load database size data (Loading records first to prevent race condition on dbviewer model constant creation)
+  await fetchRecordsCount();
+
+  Promise.all([
+    fetchTableCount(),
+    fetchDatabaseSize(),
+    fetchRecentQueries(),
+  ]).catch((error) => {
+    console.error("Error loading initial data:", error);
+  });
 });

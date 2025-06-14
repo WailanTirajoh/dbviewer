@@ -62,7 +62,12 @@ module Dbviewer
       # @return [Boolean] True if the query should be skipped
       def self.should_skip_internal_query?(event)
         event.payload[:name].include?("Dbviewer::") ||
-        event.payload[:sql].include?("PRAGMA")
+        # SQLite specific check for size queries
+        event.payload[:sql].include?("PRAGMA") ||
+        # PostgreSQL specific check for size queries
+        event.payload[:sql].include?("pg_database_size(current_database())") ||
+        # MySQL specific check for size queries
+        event.payload[:sql].include?("SUM(data_length + index_length) AS size FROM information_schema.TABLES")
       end
     end
   end
