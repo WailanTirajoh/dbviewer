@@ -42,6 +42,8 @@ module Dbviewer
 
       # Determine if a query should be skipped based on content
       # Rails and ActiveRecord often run internal queries that are not useful for logging
+      # @param event [ActiveSupport::Notifications::Event] The notification event
+      # @return [Boolean] True if the query should be skipped
       def self.should_skip_query?(event)
         event.payload[:name] == "SCHEMA" ||
         event.payload[:sql].include?("SHOW TABLES") ||
@@ -50,6 +52,17 @@ module Dbviewer
         event.payload[:sql].include?("schema_migrations") ||
         event.payload[:sql].include?("ar_internal_metadata") ||
         event.payload[:sql].include?("pg_catalog")
+      end
+
+      # Determine if an internal query should be skipped
+      # Internal queries are those that are part of the Dbviewer module itself
+      # and do not represent user-generated SQL queries.
+      # This helps avoid logging internal operations that are not relevant to users.
+      # @param event [ActiveSupport::Notifications::Event] The notification event
+      # @return [Boolean] True if the query should be skipped
+      def self.should_skip_internal_query?(event)
+        event.payload[:name].include?("Dbviewer::") ||
+        event.payload[:sql].include?("PRAGMA")
       end
     end
   end

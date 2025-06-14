@@ -21,9 +21,6 @@ module Dbviewer
         # @param args [Array] Notification arguments from ActiveSupport::Notifications
         def process_notification(*args)
           event = ActiveSupport::Notifications::Event.new(*args)
-
-          return if skip_internal_query?(event)
-
           Dbviewer::Query::Logger.instance.add(event)
         end
 
@@ -35,7 +32,7 @@ module Dbviewer
           return false unless caller_locations
 
           excluded_caller_locations = caller_locations.filter do |caller_location|
-            !caller_location.path.include?("lib/dbviewer/engine.rb")
+            !caller_location.path.include?("lib/dbviewer/query/notification_subscriber.rb")
           end
 
           excluded_caller_locations.any? { |location| location.path.include?("dbviewer") }

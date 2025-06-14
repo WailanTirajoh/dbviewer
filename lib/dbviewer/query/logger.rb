@@ -32,7 +32,7 @@ module Dbviewer
       def add(event)
         # Return early if query logging is disabled
         return unless @enable_query_logging
-        return if ::Dbviewer::Query::Parser.should_skip_query?(event)
+        return if ::Dbviewer::Query::Parser.should_skip_query?(event) || ::Dbviewer::Query::Parser.should_skip_internal_query?(event)
 
         current_time = Time.now
         @storage.add({
