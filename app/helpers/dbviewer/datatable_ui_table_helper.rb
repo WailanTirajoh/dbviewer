@@ -1,5 +1,5 @@
 module Dbviewer
-  module TableRenderingHelper
+  module DatatableUiTableHelper
     # Render a complete table header row with sortable columns
     def render_sortable_header_row(records, order_by, order_direction, table_name, current_page, per_page, column_filters)
       return content_tag(:tr) { content_tag(:th, "No columns available") } unless records&.columns

@@ -1,5 +1,5 @@
 module Dbviewer
-  module FilterHelper
+  module DatatableUiFilterHelper
     # Determine default operator based on column type
     def default_operator_for_column_type(column_type)
       if column_type && column_type =~ /char|text|string|uuid|enum/i

@@ -1,5 +1,5 @@
 module Dbviewer
-  module SortingHelper
+  module DatatableUiSortingHelper
     # Returns a sort icon based on the current sort direction
     def sort_icon(column_name, current_order_by, current_direction)
       if column_name == current_order_by

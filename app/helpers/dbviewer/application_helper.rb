@@ -2,11 +2,13 @@ module Dbviewer
   module ApplicationHelper
     # Include all the helper modules organized by logical concerns
     include DatabaseHelper
-    include FilterHelper
     include FormattingHelper
-    include PaginationHelper
-    include SortingHelper
-    include TableRenderingHelper
+
+    include DatatableUiHelper
+    include DatatableUiFilterHelper
+    include DatatableUiPaginationHelper
+    include DatatableUiSortingHelper
+    include DatatableUiTableHelper
     include NavigationHelper
     include UiHelper
   end

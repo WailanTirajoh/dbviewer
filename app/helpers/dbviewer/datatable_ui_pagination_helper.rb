@@ -1,5 +1,5 @@
 module Dbviewer
-  module PaginationHelper
+  module DatatableUiPaginationHelper
     # Common parameters for pagination and filtering
     def common_params(options = {})
       params = {

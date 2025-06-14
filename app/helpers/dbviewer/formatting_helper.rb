@@ -2,29 +2,56 @@ module Dbviewer
   module FormattingHelper
     def format_cell_value(value)
       return "NULL" if value.nil?
-      return value.to_s.truncate(100) unless value.is_a?(String)
+      return format_default_value(value) unless value.is_a?(String)
 
+      format_string_value(value)
+    end
+
+    private
+
+    def format_string_value(value)
       case value
-      when /\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
-        # ISO 8601 datetime
-        begin
-          Time.parse(value).strftime("%Y-%m-%d %H:%M:%S")
-        rescue
-          value.to_s.truncate(100)
-        end
-      when /\A\d{4}-\d{2}-\d{2}\z/
-        # Date
-        value
-      when /\A{.+}\z/, /\A\[.+\]\z/
-        # JSON
-        begin
-          JSON.pretty_generate(JSON.parse(value)).truncate(100)
-        rescue
-          value.to_s.truncate(100)
-        end
+      when ->(v) { datetime_string?(v) }
+        format_datetime_value(value)
+      when ->(v) { date_string?(v) }
+        format_date_value(value)
+      when ->(v) { json_string?(v) }
+        format_json_value(value)
       else
-        value.to_s.truncate(100)
+        format_default_value(value)
       end
+    end
+
+    def datetime_string?(value)
+      value.match?(/\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
+    end
+
+    def date_string?(value)
+      value.match?(/\A\d{4}-\d{2}-\d{2}\z/)
+    end
+
+    def json_string?(value)
+      value.match?(/\A{.+}\z/) || value.match?(/\A\[.+\]\z/)
+    end
+
+    def format_datetime_value(value)
+      Time.parse(value).strftime("%Y-%m-%d %H:%M:%S")
+    rescue
+      format_default_value(value)
+    end
+
+    def format_date_value(value)
+      value
+    end
+
+    def format_json_value(value)
+      JSON.pretty_generate(JSON.parse(value)).truncate(100)
+    rescue
+      format_default_value(value)
+    end
+
+    def format_default_value(value)
+      value.to_s.truncate(100)
     end
   end
 end
