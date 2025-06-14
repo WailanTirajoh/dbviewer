@@ -26,6 +26,9 @@ Dbviewer.configure do |config|
   }
   config.current_connection = :primary
 
+  # DBViewer disabled state (for testing purposes, normally false)
+  config.disabled = false
+
   # Authentication options (Basic Auth)
   # config.admin_credentials = {
   #   username: "admin",

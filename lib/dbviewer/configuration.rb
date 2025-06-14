@@ -55,6 +55,10 @@ module Dbviewer
     # Set to false in production/CI environments to avoid startup failures
     attr_accessor :validate_connections_on_startup
 
+    # Completely disable DBViewer access when set to true
+    # When enabled, all DBViewer routes will return 404 responses
+    attr_accessor :disabled
+
     def initialize
       @per_page_options = [ 10, 20, 50, 100 ]
       @default_per_page = 20
@@ -70,6 +74,7 @@ module Dbviewer
       @admin_credentials = nil
       @default_order_column = "updated_at"
       @validate_connections_on_startup = false  # Default to false for safer deployments
+      @disabled = false  # Default to false - DBViewer is enabled by default
       @database_connections = {
         default: {
           connection_class: "ActiveRecord::Base",

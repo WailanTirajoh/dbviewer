@@ -1,6 +1,7 @@
 module Dbviewer
   class ApplicationController < ActionController::Base
     include Dbviewer::DatabaseOperations
+    include Dbviewer::DisabledStateValidation
     include Dbviewer::DatabaseConnectionValidation
 
     before_action :authenticate_with_basic_auth

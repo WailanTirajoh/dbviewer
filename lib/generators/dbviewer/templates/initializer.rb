@@ -37,4 +37,9 @@ Dbviewer.configure do |config|
   # Whether to validate database connections during application startup
   # Set to true in development, false in production to avoid deployment issues
   config.validate_connections_on_startup = Rails.env.development?
+
+  # Completely disable DBViewer access when set to true
+  # When enabled, all DBViewer routes will return 404 responses
+  # Useful for production environments where you want to completely disable the tool
+  # config.disabled = Rails.env.production?
 end

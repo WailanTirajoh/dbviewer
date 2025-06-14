@@ -116,12 +116,43 @@ Dbviewer.configure do |config|
 
   # Authentication options
   # config.admin_credentials = { username: "admin", password: "your_secure_password" } # Basic HTTP auth credentials
+
+  # Disable DBViewer completely
+  # config.disabled = Rails.env.production?  # Disable in production
 end
 ```
 
 You can also create this file manually if you prefer.
 
 The configuration is accessed through `Dbviewer.configuration` throughout the codebase. You can also access it via `Dbviewer.config` which is an alias for backward compatibility.
+
+### Disabling DBViewer Completely
+
+You can completely disable DBViewer access by setting the `disabled` configuration option to `true`. When disabled, all DBViewer routes will return 404 (Not Found) responses:
+
+```ruby
+# config/initializers/dbviewer.rb
+Dbviewer.configure do |config|
+  # Completely disable DBViewer in production
+  config.disabled = Rails.env.production?
+
+  # Or disable unconditionally
+  # config.disabled = true
+end
+```
+
+This is useful for:
+
+- **Production environments** where you want to completely disable access to database viewing tools
+- **Security compliance** where database admin tools must be disabled in certain environments
+- **Performance** where you want to eliminate any potential overhead from DBViewer routes
+
+When disabled:
+
+- All DBViewer routes return 404 (Not Found) responses
+- No database connections are validated
+- No DBViewer middleware or concerns are executed
+- The application behaves as if DBViewer was never mounted
 
 ### Multiple Database Connections
 
@@ -195,6 +226,7 @@ DBViewer includes several security features to protect your database:
 - **Pattern Detection**: Detection of SQL injection patterns and suspicious constructs
 - **Error Handling**: Informative error messages without exposing sensitive information
 - **HTTP Basic Authentication**: Protect access with username and password authentication
+- **Complete Disabling**: Completely disable DBViewer in production or sensitive environments
 
 ### Basic Authentication
 
@@ -211,6 +243,19 @@ end
 
 When credentials are provided, all DBViewer routes will be protected by HTTP Basic Authentication.
 Without valid credentials, users will be prompted for a username and password before they can access any DBViewer page.
+
+### Complete Disabling
+
+For maximum security in production environments, you can completely disable DBViewer:
+
+```ruby
+Dbviewer.configure do |config|
+  # Completely disable DBViewer in production
+  config.disabled = Rails.env.production?
+end
+```
+
+When disabled, all DBViewer routes return 404 responses, making it appear as if the tool was never installed. This is the recommended approach for production systems where database admin tools should not be accessible.
 
 ## 📝 Security Note
 
