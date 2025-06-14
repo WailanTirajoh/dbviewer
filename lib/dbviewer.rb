@@ -56,7 +56,21 @@ module Dbviewer
     # This class method will be called by the engine when it's appropriate
     def setup
       configure_query_logger
-      validate_database_connections
+      # Database connections will be validated when first accessed
+      Rails.logger.info "DBViewer: Initialized successfully (database connections will be validated on first access)"
+    end
+
+    # Validate database connections on-demand (called when first accessing DBViewer)
+    def validate_connections!
+      connection_errors = configuration.database_connections.filter_map do |key, config|
+        validate_single_connection(key, config)
+      end
+
+      if connection_errors.length == configuration.database_connections.length
+        raise "DBViewer could not connect to any configured database. Please check your database configuration."
+      end
+
+      connection_errors
     end
 
     private
@@ -67,15 +81,6 @@ module Dbviewer
         enable_query_logging: configuration.enable_query_logging,
         query_logging_mode: configuration.query_logging_mode
       )
-    end
-
-    # Validate all configured database connections
-    def validate_database_connections
-      connection_errors = configuration.database_connections.filter_map do |key, config|
-        validate_single_connection(key, config)
-      end
-
-      raise_if_all_connections_failed(connection_errors)
     end
 
     # Validate a single database connection
@@ -124,14 +129,6 @@ module Dbviewer
     # @param connection_class [Class] The resolved connection class
     def store_resolved_connection(config, connection_class)
       config[:connection] = connection_class
-    end
-
-    # Raise an error if all database connections failed
-    # @param connection_errors [Array] Array of connection error hashes
-    def raise_if_all_connections_failed(connection_errors)
-      if connection_errors.length == configuration.database_connections.length
-        raise "DBViewer could not connect to any configured database"
-      end
     end
   end
 end

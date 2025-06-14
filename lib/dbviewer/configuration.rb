@@ -51,6 +51,10 @@ module Dbviewer
     # The key of the current active connection
     attr_accessor :current_connection
 
+    # Whether to validate database connections during application startup
+    # Set to false in production/CI environments to avoid startup failures
+    attr_accessor :validate_connections_on_startup
+
     def initialize
       @per_page_options = [ 10, 20, 50, 100 ]
       @default_per_page = 20
@@ -65,6 +69,7 @@ module Dbviewer
       @enable_query_logging = true
       @admin_credentials = nil
       @default_order_column = "updated_at"
+      @validate_connections_on_startup = false  # Default to false for safer deployments
       @database_connections = {
         default: {
           connection_class: "ActiveRecord::Base",

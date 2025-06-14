@@ -33,4 +33,8 @@ Dbviewer.configure do |config|
 
   # Set the default active connection
   # config.current_connection = :primary
+
+  # Whether to validate database connections during application startup
+  # Set to true in development, false in production to avoid deployment issues
+  config.validate_connections_on_startup = Rails.env.development?
 end

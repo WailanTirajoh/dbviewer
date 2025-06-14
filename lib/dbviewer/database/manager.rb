@@ -187,13 +187,20 @@ module Dbviewer
         connection_config = Dbviewer.configuration.database_connections[@connection_key]
 
         if connection_config && connection_config[:connection_class]
-          @connection = connection_config[:connection_class].constantize.connection
+          begin
+            @connection = connection_config[:connection_class].constantize.connection
+            @adapter_name = @connection.adapter_name.downcase
+            Rails.logger.info "DBViewer: Successfully connected to #{connection_config[:name] || @connection_key} database (#{@adapter_name})"
+          rescue => e
+            Rails.logger.error "DBViewer: Failed to connect to #{connection_config[:name] || @connection_key}: #{e.message}"
+            raise "DBViewer database connection failed: #{e.message}"
+          end
         else
           Rails.logger.warn "DBViewer: Using default connection for key: #{@connection_key}"
           @connection = ActiveRecord::Base.connection
+          @adapter_name = @connection.adapter_name.downcase
         end
 
-        @adapter_name = @connection.adapter_name.downcase
         @connection
       end
     end
