@@ -180,7 +180,7 @@ Dbviewer.configure do |config|
 end
 ```
 
-Each connection needs to reference an ActiveRecord class that establishes a database connection. For more details, see [Multiple Database Connections](docs/multiple_connections.md).
+Each connection needs to reference an ActiveRecord class that establishes a database connection.
 
 ## 🪵 Query Logging (Development Only)
 
