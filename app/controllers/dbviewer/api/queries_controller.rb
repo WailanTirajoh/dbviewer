@@ -13,15 +13,11 @@ module Dbviewer
       def fetch_recent_queries
         return [] unless query_logging_enabled?
 
-        Dbviewer::Query::Logger.instance.recent_queries(limit: queries_limit)
+        Dbviewer::Query::Logger.instance.recent_queries(limit: 10)
       end
 
       def query_logging_enabled?
         Dbviewer.configuration.enable_query_logging
-      end
-
-      def queries_limit
-        10
       end
     end
   end
