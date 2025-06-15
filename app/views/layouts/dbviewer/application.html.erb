@@ -115,44 +115,44 @@
         </div>
         <div class="offcanvas-body bg-body-tertiary">
           <ul class="navbar-nav mb-2 mb-lg-0 fw-medium">
-        <li class="nav-item py-1">
-          <%= link_to raw('<i class="bi bi-table me-2 text-primary"></i> Tables'), dbviewer.tables_path, class: "nav-link rounded #{tables_nav_class}" %>
-        </li>
-        <li class="nav-item py-1">
-          <%= link_to raw('<i class="bi bi-diagram-3 me-2 text-primary"></i> ERD'), dbviewer.entity_relationship_diagrams_path, class: "nav-link rounded #{erd_nav_class}" %>
-        </li>
-        <% if Dbviewer.configuration.enable_query_logging %>
-          <li class="nav-item py-1">
-            <%= link_to raw('<i class="bi bi-journal-code me-2 text-primary"></i> SQL Logs'), dbviewer.logs_path, class: "nav-link rounded #{logs_nav_class}" %>
-          </li>
-        <% end %>
-        <li class="nav-item dropdown py-1">
-          <a class="nav-link dropdown-toggle d-flex align-items-center rounded" href="#" id="offcanvasDbDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-database me-2 text-primary"></i> <%= (current_conn = available_connections.find { |c| c[:current] }) ? current_conn[:name] : "Database" %>
-          </a>
-          <ul class="dropdown-menu shadow-sm mt-2" aria-labelledby="offcanvasDbDropdown">
-            <% available_connections.each do |connection| %>
-          <li>
-            <%= button_to connection_path(connection[:key]), method: :post, class: "dropdown-item border-0 w-100 text-start #{'active' if connection[:current]}" do %>
-              <% if connection[:current] %>
-            <i class="bi bi-check2-circle me-2 text-primary"></i>
-              <% else %>
-            <i class="bi bi-circle me-2"></i>
-              <% end %>
-              <%= connection[:name] %>
+            <li class="nav-item py-1">
+              <%= link_to raw('<i class="bi bi-table me-2 text-primary"></i> Tables'), dbviewer.tables_path, class: "nav-link rounded #{tables_nav_class}" %>
+            </li>
+            <li class="nav-item py-1">
+              <%= link_to raw('<i class="bi bi-diagram-3 me-2 text-primary"></i> ERD'), dbviewer.entity_relationship_diagrams_path, class: "nav-link rounded #{erd_nav_class}" %>
+            </li>
+            <% if Dbviewer.configuration.enable_query_logging %>
+              <li class="nav-item py-1">
+                <%= link_to raw('<i class="bi bi-journal-code me-2 text-primary"></i> SQL Logs'), dbviewer.logs_path, class: "nav-link rounded #{logs_nav_class}" %>
+              </li>
             <% end %>
-          </li>
-            <% end %>
-            <li><hr class="dropdown-divider"></li>
-            <li><%= link_to "<i class='bi bi-gear me-2'></i> Manage Connections".html_safe, connections_path, class: "dropdown-item" %></li>
-          </ul>
-        </li>
-        <li class="mt-4 pt-2 border-top">
-          <div class="d-flex align-items-center py-2">
-            <i class="bi bi-tools me-2 text-secondary"></i> 
-            <span class="text-secondary"><%= Rails.env %> environment</span>
-          </div>
-        </li>
+            <li class="nav-item dropdown py-1">
+              <a class="nav-link dropdown-toggle d-flex align-items-center rounded" href="#" id="offcanvasDbDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-database me-2 text-primary"></i> <%= (current_conn = available_connections.find { |c| c[:current] }) ? current_conn[:name] : "Database" %>
+              </a>
+              <ul class="dropdown-menu shadow-sm mt-2" aria-labelledby="offcanvasDbDropdown">
+                <% available_connections.each do |connection| %>
+              <li>
+                <%= button_to connection_path(connection[:key]), method: :post, class: "dropdown-item border-0 w-100 text-start #{'active' if connection[:current]}" do %>
+                  <% if connection[:current] %>
+                <i class="bi bi-check2-circle me-2 text-primary"></i>
+                  <% else %>
+                <i class="bi bi-circle me-2"></i>
+                  <% end %>
+                  <%= connection[:name] %>
+                <% end %>
+              </li>
+                <% end %>
+                <li><hr class="dropdown-divider"></li>
+                <li><%= link_to "<i class='bi bi-gear me-2'></i> Manage Connections".html_safe, connections_path, class: "dropdown-item" %></li>
+              </ul>
+            </li>
+            <li class="mt-4 pt-2 border-top">
+              <div class="d-flex align-items-center py-2">
+                <i class="bi bi-tools me-2 text-secondary"></i> 
+                <span class="text-secondary"><%= Rails.env %> environment</span>
+              </div>
+            </li>
           </ul>
         </div>
       </div>
