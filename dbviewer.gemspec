@@ -25,4 +25,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rails", ">= 7.0.0"
   spec.add_dependency "activerecord", ">= 7.0.0"
   spec.add_dependency "propshaft", ">= 1.1.0"
+  spec.add_dependency "csv"
 end
