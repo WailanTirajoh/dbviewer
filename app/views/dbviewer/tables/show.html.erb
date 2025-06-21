@@ -348,5 +348,5 @@
   </div>
 </div>
 <% end %>
-<input type="hidden" id="mini_erd_table_path" name="mini_erd_table_path" value="<%= dbviewer.mini_erd_table_path(@table_name, format: :json) %>">
+<input type="hidden" id="mini_erd_table_path" name="mini_erd_table_path" value="<%= dbviewer.mini_erd_api_table_path(@table_name, format: :json) %>">
 <input type="hidden" id="table_name" name="table_name" value="<%= @table_name %>">

@@ -25,19 +25,8 @@ module Dbviewer
       @metadata = datatable_data[:metadata]
     end
 
-    def mini_erd
-      @erd_data = fetch_mini_erd_for_table(@table_name)
-
-      respond_to do |format|
-        format.json { render json: @erd_data }
-        format.html { render layout: false }
-      end
-    end
-
     def query
       @columns = fetch_table_columns(@table_name)
-      @tables = fetch_tables  # Fetch tables for sidebar
-
       @query = prepare_query(@table_name, params[:query])
       @records = execute_query(@query)
 

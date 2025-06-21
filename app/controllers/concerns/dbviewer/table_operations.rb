@@ -54,6 +54,14 @@ module Dbviewer
       }
     end
 
+    def fetch_table_stats(table_name)
+      {
+        table_name: table_name,
+        columns: fetch_table_columns(table_name),
+        metadata: fetch_table_metadata(table_name)
+      }
+    end
+
     private
 
     # Check if a table has a created_at column for timestamp visualization

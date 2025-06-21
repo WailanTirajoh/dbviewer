@@ -4,7 +4,6 @@ Dbviewer::Engine.routes.draw do
       get "query"
       post "query"
       get "export_csv"
-      get "mini_erd"
     end
   end
 
@@ -26,13 +25,14 @@ Dbviewer::Engine.routes.draw do
   get "dashboard", to: "home#index", as: :dashboard
 
   namespace :api do
-    resources :tables, only: [ :index ] do
+    resources :tables, only: [ :index, :show ] do
       collection do
         get "records"
         get "relationships_count"
       end
       member do
         get "relationship_counts"
+        get "mini_erd"
       end
     end
 

@@ -6,6 +6,11 @@ module Dbviewer
         render_success(total_tables: tables_count)
       end
 
+      def show
+        table_stats = fetch_table_stats(params[:id])
+        render_success(**table_stats)
+      end
+
       def records
         tables_stats = fetch_tables_stats
         render_success(tables_stats)
@@ -34,6 +39,13 @@ module Dbviewer
           record_id: record_id,
           relationships: relationship_counts
         })
+      end
+
+      def mini_erd
+        table_name = params[:id]
+        erd_data = fetch_mini_erd_for_table(table_name)
+
+        render_success(erd_data)
       end
 
       private
