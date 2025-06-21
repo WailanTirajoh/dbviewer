@@ -48,9 +48,6 @@ module Dbviewer
 
         # Format results
         to_result_set(records, column_names)
-      rescue => e
-        Rails.logger.error("[DBViewer] Error executing table query: #{e.message}")
-        raise e
       end
 
       # Get the total count of records in a table
@@ -58,9 +55,6 @@ module Dbviewer
       # @return [Integer] Number of records
       def table_count(table_name)
         get_model_for(table_name).count
-      rescue => e
-        Rails.logger.error("[DBViewer] Error counting records in table #{table_name}: #{e.message}")
-        0
       end
 
       # Get the number of records in a table with filters applied
@@ -76,9 +70,6 @@ module Dbviewer
         # Apply filters in the same way as table_records
         query = apply_column_filters(query, table_name, column_filters)
         query.count
-      rescue => e
-        Rails.logger.error("[DBViewer] Error counting filtered records in table #{table_name}: #{e.message}")
-        0
       end
 
       ## -- Delegator
