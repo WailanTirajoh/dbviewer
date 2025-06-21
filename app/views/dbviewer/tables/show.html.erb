@@ -100,7 +100,7 @@
   <div class="card-header d-flex justify-content-between align-items-center">
     <h5 class="mb-0">
       <select id="per-page-select" class="form-select form-select-sm" onchange="window.location.href='<%= table_path(@table_name) %>?<%= per_page_url_params(@table_name) %>'">
-        <% Dbviewer::TablesController.per_page_options.each do |option| %>
+        <% Dbviewer.configuration.per_page_options.each do |option| %>
           <option value="<%= option %>" <%= 'selected' if @per_page == option %>><%= option %></option>
         <% end %>
       </select>

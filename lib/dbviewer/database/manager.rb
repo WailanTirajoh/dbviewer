@@ -75,8 +75,8 @@ module Dbviewer
       # @param table_name [String] Name of the table
       # @param column_filters [Hash] Hash of column_name => filter_value for filtering
       # @return [Integer] Number of filtered records
-      def filtered_record_count(table_name, column_filters = {})
-        @table_query_operations.filtered_record_count(table_name, column_filters)
+      def table_record_count(table_name, column_filters = {})
+        @table_query_operations.table_record_count(table_name, column_filters)
       end
 
       # Get the number of columns in a table

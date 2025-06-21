@@ -6,10 +6,8 @@ module Dbviewer
     # By default, don't include record counts for better performance on sidebar
     def fetch_tables(include_record_counts = false)
       database_manager.tables.map do |table_name|
-        table_stats = {
-          name: table_name
-        }
-        table_stats[:record_count] = database_manager.record_count(table_name) if include_record_counts
+        table_stats = { name: table_name }
+        table_stats[:record_count] = fetch_table_record_count(table_name) if include_record_counts
         table_stats
       end
     end
@@ -19,29 +17,41 @@ module Dbviewer
       database_manager.table_columns(table_name)
     end
 
-    # Get the total number of records in a table
-    def fetch_table_record_count(table_name)
-      database_manager.table_count(table_name)
-    end
-
     # Fetch records for a table with pagination and sorting
     def fetch_table_records(table_name, query_params)
       database_manager.table_records(table_name, query_params)
     end
 
     # Get filtered record count for a table
-    def fetch_filtered_record_count(table_name, column_filters)
-      database_manager.filtered_record_count(table_name, column_filters)
-    end
-
-    # Safely quote a table name, with fallback
-    def safe_quote_table_name(table_name)
-      database_manager.connection.quote_table_name(table_name) rescue table_name.to_s
+    def fetch_table_record_count(table_name, column_filters = {})
+      database_manager.table_record_count(table_name, column_filters)
     end
 
     # Get table metadata for display (e.g., primary key, foreign keys, indexes)
     def fetch_table_metadata(table_name)
       database_manager.table_metadata(table_name)
+    end
+
+    # Consolidated method to fetch all datatable-related data in one call
+    # Returns a hash containing all necessary datatable information
+    def fetch_datatable_data(table_name, query_params)
+      columns = fetch_table_columns(table_name)
+
+      total_count = fetch_table_record_count(table_name, query_params.column_filters)
+      records = fetch_table_records(table_name, query_params)
+      metadata = fetch_table_metadata(table_name)
+
+      {
+        columns: columns,
+        records: records,
+        total_count: total_count,
+        total_pages: total_count > 0 ? (total_count.to_f / query_params.per_page).ceil : 0,
+        metadata: metadata,
+        current_page: query_params.page,
+        per_page: query_params.per_page,
+        order_by: query_params.order_by,
+        direction: query_params.direction
+      }
     end
 
     private

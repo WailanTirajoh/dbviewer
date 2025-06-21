@@ -8,7 +8,6 @@ module Dbviewer
     include RelationshipManagement
     include QueryOperations
     include DataExport
-    include DatatableSupport
 
     # -- Database Managers --
 

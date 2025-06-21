@@ -24,5 +24,12 @@ module Dbviewer
       quoted_table = safe_quote_table_name(table_name)
       "SELECT * FROM #{quoted_table} LIMIT 100"
     end
+
+    private
+
+    # Safely quote a table name, with fallback
+    def safe_quote_table_name(table_name)
+      database_manager.connection.quote_table_name(table_name) rescue table_name.to_s
+    end
   end
 end

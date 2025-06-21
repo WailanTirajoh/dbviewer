@@ -63,18 +63,11 @@ module Dbviewer
         0
       end
 
-      # Get the number of records in a table (alias for table_count)
-      # @param table_name [String] Name of the table
-      # @return [Integer] Number of records
-      def record_count(table_name)
-        table_count(table_name)
-      end
-
       # Get the number of records in a table with filters applied
       # @param table_name [String] Name of the table
       # @param column_filters [Hash] Hash of column_name => filter_value for filtering
       # @return [Integer] Number of filtered records
-      def filtered_record_count(table_name, column_filters = {})
+      def table_record_count(table_name, column_filters = {})
         return table_count(table_name) unless column_filters.present?
 
         model = get_model_for(table_name)

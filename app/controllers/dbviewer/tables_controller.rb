@@ -1,13 +1,11 @@
 module Dbviewer
   class TablesController < ApplicationController
-    include Dbviewer::PaginationConcern
-
     before_action :set_table_name, except: [ :index ]
     before_action :set_query_filters, only: [ :show, :export_csv ]
     before_action :set_global_filters, only: [ :show, :export_csv ]
 
     def index
-      @tables = fetch_tables(include_record_counts: true)
+      @tables = fetch_tables(:include_record_counts)
     end
 
     def show
@@ -18,28 +16,13 @@ module Dbviewer
         direction: @order_direction,
         column_filters: @column_filters.reject { |_, v| v.blank? }
       )
-
-      # Get all datatable data in one method call
       datatable_data = fetch_datatable_data(@table_name, query_params)
 
-      # Assign to instance variables for view access
       @total_count = datatable_data[:total_count]
       @records = datatable_data[:records]
       @total_pages = datatable_data[:total_pages]
       @columns = datatable_data[:columns]
       @metadata = datatable_data[:metadata]
-
-      respond_to do |format|
-        format.html # Default HTML response
-        format.json do
-          render json: {
-            table_name: @table_name,
-            columns: @columns,
-            metadata: @metadata,
-            record_count: @total_count
-          }
-        end
-      end
     end
 
     def mini_erd
@@ -52,7 +35,6 @@ module Dbviewer
     end
 
     def query
-      @read_only_mode = true # Flag to indicate we're in read-only mode
       @columns = fetch_table_columns(@table_name)
       @tables = fetch_tables  # Fetch tables for sidebar
 
@@ -95,11 +77,11 @@ module Dbviewer
 
     def set_query_filters
       @current_page = [ 1, params[:page].to_i ].max
-      @per_page = params[:per_page] ? params[:per_page].to_i : self.class.default_per_page
-      @per_page = self.class.default_per_page unless self.class.per_page_options.include?(@per_page)
+      @per_page = params[:per_page] ? params[:per_page].to_i : Dbviewer.configuration.default_per_page
+      @per_page = Dbviewer.configuration.default_per_page unless Dbviewer.configuration.per_page_options.include?(@per_page)
       @order_by = params[:order_by].presence || determine_default_order_column
       @order_direction = params[:order_direction].upcase if params[:order_direction].present?
-      @order_direction = "DESC" unless self.class::VALID_SORT_DIRECTIONS.include?(@order_direction)
+      @order_direction = "DESC" unless %w[ASC DESC].include?(@order_direction)
       @column_filters = params[:column_filters].presence ? params[:column_filters].to_enum.to_h : {}
     end
 
