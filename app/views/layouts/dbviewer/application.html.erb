@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👁️</text></svg>">
+  <link rel="icon" href="<%= asset_path('dbviewer/favicon.ico') %>" type="image/x-icon">
+  <link rel="shortcut icon" href="<%= asset_path('dbviewer/favicon.ico') %>" type="image/x-icon">
+  <link rel="icon" type="image/svg+xml" href="<%= asset_path('dbviewer/favicon.svg') %>">
+  <link rel="icon" type="image/png" href="<%= asset_path('dbviewer/favicon.png') %>">
 
   <!-- Prevent theme flash during page load -->
   <script>
@@ -47,8 +54,8 @@
   <div class="dbviewer-wrapper">
     <!-- Top Navigation Bar (Fixed) -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary dbviewer-navbar fixed-top">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="<%= dbviewer.root_path %>"><i class="bi bi-database-fill me-1"></i>DB Viewer</a>
+      <div class="container-fluid px-0">
+        <a class="navbar-brand d-flex" href="<%= dbviewer.root_path %>"><span class="me-2">👁️</span> DB Viewer</a>
         <div class="d-flex align-items-center">
           <button class="navbar-toggler border-0 px-2 d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#navbarOffcanvas"
                   aria-controls="navbarOffcanvas" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,7 +117,7 @@
       <!-- Offcanvas sidebar for mobile/tablet view that slides from right -->
       <div class="offcanvas offcanvas-end d-lg-none" tabindex="-1" id="navbarOffcanvas" aria-labelledby="offcanvasNavbarLabel">
         <div class="offcanvas-header bg-light-subtle">
-          <h5 class="offcanvas-title" id="offcanvasNavbarLabel"><i class="bi bi-database-fill me-2 text-primary"></i>DB Viewer</h5>
+          <h5 class="offcanvas-title" id="offcanvasNavbarLabel">👁️ DB Viewer</h5>
           <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body bg-body-tertiary">
