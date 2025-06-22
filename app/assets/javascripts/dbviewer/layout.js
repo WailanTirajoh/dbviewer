@@ -1,50 +1,25 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // Validate that required utility scripts have loaded
+  if (!window.DBViewer || !DBViewer.Utility) {
+    console.error(
+      "Required DBViewer utility scripts not loaded. Please check utility.js."
+    );
+    return;
+  }
+
+  // Get ThemeManager from the global namespace
+  const { ThemeManager } = DBViewer.Utility;
   // Theme toggle functionality
   const themeToggleBtn = document.querySelector(".theme-toggle");
-  const htmlElement = document.documentElement;
 
-  // Check for saved theme preference or respect OS preference
-  const prefersDarkMode = window.matchMedia(
-    "(prefers-color-scheme: dark)"
-  ).matches;
-  const savedTheme = localStorage.getItem("dbviewerTheme");
-
-  // Set initial theme
-  if (savedTheme) {
-    htmlElement.setAttribute("data-bs-theme", savedTheme);
-  } else if (prefersDarkMode) {
-    htmlElement.setAttribute("data-bs-theme", "dark");
-    localStorage.setItem("dbviewerTheme", "dark");
-  }
+  // Initialize theme based on saved preference or OS preference
+  ThemeManager.initialize();
 
   // Toggle theme when button is clicked
   if (themeToggleBtn) {
     themeToggleBtn.addEventListener("click", function () {
-      const currentTheme = htmlElement.getAttribute("data-bs-theme");
-      const newTheme = currentTheme === "dark" ? "light" : "dark";
-
-      // Update theme
-      htmlElement.setAttribute("data-bs-theme", newTheme);
-      localStorage.setItem("dbviewerTheme", newTheme);
-
-      // Dispatch event for other components to respond to theme change (Monaco editor)
-      const themeChangeEvent = new CustomEvent("dbviewerThemeChanged", {
-        detail: { theme: newTheme },
-      });
-      document.dispatchEvent(themeChangeEvent);
+      ThemeManager.toggleTheme();
     });
-  }
-
-  // Check if styles are loaded properly
-  const styleCheck = getComputedStyle(
-    document.documentElement
-  ).getPropertyValue("--dbviewer-styles-loaded");
-  if (!styleCheck) {
-    console.log(
-      "DBViewer: Using fallback inline styles (asset pipeline may not be available)"
-    );
-  } else {
-    console.log("DBViewer: External CSS loaded successfully");
   }
 
   const toggleBtn = document.querySelector(".dbviewer-sidebar-toggle");

@@ -5,7 +5,18 @@
 <% content_for :head do %>
   <link href="https://cdn.jsdelivr.net/npm/vscode-codicons@0.0.17/dist/codicon.min.css" rel="stylesheet">
   <%= stylesheet_link_tag "dbviewer/query", "data-turbo-track": "reload" %>
-  <%= javascript_include_tag "dbviewer/query", "data-turbo-track": "reload", type: :module %>
+  <!-- Load Monaco editor first as a regular script -->
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.39.0/min/vs/loader.js"></script>
+  <script>
+    // Set up Monaco loader
+    require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.39.0/min/vs' } });
+    window.MonacoEnvironment = { getWorkerUrl: () => proxy };
+    let proxy = URL.createObjectURL(new Blob([`
+      self.MonacoEnvironment = { baseUrl: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.39.0/min/' };
+      importScripts('https://cdn.jsdelivr.net/npm/monaco-editor@0.39.0/min/vs/base/worker/workerMain.js');
+    `], { type: 'text/javascript' }));
+  </script>
+  <%= javascript_include_tag "dbviewer/query", "data-turbo-track": "reload" %>
 <% end %>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -26,6 +37,7 @@
       <div class="mb-3">
         <div id="monaco-editor" class="monaco-editor-container" style="min-height: 200px; border-radius: 4px; margin-bottom: 0rem;" 
               data-initial-query="<%= CGI.escapeHTML(@query.to_s) %>"></div>
+        <div id="query-container" class="editor-error-container"></div>
         <%= form.hidden_field :query, id: "query-input", value: @query.to_s %>
       </div>
       
@@ -100,11 +112,14 @@
   </div>
 </div>
 
-<% if @error.present? %>
-  <div class="alert alert-danger" role="alert">
-    <strong>Error:</strong> <%= @error %>
-  </div>
-<% end %>
+<div id="query-results">
+  <% if @error.present? %>
+    <div class="alert alert-danger" role="alert">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      <strong>Error:</strong> <%= @error %>
+    </div>
+  <% end %>
+</div>
 
 <% if @records.present? %>
   <div class="card">

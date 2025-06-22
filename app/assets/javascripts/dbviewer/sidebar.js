@@ -1,4 +1,14 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // Validate that required utility scripts have loaded
+  if (!window.DBViewer || !DBViewer.Utility) {
+    console.error(
+      "Required DBViewer utility scripts not loaded. Please check utility.js."
+    );
+    return;
+  }
+
+  // Get debounce from the global namespace
+  const { debounce } = DBViewer.Utility;
   const searchInput = document.getElementById("tableSearch");
   const sidebarContent = document.querySelector(".dbviewer-sidebar-content");
 
@@ -9,19 +19,6 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   if (searchInput) {
-    // Debounce function to limit how often the filter runs
-    function debounce(func, wait) {
-      let timeout;
-      return function () {
-        const context = this;
-        const args = arguments;
-        clearTimeout(timeout);
-        timeout = setTimeout(function () {
-          func.apply(context, args);
-        }, wait);
-      };
-    }
-
     // Filter function
     const filterTables = debounce(function () {
       const query = searchInput.value.toLowerCase();

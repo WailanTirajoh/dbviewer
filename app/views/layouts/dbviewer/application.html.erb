@@ -44,6 +44,8 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   
+  <%= javascript_include_tag "dbviewer/utility", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "dbviewer/error_handler", "data-turbo-track": "reload" %>
   <%= javascript_include_tag "dbviewer/layout", "data-turbo-track": "reload" %>
   <%= javascript_include_tag "dbviewer/sidebar", "data-turbo-track": "reload" %>
   <%= stylesheet_link_tag "dbviewer/application", "data-turbo-track": "reload" %>

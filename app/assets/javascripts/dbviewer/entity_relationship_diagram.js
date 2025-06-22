@@ -1,30 +1,30 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // Validate that required utility scripts have loaded
+  if (!window.DBViewer || !DBViewer.Utility || !DBViewer.ErrorHandler) {
+    console.error(
+      "Required DBViewer scripts not loaded. Please check utility.js and error_handler.js."
+    );
+    return;
+  }
+
+  // Destructure the needed functions for easier access
+  const { debounce, ThemeManager } = DBViewer.Utility;
+  const { displayError } = DBViewer.ErrorHandler;
   // Check if mermaid is loaded first
   if (typeof mermaid === "undefined") {
     console.error("Mermaid library not loaded!");
-    showError(
-      "Mermaid library not loaded",
+    displayError(
+      "erd-container",
+      "Mermaid Library Not Loaded",
       "The diagram library could not be loaded. Please check your internet connection and try again."
     );
     return;
   }
 
-  // Helper function to debounce rapid function calls
-  function debounce(func, wait) {
-    let timeout;
-    return function (...args) {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-  }
-
   // Initialize mermaid with theme detection like mini ERD
   mermaid.initialize({
     startOnLoad: true,
-    theme:
-      document.documentElement.getAttribute("data-bs-theme") === "dark"
-        ? "dark"
-        : "default",
+    theme: ThemeManager.getCurrentTheme() === "dark" ? "dark" : "default",
     securityLevel: "loose",
     er: {
       diagramPadding: 20,
@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
     },
   });
 
-  // Function to show error messages
+  // Function to show error messages - using our custom error handler with specific UI adjustments
   function showError(title, message, details = "") {
     const errorContainer = document.getElementById("erd-error");
     const errorMessage = document.getElementById("erd-error-message");
@@ -656,34 +656,30 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Add theme observer to update diagram when theme changes
   function setupThemeObserver() {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === "data-bs-theme") {
-          const newTheme =
-            document.documentElement.getAttribute("data-bs-theme");
-          mermaid.initialize({
-            theme: newTheme === "dark" ? "dark" : "default",
-            // Keep other settings
-            securityLevel: "loose",
-            er: {
-              diagramPadding: 20,
-              layoutDirection: "TB",
-              minEntityWidth: 100,
-              minEntityHeight: 75,
-              entityPadding: 15,
-              stroke: "gray",
-              fill: "honeydew",
-              fontSize: 20,
-            },
-          });
-          // Trigger redraw if diagram is already displayed
-          if (diagramReady) {
-            updateDiagramWithFullData();
-          }
-        }
+    // Listen for our custom theme change event
+    document.addEventListener("dbviewerThemeChanged", (event) => {
+      const newTheme = event.detail.theme;
+      mermaid.initialize({
+        theme: newTheme === "dark" ? "dark" : "default",
+        // Keep other settings
+        securityLevel: "loose",
+        er: {
+          diagramPadding: 20,
+          layoutDirection: "TB",
+          minEntityWidth: 100,
+          minEntityHeight: 75,
+          entityPadding: 15,
+          stroke: "gray",
+          fill: "honeydew",
+          fontSize: 20,
+        },
       });
+
+      // Trigger redraw if diagram is already displayed
+      if (diagramReady) {
+        updateDiagramWithFullData();
+      }
     });
-    observer.observe(document.documentElement, { attributes: true });
   }
 
   setupThemeObserver();

@@ -66,6 +66,26 @@
   color: #adb5bd;
 }
 
+/* Error containers */
+.editor-error-container {
+  margin: 10px 0;
+  display: none; /* Hidden by default */
+}
+
+.editor-error-container:not(:empty) {
+  display: block;
+  padding: 15px;
+  border-radius: 4px;
+  background-color: #f8d7da;
+  border: 1px solid #f5c2c7;
+}
+
+[data-bs-theme="dark"] .editor-error-container:not(:empty) {
+  background-color: #2d1a1d;
+  border: 1px solid #842029;
+  color: #ea868f;
+}
+
 /* Monaco status bar */
 .monaco-status-bar {
   display: flex;

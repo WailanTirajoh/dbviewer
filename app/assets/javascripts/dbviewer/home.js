@@ -1,21 +1,16 @@
+// Use DBViewer namespace for utility functions and error handling
 document.addEventListener("DOMContentLoaded", async function () {
-  // Helper function to format numbers with commas
-  function numberWithDelimiter(number) {
-    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  // Validate that required utility scripts have loaded
+  if (!window.DBViewer || !DBViewer.Utility || !DBViewer.ErrorHandler) {
+    console.error(
+      "Required DBViewer scripts not loaded. Please check utility.js and error_handler.js."
+    );
+    return;
   }
 
-  // Helper function to format file sizes
-  function numberToHumanSize(bytes) {
-    if (bytes === null || bytes === undefined) return "N/A";
-    if (bytes === 0) return "0 Bytes";
-
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  }
-
+  // Destructure the needed functions for easier access
+  const { numberWithDelimiter, numberToHumanSize } = DBViewer.Utility;
+  const { displayError, handleApiError } = DBViewer.ErrorHandler;
   // Function to update analytics cards
   function updateTablesCount(data) {
     document.getElementById("tables-loading").classList.add("d-none");
@@ -167,17 +162,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-  // Function to show error state
-  function showError(containerId, message) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = `
-      <div class="text-center my-4 text-danger">
-        <i class="bi bi-exclamation-triangle fs-2 d-block mb-2"></i>
-        <p>Error loading data</p>
-        <small>${message}</small>
-      </div>
-    `;
-  }
+  // Using error handler from imported module
 
   async function fetchTableCount() {
     try {
@@ -196,12 +181,13 @@ document.addEventListener("DOMContentLoaded", async function () {
       const data = await response.json();
       updateTablesCount(data);
     } catch (error) {
-      console.error("Error loading tables count:", error);
-      const loading = document.getElementById("tables-loading");
-      const count = document.getElementById("tables-count");
-      loading.classList.add("d-none");
-      count.classList.remove("d-none");
-      count.innerHTML = '<span class="text-danger">Error</span>';
+      await handleApiError("tables count", error, () => {
+        const loading = document.getElementById("tables-loading");
+        const count = document.getElementById("tables-count");
+        loading.classList.add("d-none");
+        count.classList.remove("d-none");
+        count.innerHTML = '<span class="text-danger">Error</span>';
+      });
     }
   }
 
@@ -274,8 +260,13 @@ document.addEventListener("DOMContentLoaded", async function () {
       const data = await response.json();
       updateRecentQueries(data);
     } catch (error) {
-      console.error("Error loading recent queries:", error);
-      showError("recent-queries-container", error.message);
+      await handleApiError("recent queries", error, () => {
+        displayError(
+          "recent-queries-container",
+          "Error Loading Queries",
+          error.message
+        );
+      });
     }
   }
   // Load database size data (Loading records first to prevent race condition on dbviewer model constant creation)
