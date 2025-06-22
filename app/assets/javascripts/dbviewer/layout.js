@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Get ThemeManager from the global namespace
   const { ThemeManager } = DBViewer.Utility;
+
   // Theme toggle functionality
   const themeToggleBtn = document.querySelector(".theme-toggle");
 
@@ -47,26 +48,22 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 300);
   }
 
-  if (toggleBtn) {
-    toggleBtn.addEventListener("click", function () {
-      if (sidebar.classList.contains("active")) {
-        hideSidebar();
-      } else {
-        showSidebar();
-        // Focus the search input when sidebar becomes visible
-        setTimeout(() => {
-          const searchInput = document.getElementById("tableSearch");
-          if (searchInput) searchInput.focus();
-        }, 300); // Small delay to allow for animation
-      }
-    });
-  }
-
-  if (closeBtn) {
-    closeBtn.addEventListener("click", function () {
+  toggleBtn.addEventListener("click", function () {
+    if (sidebar.classList.contains("active")) {
       hideSidebar();
-    });
-  }
+    } else {
+      showSidebar();
+      // Focus the search input when sidebar becomes visible
+      setTimeout(() => {
+        const searchInput = document.getElementById("tableSearch");
+        if (searchInput) searchInput.focus();
+      }, 300); // Small delay to allow for animation
+    }
+  });
+
+  closeBtn.addEventListener("click", function () {
+    hideSidebar();
+  });
 
   overlay.addEventListener("click", function () {
     hideSidebar();
@@ -85,85 +82,84 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Offcanvas enhancement for theme synchronization
   const offcanvasElement = document.getElementById("navbarOffcanvas");
-  if (offcanvasElement) {
-    // Get all theme toggles
-    const allThemeToggles = document.querySelectorAll(".theme-toggle");
 
-    // Handle theme change from any toggle button
-    allThemeToggles.forEach((toggleBtn) => {
-      toggleBtn.addEventListener("click", function () {
-        const currentTheme =
-          document.documentElement.getAttribute("data-bs-theme") || "light";
+  // Get all theme toggles
+  const allThemeToggles = document.querySelectorAll(".theme-toggle");
 
-        // Update all theme toggle buttons to maintain consistency
-        allThemeToggles.forEach((btn) => {
-          // Update icon in all theme toggle buttons
-          if (currentTheme === "dark") {
-            btn.querySelector("span").innerHTML =
-              '<i class="bi bi-sun-fill"></i>';
-            btn.setAttribute("aria-label", "Switch to light mode");
-          } else {
-            btn.querySelector("span").innerHTML =
-              '<i class="bi bi-moon-fill"></i>';
-            btn.setAttribute("aria-label", "Switch to dark mode");
-          }
-        });
-      });
-    });
-
-    // Function to sync offcanvas colors with current theme
-    function syncOffcanvasWithTheme() {
+  // Handle theme change from any toggle button
+  allThemeToggles.forEach((toggleBtn) => {
+    toggleBtn.addEventListener("click", function () {
       const currentTheme =
         document.documentElement.getAttribute("data-bs-theme") || "light";
-      if (currentTheme === "dark") {
-        offcanvasElement
-          .querySelector(".offcanvas-header")
-          .classList.remove("bg-light-subtle");
-        offcanvasElement
-          .querySelector(".offcanvas-header")
-          .classList.add("bg-dark-subtle");
-      } else {
-        offcanvasElement
-          .querySelector(".offcanvas-header")
-          .classList.remove("bg-dark-subtle");
-        offcanvasElement
-          .querySelector(".offcanvas-header")
-          .classList.add("bg-light-subtle");
-      }
-    }
 
-    // Sync on page load
-    document.addEventListener("DOMContentLoaded", syncOffcanvasWithTheme);
-
-    // Listen for theme changes
-    document.addEventListener("dbviewerThemeChanged", syncOffcanvasWithTheme);
-
-    // Handle link click in offcanvas (auto-close on mobile)
-    const offcanvasLinks = offcanvasElement.querySelectorAll(
-      ".nav-link:not(.dropdown-toggle)"
-    );
-    offcanvasLinks.forEach((link) => {
-      link.addEventListener("click", function () {
-        if (window.innerWidth < 992) {
-          bootstrap.Offcanvas.getInstance(offcanvasElement).hide();
+      // Update all theme toggle buttons to maintain consistency
+      allThemeToggles.forEach((btn) => {
+        // Update icon in all theme toggle buttons
+        if (currentTheme === "dark") {
+          btn.querySelector("span").innerHTML =
+            '<i class="bi bi-sun-fill"></i>';
+          btn.setAttribute("aria-label", "Switch to light mode");
+        } else {
+          btn.querySelector("span").innerHTML =
+            '<i class="bi bi-moon-fill"></i>';
+          btn.setAttribute("aria-label", "Switch to dark mode");
         }
       });
     });
+  });
 
-    // Fix offcanvas backdrop on desktop
-    window.addEventListener("resize", function () {
-      if (window.innerWidth >= 992) {
-        const offcanvasInstance =
-          bootstrap.Offcanvas.getInstance(offcanvasElement);
-        if (offcanvasInstance) {
-          offcanvasInstance.hide();
-        }
-        // Also remove any backdrop
-        const backdrop = document.querySelector(".offcanvas-backdrop");
-        if (backdrop) {
-          backdrop.remove();
-        }
+  // Function to sync offcanvas colors with current theme
+  function syncOffcanvasWithTheme() {
+    const currentTheme =
+      document.documentElement.getAttribute("data-bs-theme") || "light";
+    if (currentTheme === "dark") {
+      offcanvasElement
+        .querySelector(".offcanvas-header")
+        .classList.remove("bg-light-subtle");
+      offcanvasElement
+        .querySelector(".offcanvas-header")
+        .classList.add("bg-dark-subtle");
+    } else {
+      offcanvasElement
+        .querySelector(".offcanvas-header")
+        .classList.remove("bg-dark-subtle");
+      offcanvasElement
+        .querySelector(".offcanvas-header")
+        .classList.add("bg-light-subtle");
+    }
+  }
+
+  // Sync on page load
+  document.addEventListener("DOMContentLoaded", syncOffcanvasWithTheme);
+
+  // Listen for theme changes
+  document.addEventListener("dbviewerThemeChanged", syncOffcanvasWithTheme);
+
+  // Handle link click in offcanvas (auto-close on mobile)
+  const offcanvasLinks = offcanvasElement.querySelectorAll(
+    ".nav-link:not(.dropdown-toggle)"
+  );
+  offcanvasLinks.forEach((link) => {
+    link.addEventListener("click", function () {
+      if (window.innerWidth < 992) {
+        bootstrap.Offcanvas.getInstance(offcanvasElement).hide();
       }
     });
-  }
+  });
+
+  // Fix offcanvas backdrop on desktop
+  window.addEventListener("resize", function () {
+    if (window.innerWidth >= 992) {
+      const offcanvasInstance =
+        bootstrap.Offcanvas.getInstance(offcanvasElement);
+      if (offcanvasInstance) {
+        offcanvasInstance.hide();
+      }
+      // Also remove any backdrop
+      const backdrop = document.querySelector(".offcanvas-backdrop");
+      if (backdrop) {
+        backdrop.remove();
+      }
+    }
+  });
 });
