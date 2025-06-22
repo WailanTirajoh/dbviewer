@@ -137,27 +137,6 @@
 }
 
 /* Data loading badge styling */
-#data-loading-badge {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-#data-loading-badge .badge {
-  font-size: 0.75rem;
-  padding: 0.4rem 0.6rem;
-}
-
 /* Mermaid override for text size */
 .mermaid .entityLabel div {
   font-size: 20px !important;
@@ -165,17 +144,4 @@
 
 .mermaid .er.relationshipLabel {
   font-size: 20px !important;
-}
-
-/* Enhanced table highlighting for current table */
-.current-table-highlight rect {
-  fill: var(--bs-primary-bg-subtle) !important;
-  stroke: var(--bs-primary) !important;
-  stroke-width: 2px !important;
-}
-
-[data-bs-theme="dark"] .current-table-highlight rect {
-  fill: #2c3034 !important;
-  stroke: #6ea8fe !important;
-  stroke-width: 2px !important;
 }

@@ -40,17 +40,6 @@ details summary {
   cursor: pointer;
 }
 
-/* Rotate icon when expanded */
-.collapsed-section[aria-expanded="true"] .bi-chevron-down {
-  transform: rotate(180deg);
-  transition: transform 0.3s ease;
-}
-
-.collapsed-section[aria-expanded="false"] .bi-chevron-down {
-  transform: rotate(0deg);
-  transition: transform 0.3s ease;
-}
-
 /* Code styling */
 .pattern-code,
 .query-binds {

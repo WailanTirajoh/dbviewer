@@ -44,15 +44,7 @@
   color: #f8f9fa;
 }
 
-/* Result table styling */
-.results-table {
-  border-collapse: collapse;
-}
-
-[data-bs-theme="dark"] .results-table {
-  border-color: #495057;
-}
-
+/* Button styling */
 .example-query:hover {
   background-color: #0d6efd;
   color: white;

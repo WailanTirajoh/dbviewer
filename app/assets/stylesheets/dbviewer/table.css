@@ -1,3 +1,4 @@
+/* ========== TABLE HEADER AND COLUMN SORTING STYLES ========== */
 /* Column sorting styles */
 .sortable-column {
   cursor: pointer;
@@ -104,6 +105,7 @@ tbody tr td.action-column {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* ========== FILTER STYLING ========== */
 /* Column filter styling */
 .column-filters td {
   padding: 0.5rem;
@@ -120,6 +122,7 @@ tbody tr td.action-column {
   cursor: not-allowed;
 }
 
+/* ========== ACTION COLUMN STYLING ========== */
 /* Action column styling */
 .action-column {
   width: 100px; /* Increased from 60px to accommodate two buttons */
@@ -127,29 +130,38 @@ tbody tr td.action-column {
   white-space: nowrap;
   position: sticky;
   left: 0;
-  z-index: 15;
-  background-color: var(--bs-table-striped-bg, #f2f2f2);
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+  z-index: 30; /* Higher z-index to ensure it stays on top */
+  background-color: var(--bs-body-bg, #fff); /* Use body background color */
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.04);
 }
 
-.copy-factory-btn {
+.copy-factory-btn,
+.view-record-btn {
   padding: 0.1rem 0.4rem;
   width: 32px;
 }
 
-.copy-factory-btn:hover {
+.copy-factory-btn:hover,
+.view-record-btn:hover {
   opacity: 0.85;
   transform: translateY(-1px);
 }
 
 /* Ensure proper background color for actions column in dark mode */
 [data-bs-theme="dark"] .action-column {
-  background-color: var(--bs-dark-bg-subtle, #343a40);
+  background-color: var(
+    --bs-body-bg,
+    #212529
+  ); /* Use body background in dark mode */
 }
 
 /* Maintain zebra striping with sticky action column */
 .table-striped > tbody > tr:nth-of-type(odd) > .action-column {
-  background-color: var(--bs-table-striped-bg, #f8f9fa);
+  background-color: var(--bs-tertiary-bg, #f8f9fa);
+}
+
+.table-striped > tbody > tr:nth-of-type(even) > .action-column {
+  background-color: var(--bs-body-bg, #fff);
 }
 
 [data-bs-theme="dark"]
@@ -157,17 +169,15 @@ tbody tr td.action-column {
   > tbody
   > tr:nth-of-type(odd)
   > .action-column {
-  background-color: var(--bs-dark-bg-subtle, #343a40);
+  background-color: var(--bs-tertiary-bg, #2b3035);
 }
 
-.view-record-btn {
-  padding: 0.1rem 0.4rem;
-  width: 32px;
-}
-
-.view-record-btn:hover {
-  opacity: 0.85;
-  transform: translateY(-1px);
+[data-bs-theme="dark"]
+  .table-striped
+  > tbody
+  > tr:nth-of-type(even)
+  > .action-column {
+  background-color: var(--bs-body-bg, #212529);
 }
 
 /* Make action column header sticky as well */
@@ -177,10 +187,6 @@ tbody tr td.action-column {
   z-index: 40 !important; /* Even higher z-index to stay on top of everything */
   background-color: var(--bs-tertiary-bg, #f8f9fa) !important;
   box-shadow: 2px 0 6px rgba(0, 0, 0, 0.04) !important;
-}
-
-[data-bs-theme="dark"] .action-column-header {
-  background-color: var(--bs-dark-bg-subtle, #343a40) !important;
 }
 
 [data-bs-theme="dark"] .action-column-header {
@@ -199,11 +205,6 @@ tbody tr td.action-column {
   background-color: var(--bs-tertiary-bg, #2b3035) !important;
 }
 
-/* Fix action column for entire table */
-.action-column {
-  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.04);
-}
-
 /* Ensure equal padding for all cells */
 .action-column-header,
 .action-column-filter {
@@ -211,6 +212,7 @@ tbody tr td.action-column {
   padding-right: 8px !important;
 }
 
+/* ========== RELATIONSHIP AND RECORD DETAIL STYLING ========== */
 /* Relationship section styles */
 #relationshipsSection {
   border-top: 1px solid var(--bs-border-color, #dee2e6);
@@ -261,14 +263,23 @@ tbody tr td.action-column {
   padding: 0.375rem 0.75rem;
 }
 
-.relationship-section .btn-outline-primary:hover {
+.relationship-section .btn-outline-primary:hover,
+.relationship-section .btn-outline-success:hover {
   transform: translateX(2px);
   transition: transform 0.2s ease;
 }
 
-.relationship-section .btn-outline-success:hover {
-  transform: translateX(2px);
-  transition: transform 0.2s ease;
+/* Relationships table specific styles */
+.relationships-table .btn-outline-primary {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.relationships-table code {
+  background-color: var(--bs-gray-100);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.125rem;
+  font-size: 0.875rem;
 }
 
 /* Dark mode relationship styles */
@@ -293,6 +304,11 @@ tbody tr td.action-column {
   border-color: var(--bs-border-color, #495057);
 }
 
+[data-bs-theme="dark"] .relationships-table code {
+  background-color: var(--bs-gray-800);
+  color: var(--bs-gray-100);
+}
+
 /* Responsive relationship tables */
 @media (max-width: 767.98px) {
   .relationship-section .table th,
@@ -307,6 +323,7 @@ tbody tr td.action-column {
   }
 }
 
+/* ========== GENERAL TABLE STYLING ========== */
 /* Borderless table styling */
 .table {
   border-collapse: separate;
@@ -343,77 +360,6 @@ tbody tr td.action-column {
   background-color: var(--bs-tertiary-bg, rgba(255, 255, 255, 0.03));
 }
 
-/* Column filter styling */
-.column-filters td {
-  padding: 0.5rem;
-  background-color: var(--bs-tertiary-bg, #f8f9fa);
-}
-
-/* Action column styling */
-.action-column {
-  width: 100px; /* Increased from 60px to accommodate two buttons */
-  min-width: 100px; /* Ensure minimum width */
-  white-space: nowrap;
-  position: sticky;
-  left: 0;
-  z-index: 30; /* Increased z-index to ensure it stays on top */
-  background-color: var(--bs-body-bg, #fff); /* Use body background color */
-  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.04);
-}
-
-.copy-factory-btn {
-  padding: 0.1rem 0.4rem;
-  width: 32px;
-}
-
-.copy-factory-btn:hover {
-  opacity: 0.85;
-  transform: translateY(-1px);
-}
-
-/* Ensure proper background color for actions column in dark mode */
-[data-bs-theme="dark"] .action-column {
-  background-color: var(
-    --bs-body-bg,
-    #212529
-  ); /* Use body background in dark mode */
-}
-
-/* Maintain zebra striping with sticky action column */
-.table-striped > tbody > tr:nth-of-type(odd) > .action-column {
-  background-color: var(--bs-tertiary-bg, #f8f9fa);
-}
-
-.table-striped > tbody > tr:nth-of-type(even) > .action-column {
-  background-color: var(--bs-body-bg, #fff);
-}
-
-[data-bs-theme="dark"]
-  .table-striped
-  > tbody
-  > tr:nth-of-type(odd)
-  > .action-column {
-  background-color: var(--bs-tertiary-bg, #2b3035);
-}
-
-[data-bs-theme="dark"]
-  .table-striped
-  > tbody
-  > tr:nth-of-type(even)
-  > .action-column {
-  background-color: var(--bs-body-bg, #212529);
-}
-
-.view-record-btn {
-  padding: 0.1rem 0.4rem;
-  width: 32px;
-}
-
-.view-record-btn:hover {
-  opacity: 0.85;
-  transform: translateY(-1px);
-}
-
 /* Record detail modal styling */
 .record-detail-table tr:first-child th,
 .record-detail-table tr:first-child td {
@@ -429,41 +375,11 @@ tbody tr td.action-column {
 }
 
 /* Relationships section styling */
-#relationshipsSection {
-  border-top: 1px solid var(--bs-border-color);
-  padding-top: 1rem;
-}
-
-#relationshipsSection h6 {
-  color: var(--bs-emphasis-color);
-  margin-bottom: 1rem;
-}
-
-[data-bs-theme="dark"] #relationshipsSection {
-  border-top-color: #495057;
-}
-
-.relationships-table .btn-outline-primary {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-}
-
-.relationships-table code {
-  background-color: var(--bs-gray-100);
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.125rem;
-  font-size: 0.875rem;
-}
-
-[data-bs-theme="dark"] .relationships-table code {
-  background-color: var(--bs-gray-800);
-  color: var(--bs-gray-100);
-}
-
 [data-bs-theme="dark"] .record-detail-table .code-block {
   background-color: var(--bs-dark);
 }
 
+/* ========== FULLSCREEN TABLE STYLES ========== */
 /* Fullscreen table styles */
 .table-fullscreen {
   position: fixed !important;
@@ -529,6 +445,7 @@ body.table-fullscreen-active {
   transition: all 0.3s ease-in-out;
 }
 
+/* ========== FLOATING FILTER STYLES ========== */
 /* Floating creation filter button */
 .floating-creation-filter {
   position: fixed;
@@ -764,6 +681,7 @@ body.table-fullscreen-active {
   box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb), 0.3);
 }
 
+/* ========== FLATPICKR DATE PICKER STYLING ========== */
 /* Flatpickr theme adjustments */
 .flatpickr-calendar {
   border-radius: 8px;
