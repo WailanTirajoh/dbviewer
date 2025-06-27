@@ -4,6 +4,7 @@ module Dbviewer
     class AccessControl
       def initialize(config = nil)
         @config = config || Dbviewer.configuration
+        @sql_parser = SqlParser.new
       end
 
       # Check if a table is accessible based on current access control mode
@@ -46,8 +47,8 @@ module Dbviewer
       def validate_query_table_access(sql)
         return true if @config.access_control_mode == :none
 
-        # Extract table names from the SQL query
-        extracted_tables = extract_table_names_from_sql(sql)
+        # Extract table names from the SQL query using the SQL parser
+        extracted_tables = @sql_parser.extract_table_names(sql)
 
         # Check if all extracted tables are accessible
         extracted_tables.all? { |table| table_accessible?(table) }
@@ -77,38 +78,10 @@ module Dbviewer
 
       private
 
-      # Extract table names from SQL query (simplified approach)
-      # This is a basic implementation - for production use, consider using a proper SQL parser
-      # @param sql [String] The SQL query
-      # @return [Array<String>] List of table names found in the query
+      # For backwards compatibility, we keep this method but delegate to SqlParser
+      # @deprecated Use SqlParser.extract_table_names directly
       def extract_table_names_from_sql(sql)
-        # Remove comments and normalize whitespace
-        cleaned_sql = sql.gsub(/--.*$/, "").gsub(/\/\*.*?\*\//m, "").squeeze(" ")
-
-        # Simple regex to extract table names after FROM and JOIN clauses
-        # This handles both quoted and unquoted table names
-        table_names = []
-
-        # Match FROM clause - handles quoted, escaped quoted, and unquoted table names
-        # Matches: FROM table_name, FROM "table_name", FROM `table_name`, FROM \"table_name\"
-        from_matches = cleaned_sql.scan(/\bFROM\s+(?:\\?"([^"\\]+)\\?"|`([^`]+)`|([a-zA-Z_][a-zA-Z0-9_]*))/i)
-        from_matches.each do |match|
-          # match is an array where only one element will be non-nil
-          table_name = match.compact.first
-          table_names << table_name if table_name
-        end
-
-        # Match JOIN clauses - handles quoted, escaped quoted, and unquoted table names
-        # Matches: JOIN table_name, JOIN "table_name", JOIN `table_name`, JOIN \"table_name\"
-        join_matches = cleaned_sql.scan(/\bJOIN\s+(?:\\?"([^"\\]+)\\?"|`([^`]+)`|([a-zA-Z_][a-zA-Z0-9_]*))/i)
-        join_matches.each do |match|
-          # match is an array where only one element will be non-nil
-          table_name = match.compact.first
-          table_names << table_name if table_name
-        end
-
-        # Remove duplicates and return (preserve original case for table names)
-        table_names.uniq
+        @sql_parser.extract_table_names(sql)
       end
     end
   end
