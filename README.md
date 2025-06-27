@@ -1,6 +1,7 @@
 ![dbviewer](https://github.com/user-attachments/assets/665c1a65-aab3-4a7e-aa54-b42e871cb3d0)
 
 # 👁️ DBViewer
+
 > **The fastest way to visualize and explore your database**
 
 DBViewer is a powerful Rails engine that provides a comprehensive interface to view and explore database tables, records, and schema.
@@ -17,6 +18,7 @@ It's designed for development, debugging, and database analysis, offering a clea
 - **Data Browsing**
 - **SQL Queries**
 - **Multiple Database Connections**
+- **PII Data Masking** - Protect sensitive data with configurable masking rules
 - **Enhanced UI Features**
 
 ## 🧪 Demo Application
@@ -257,6 +259,63 @@ end
 ```
 
 When disabled, all DBViewer routes return 404 responses, making it appear as if the tool was never installed. This is the recommended approach for production systems where database admin tools should not be accessible.
+
+## 🔐 PII Data Masking
+
+DBViewer includes built-in support for masking Personally Identifiable Information (PII) to protect sensitive data while allowing developers to browse database contents.
+
+### Quick Setup
+
+Configure PII masking in your Rails initializer (e.g., `config/initializers/dbviewer.rb`):
+
+```ruby
+# Enable PII masking (enabled by default)
+Dbviewer.configure do |config|
+  config.enable_pii_masking = true
+end
+
+# Define masking rules
+Dbviewer.configure_pii do |pii|
+  # Built-in masking types
+  pii.mask 'users.email', with: :email           # john@example.com → jo***@example.com
+  pii.mask 'users.phone', with: :phone           # +1234567890 → +1***90
+  pii.mask 'users.ssn', with: :ssn               # 123456789 → ***-**-6789
+  pii.mask 'payments.card_number', with: :credit_card  # 1234567890123456 → ****-****-****-3456
+  pii.mask 'users.api_key', with: :full_redact   # any_value → ***REDACTED***
+
+  # Custom masking with lambda
+  pii.mask 'users.salary', with: ->(value) { value ? '$***,***' : value }
+
+  # Define reusable custom masks
+  pii.custom_mask :ip_mask, ->(value) {
+    return value if value.nil?
+    parts = value.split('.')
+    "#{parts[0]}.#{parts[1]}.***.***.***"
+  }
+  pii.mask 'logs.ip_address', with: :ip_mask
+end
+```
+
+### Built-in Masking Types
+
+- **`:email`** - Masks email addresses while preserving domain
+- **`:phone`** - Masks phone numbers keeping first and last digits
+- **`:ssn`** - Masks Social Security Numbers showing only last 4 digits
+- **`:credit_card`** - Masks credit card numbers showing only last 4 digits
+- **`:full_redact`** - Completely redacts the value
+- **`:partial`** - Partial masking (default behavior)
+
+### Generate Example Configuration
+
+Use the generator to create an example PII configuration:
+
+```bash
+rails generate dbviewer:install
+```
+
+This creates `config/initializers/dbviewer_pii_example.rb` with comprehensive examples.
+
+For detailed PII masking documentation, see [PII_MASKING.md](docs/PII_MASKING.md).
 
 ## 📝 Security Note
 

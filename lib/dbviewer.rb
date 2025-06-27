@@ -23,10 +23,39 @@ require "dbviewer/database/metadata_manager"
 require "dbviewer/datatable/query_operations"
 require "dbviewer/datatable/query_params"
 
+require "dbviewer/data_privacy/pii_masker"
+
 require "propshaft"
 
 module Dbviewer
   # Main module for the database viewer
+
+  # Helper class for configuring PII masking rules
+  class PiiConfigurator
+    def initialize(configuration)
+      @configuration = configuration
+    end
+
+    # Define a PII masking rule
+    # @param column_spec [String] Table and column in format "table.column"
+    # @param with [Symbol, Proc] Masking rule - either built-in symbol or custom proc
+    def mask(column_spec, with:)
+      @configuration.pii_rules[column_spec] = with
+    end
+
+    # Define a custom masking function
+    # @param name [Symbol] Name of the custom mask
+    # @param block [Proc] The masking function
+    def custom_mask(name, block)
+      @configuration.custom_pii_masks[name] = block
+    end
+
+    # Enable or disable PII masking globally
+    # @param enabled [Boolean] Whether to enable PII masking
+    def enabled=(enabled)
+      @configuration.enable_pii_masking = enabled
+    end
+  end
 
   class << self
     # Module accessor for configuration
@@ -71,6 +100,22 @@ module Dbviewer
       end
 
       connection_errors
+    end
+
+    # Configure PII masking rules using a block
+    #
+    # @example
+    #   Dbviewer.configure_pii do |pii|
+    #     pii.mask 'users.email', with: :email
+    #     pii.mask 'users.phone', with: :phone
+    #     pii.mask 'users.ssn', with: :ssn
+    #     pii.mask 'customers.credit_card', with: :credit_card
+    #     pii.mask 'profiles.secret', with: :full_redact
+    #     pii.mask 'accounts.api_key', with: ->(value) { value ? 'api_***' : value }
+    #     pii.custom_mask :my_custom, ->(value) { "CUSTOM: #{value[0]}***" }
+    #   end
+    def configure_pii
+      yield(PiiConfigurator.new(configuration)) if block_given?
     end
 
     private

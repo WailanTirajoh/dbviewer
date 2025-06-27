@@ -136,7 +136,7 @@
                 <%= render_sortable_header_row(@records, @order_by, @order_direction, @table_name, @current_page, @per_page, @column_filters) %>
                 <%= render_column_filters_row(form, @records, @columns, @column_filters) %>
               </thead>
-              <%= render_table_body(@records, @metadata) %>
+              <%= render_table_body(@records, @metadata, @table_name) %>
         </table>
         <% end %> <!-- End of form_with -->
       </div>

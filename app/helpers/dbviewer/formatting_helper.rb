@@ -1,6 +1,11 @@
 module Dbviewer
   module FormattingHelper
-    def format_cell_value(value)
+    def format_cell_value(value, table_name = nil, column_name = nil)
+      # Apply PII masking if configured
+      if table_name && column_name
+        value = Dbviewer::DataPrivacy::PiiMasker.mask_value(value, table_name, column_name)
+      end
+
       return "NULL" if value.nil?
       return format_default_value(value) unless value.is_a?(String)
 

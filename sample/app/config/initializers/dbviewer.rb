@@ -13,6 +13,9 @@ Dbviewer.configure do |config|
   config.query_log_path = "log/dbviewer.log"         # Path for query log file when in :file mode
   config.max_memory_queries = 1000                   # Maximum number of queries to store in memory
 
+  # PII Masking Configuration
+  config.enable_pii_masking = true                   # Enable PII masking globally (default: true)
+
   # Multiple database connections
   config.database_connections = {
     primary: {

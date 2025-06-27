@@ -59,6 +59,24 @@ module Dbviewer
     # When enabled, all DBViewer routes will return 404 responses
     attr_accessor :disabled
 
+    # PII (Personally Identifiable Information) masking configuration
+    # Hash of table.column => masking rule
+    # @example {
+    #   'users.email' => :email,
+    #   'users.phone' => :phone,
+    #   'customers.ssn' => :custom_mask
+    # }
+    attr_accessor :pii_rules
+
+    # Enable/disable PII masking globally
+    attr_accessor :enable_pii_masking
+
+    # Custom PII masking blocks
+    # @example {
+    #   custom_mask: ->(value) { value ? '***REDACTED***' : value }
+    # }
+    attr_accessor :custom_pii_masks
+
     def initialize
       @per_page_options = [ 10, 20, 50, 100 ]
       @default_per_page = 20
@@ -82,6 +100,9 @@ module Dbviewer
         }
       }
       @current_connection = :default
+      @pii_rules = {}
+      @enable_pii_masking = true
+      @custom_pii_masks = {}
     end
   end
 end

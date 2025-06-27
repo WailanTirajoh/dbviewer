@@ -40,8 +40,8 @@ module Dbviewer
     end
 
     # Render a cell that may include a foreign key link
-    def render_table_cell(cell, column_name, metadata)
-      cell_value = format_cell_value(cell)
+    def render_table_cell(cell, column_name, metadata, table_name = nil)
+      cell_value = format_cell_value(cell, table_name, column_name)
       foreign_key = metadata && metadata[:foreign_keys] ?
                     metadata[:foreign_keys].find { |fk| fk[:column] == column_name } :
                     nil
@@ -61,15 +61,15 @@ module Dbviewer
     end
 
     # Render a table row with cells
-    def render_table_row(row, records, metadata)
+    def render_table_row(row, records, metadata, table_name = nil)
       content_tag(:tr) do
         # Start with action column (sticky first column)
-        cells = [ render_action_cell(row, records.columns, metadata) ]
+        cells = [ render_action_cell(row, records.columns, metadata, table_name) ]
 
         # Add all data cells
         cells += row.each_with_index.map do |cell, cell_index|
           column_name = records.columns[cell_index]
-          render_table_cell(cell, column_name, metadata)
+          render_table_cell(cell, column_name, metadata, table_name)
         end
 
         cells.join.html_safe
@@ -77,7 +77,7 @@ module Dbviewer
     end
 
     # Render the entire table body with rows
-    def render_table_body(records, metadata)
+    def render_table_body(records, metadata, table_name = nil)
       if records.nil? || records.rows.nil? || records.empty?
         content_tag(:tbody) do
           content_tag(:tr) do
@@ -89,19 +89,20 @@ module Dbviewer
       else
         content_tag(:tbody) do
           records.rows.map do |row|
-            render_table_row(row, records, metadata)
+            render_table_row(row, records, metadata, table_name)
           end.join.html_safe
         end
       end
     end
 
     # Render action buttons for a record
-    def render_action_cell(row_data, columns, metadata = nil)
+    def render_action_cell(row_data, columns, metadata = nil, table_name = nil)
       data_attributes = {}
 
       # Create a hash of column_name: value pairs for data attributes
+      # Apply the same formatting logic used in table cells
       columns.each_with_index do |column_name, index|
-        data_attributes[column_name] = row_data[index].to_s
+        data_attributes[column_name] = format_cell_value(row_data[index], table_name, column_name)
       end
 
       content_tag(:td, class: "text-center action-column") do
