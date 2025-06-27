@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **PII Data Masking**: Comprehensive PII (Personally Identifiable Information) masking system
+  - Built-in masking types: `:email`, `:phone`, `:ssn`, `:credit_card`, `:full_redact`, `:partial`
+  - Custom masking support with lambda/proc functions
+  - Reusable custom mask definitions
+  - Column-specific masking rules using `table.column` format
+  - Global enable/disable functionality
+  - Applied to table views, query results, and detail modals
+  - Comprehensive test coverage and documentation
+- Added `Dbviewer.configure_pii` method for easy PII rule configuration
+- Added PII configuration example generator
+- Added detailed PII masking documentation
+
 ## [0.4.5] - 2025-05-25
 
 ### Added
@@ -275,15 +291,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pagination for record viewing
 - Column sorting capabilities
 - Basic documentation
-
-## Unreleased
-
-### Added
-
-- Dark mode support throughout the application
-  - Toggle feature in the navbar with localStorage persistence
-  - System preference detection via `prefers-color-scheme`
-  - Monaco editor theme switching for SQL queries
-  - Theme-adaptive styling for all UI components including tables, forms, cards
-  - Dark mode compatible SQL log display and charts
-  - Improved chart visualization with dark/light theme detection

@@ -142,8 +142,9 @@
               <% if @records.rows.any? %>
                 <% @records.rows.each do |row| %>
                   <tr>
-                    <% row.each do |cell| %>
-                      <td><%= format_cell_value(cell) %></td>
+                    <% row.each_with_index do |cell, index| %>
+                      <% column_name = @records.columns[index] %>
+                      <td><%= format_cell_value(cell, @table_name, column_name) %></td>
                     <% end %>
                   </tr>
                 <% end %>
