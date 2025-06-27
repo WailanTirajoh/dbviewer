@@ -120,6 +120,15 @@ Dbviewer.configure do |config|
   # Authentication options
   # config.admin_credentials = { username: "admin", password: "your_secure_password" } # Basic HTTP auth credentials
 
+  # Table and Column Access Control
+  # config.access_control_mode = :whitelist  # :whitelist, :blacklist, or :none (default)
+  # config.allowed_tables = ['users', 'orders', 'products']  # Only these tables accessible (whitelist mode)
+  # config.blocked_tables = ['admin_users', 'sensitive_data']  # These tables blocked (blacklist mode)
+  # config.blocked_columns = {  # Hide sensitive columns from specific tables
+  #   'users' => ['password_digest', 'api_key', 'secret_token'],
+  #   'orders' => ['internal_notes']
+  # }
+
   # Disable DBViewer completely
   # config.disabled = Rails.env.production?  # Disable in production
 end
@@ -260,11 +269,11 @@ end
 
 When disabled, all DBViewer routes return 404 responses, making it appear as if the tool was never installed. This is the recommended approach for production systems where database admin tools should not be accessible.
 
-## 🔐 PII Data Masking
+### 🔐 PII Data Masking
 
 DBViewer includes built-in support for masking Personally Identifiable Information (PII) to protect sensitive data while allowing developers to browse database contents.
 
-### Quick Setup
+#### Quick Setup
 
 Configure PII masking in your Rails initializer (e.g., `config/initializers/dbviewer.rb`):
 
@@ -296,7 +305,7 @@ Dbviewer.configure_pii do |pii|
 end
 ```
 
-### Built-in Masking Types
+#### Built-in Masking Types
 
 - **`:email`** - Masks email addresses while preserving domain
 - **`:phone`** - Masks phone numbers keeping first and last digits
@@ -304,6 +313,22 @@ end
 - **`:credit_card`** - Masks credit card numbers showing only last 4 digits
 - **`:full_redact`** - Completely redacts the value
 - **`:partial`** - Partial masking (default behavior)
+
+### Table and Column Access Control
+
+DBViewer includes granular access control features to restrict access to specific tables and columns, providing an additional layer of security beyond basic authentication.
+
+#### Access Control Modes
+
+DBViewer supports three access control modes:
+
+- **`:none`** (default) - All tables are accessible (current behavior)
+- **`:whitelist`** - Only explicitly allowed tables are accessible (most secure)
+- **`:blacklist`** - All tables except explicitly blocked ones are accessible
+
+#### Whitelist Mode (Recommended for Production)
+
+Whitelist mode is the most secure approach, where only explicitly allowed tables can be accessed:
 
 ### Generate Example Configuration
 

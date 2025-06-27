@@ -2,6 +2,7 @@ require "dbviewer/version"
 require "dbviewer/configuration"
 require "dbviewer/engine"
 require "dbviewer/validator/sql"
+require "dbviewer/security/access_control"
 
 require "dbviewer/storage/base"
 require "dbviewer/storage/in_memory_storage"

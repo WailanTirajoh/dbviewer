@@ -37,4 +37,27 @@ Dbviewer.configure do |config|
   #   username: "admin",
   #   password: "your_secure_password"
   # }
+
+  # Table and Column Access Control (Security Feature)
+  # Access control mode: :whitelist (most secure), :blacklist, or :none (default)
+  config.access_control_mode = :whitelist
+
+  # Whitelist mode: Only these tables will be accessible
+  config.allowed_tables = [
+    'users',
+    'orders',
+    'products',
+    'categories'
+  ]
+
+  # Blacklist mode: All tables except these will be accessible
+  # config.blocked_tables = [
+  #   'users'
+  # ]
+
+  # Hide sensitive columns from specific tables
+  # config.blocked_columns = {
+  #   'users' => ['password_digest', 'api_key', 'secret_token'],
+  #   'orders' => ['internal_notes', 'admin_comments']
+  # }
 end

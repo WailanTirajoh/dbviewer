@@ -77,6 +77,29 @@ module Dbviewer
     # }
     attr_accessor :custom_pii_masks
 
+    # Table access control - whitelist approach (more secure)
+    # Only tables listed here will be accessible
+    # @example ['users', 'orders', 'products']
+    attr_accessor :allowed_tables
+
+    # Table access control - blacklist approach
+    # Tables listed here will be blocked from access
+    # @example ['admin_users', 'sensitive_data', 'audit_logs']
+    attr_accessor :blocked_tables
+
+    # Column access control - hide sensitive columns
+    # @example {
+    #   'users' => ['password_digest', 'api_key', 'secret_token'],
+    #   'orders' => ['internal_notes']
+    # }
+    attr_accessor :blocked_columns
+
+    # Access control mode: :whitelist, :blacklist, or :none
+    # :whitelist - only allowed_tables are accessible (most secure)
+    # :blacklist - all tables except blocked_tables are accessible
+    # :none - all tables accessible (current behavior)
+    attr_accessor :access_control_mode
+
     def initialize
       @per_page_options = [ 10, 20, 50, 100 ]
       @default_per_page = 20
@@ -103,6 +126,12 @@ module Dbviewer
       @pii_rules = {}
       @enable_pii_masking = true
       @custom_pii_masks = {}
+
+      # Initialize access control settings
+      @allowed_tables = []
+      @blocked_tables = []
+      @blocked_columns = {}
+      @access_control_mode = :none  # Default to current behavior
     end
   end
 end

@@ -2,18 +2,25 @@ module Dbviewer
   module Api
     class TablesController < BaseController
       def index
-        tables_count = fetch_tables_count
-        render_success(total_tables: tables_count)
+        render_success(total_tables: fetch_tables.length)
       end
 
       def show
-        table_stats = fetch_table_stats(params[:id])
+        table_name = params[:id]
+
+        # Check if table is accessible
+        unless access_control.table_accessible?(table_name)
+          render_error("Access denied: Table '#{table_name}' is not accessible", :forbidden)
+          return
+        end
+
+        table_stats = fetch_table_stats(table_name)
         render_success(**table_stats)
       end
 
       def records
-        tables_stats = fetch_tables_stats
-        render_success(tables_stats)
+        all_tables_stats = fetch_tables_stats
+        render_success(all_tables_stats)
       end
 
       def relationships_count
@@ -25,14 +32,23 @@ module Dbviewer
         table_name = params[:id]
         record_id = params[:record_id]
 
+        # Check if table is accessible
+        unless access_control.table_accessible?(table_name)
+          render_error("Access denied: Table '#{table_name}' is not accessible", :forbidden)
+          return
+        end
+
         reverse_foreign_keys = fetch_table_metadata(table_name).dig(:reverse_foreign_keys) || []
         relationship_counts = reverse_foreign_keys.map do |rel|
+          # Only include relationships to accessible tables
+          next unless access_control.table_accessible?(rel[:from_table])
+
           {
             table: rel[:from_table],
             foreign_key: rel[:column],
             count: database_manager.get_model_for(rel[:from_table]).where(rel[:column] => record_id).count
           }
-        end
+        end.compact
 
         render_success({
           table_name: table_name,

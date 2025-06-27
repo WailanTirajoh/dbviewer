@@ -6,7 +6,9 @@ module Dbviewer
       # Fetch all tables with their stats
       # By default, don't include record counts for better performance on sidebar
       def fetch_tables(include_record_counts = false)
-        database_manager.tables.map do |table_name|
+        all_table_names = database_manager.tables
+        filtered_table_names = filter_accessible_tables(all_table_names)
+        filtered_table_names.map do |table_name|
           table_stats = { name: table_name }
           table_stats[:record_count] = fetch_table_record_count(table_name) if include_record_counts
           table_stats
