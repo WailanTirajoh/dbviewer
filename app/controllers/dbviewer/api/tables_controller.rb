@@ -10,7 +10,7 @@ module Dbviewer
 
         # Check if table is accessible
         unless access_control.table_accessible?(table_name)
-          render_error("Access denied: Table '#{table_name}' is not accessible", :forbidden)
+          render_error(access_control.access_violation_message(table_name), :forbidden)
           return
         end
 
