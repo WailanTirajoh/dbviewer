@@ -75,6 +75,31 @@ RSpec.describe Dbviewer::Security::SqlParser do
         sql = "WITH RECURSIVE category_tree AS (SELECT * FROM categories WHERE parent_id IS NULL UNION ALL SELECT c.* FROM categories c JOIN category_tree ct ON c.parent_id = ct.id) SELECT * FROM category_tree"
         expect(parser.extract_table_names(sql)).to eq([ 'categories' ])
       end
+
+      it 'handles quoted CTE names' do
+        sql = 'WITH "active_users" AS (SELECT * FROM users WHERE active = true) SELECT * FROM "active_users"'
+        expect(parser.extract_table_names(sql)).to eq([ 'users' ])
+      end
+
+      it 'handles backtick-quoted CTE names' do
+        sql = 'WITH `active_users` AS (SELECT * FROM users WHERE active = true) SELECT * FROM `active_users`'
+        expect(parser.extract_table_names(sql)).to eq([ 'users' ])
+      end
+
+      it 'handles schema-qualified CTE names' do
+        sql = "WITH schema.active_users AS (SELECT * FROM users WHERE active = true) SELECT * FROM schema.active_users"
+        expect(parser.extract_table_names(sql)).to eq([ 'users' ])
+      end
+
+      it 'handles schema-qualified quoted CTE names' do
+        sql = 'WITH schema."active_users" AS (SELECT * FROM users WHERE active = true) SELECT * FROM schema."active_users"'
+        expect(parser.extract_table_names(sql)).to eq([ 'users' ])
+      end
+
+      it 'handles mixed quoted and unquoted CTEs' do
+        sql = 'WITH active_users AS (SELECT * FROM users WHERE active = true), "recent_orders" AS (SELECT * FROM orders WHERE created_at > \'2023-01-01\') SELECT * FROM active_users JOIN "recent_orders" ON active_users.id = "recent_orders".user_id'
+        expect(parser.extract_table_names(sql)).to contain_exactly('users', 'orders')
+      end
     end
 
     context 'with DML operations' do

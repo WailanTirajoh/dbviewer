@@ -177,13 +177,20 @@ module Dbviewer
         table_names = Set.new
         cte_names = Set.new
 
-        # Find all CTE names first using a simpler approach
-        # Look for pattern: cte_name AS (
-        cte_name_pattern = /\b(\w+)\s+AS\s*\(/i
+        # Find all CTE names first using an improved approach
+        # Look for pattern: [schema.]cte_name AS (
+        # Handles quoted identifiers, schema-qualified names, and backticks
+        # Pattern breakdown:
+        # (?:(?:\w+|"[^"]+"|`[^`]+`)\.)?  - Optional schema prefix (word, quoted, or backticked) followed by dot
+        # (\w+|"[^"]+"|`[^`]+`)           - CTE name (word, double-quoted, or backticked)
+        # \s+AS\s*\(                      - " AS ("
+        cte_name_pattern = /(?:(?:\w+|"[^"]+"|`[^`]+`)\.)?(\w+|"[^"]+"|`[^`]+`)\s+AS\s*\(/i
 
         sql.scan(cte_name_pattern) do |match|
           cte_name = match[0]
-          cte_names.add(cte_name)
+          # Clean up the CTE name by removing quotes if present
+          clean_cte_name = cte_name.gsub(/^["'`](.+)["'`]$/, '\1')
+          cte_names.add(clean_cte_name)
         end
 
         # Then extract table names from the CTE definitions
