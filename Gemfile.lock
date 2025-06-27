@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    dbviewer (0.7.11)
+    dbviewer (0.8.0)
       activerecord (>= 7.0.0)
       csv
       propshaft (>= 1.1.0)
