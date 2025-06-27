@@ -3,7 +3,7 @@ module Dbviewer
     include Dbviewer::AccessControlValidation
 
     before_action :set_table_name, except: [ :index ]
-    before_action :validate_table_access, only: [ :show, :query, :export_csv ]
+    before_action :validate_table, only: [ :show, :query, :export_csv ]
     before_action :set_query_filters, only: [ :show, :export_csv ]
     before_action :set_global_filters, only: [ :show, :export_csv ]
 
@@ -78,6 +78,10 @@ module Dbviewer
 
     def set_table_name
       @table_name = params[:id]
+    end
+
+    def validate_table
+      validate_table_access(@table_name)
     end
 
     def set_query_filters
