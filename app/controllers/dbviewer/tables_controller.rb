@@ -1,11 +1,16 @@
 module Dbviewer
   class TablesController < ApplicationController
+    include Dbviewer::AccessControlValidation
+
     before_action :set_table_name, except: [ :index ]
+    before_action :validate_table, only: [ :show, :query, :export_csv ]
     before_action :set_query_filters, only: [ :show, :export_csv ]
     before_action :set_global_filters, only: [ :show, :export_csv ]
 
     def index
-      @tables = fetch_tables(:include_record_counts)
+      @tables = @tables.map do |table|
+        table.merge(record_count: fetch_table_record_count(table[:name]))
+      end
     end
 
     def show
@@ -21,13 +26,24 @@ module Dbviewer
       @total_count = datatable_data[:total_count]
       @records = datatable_data[:records]
       @total_pages = datatable_data[:total_pages]
-      @columns = datatable_data[:columns]
+      @columns = filter_accessible_columns(@table_name, datatable_data[:columns])
       @metadata = datatable_data[:metadata]
     end
 
     def query
-      @columns = fetch_table_columns(@table_name)
+      all_columns = fetch_table_columns(@table_name)
+      @columns = filter_accessible_columns(@table_name, all_columns)
       @query = prepare_query(@table_name, params[:query])
+
+      if @query.present?
+        begin
+          validate_query_access(@query)
+        rescue SecurityError => e
+          flash[:alert] = e.message
+          render :query and return
+        end
+      end
+
       @records = execute_query(@query)
 
       render :query
@@ -62,6 +78,10 @@ module Dbviewer
 
     def set_table_name
       @table_name = params[:id]
+    end
+
+    def validate_table
+      validate_table_access(@table_name)
     end
 
     def set_query_filters

@@ -37,19 +37,36 @@ module Dbviewer
       def extract_table_relationships(table_name)
         metadata = fetch_table_metadata(table_name)
         return [] unless metadata&.dig(:foreign_keys)&.present?
-
-        metadata[:foreign_keys].map do |fk|
-          {
-            from_table: table_name,
-            to_table: fk[:to_table],
-            from_column: fk[:column],
-            to_column: fk[:primary_key],
-            name: fk[:name]
-          }
+        table_names = @tables.map { |t| t[:name] }
+        metadata[:foreign_keys].filter_map do |fk|
+          # Only include relationship if target table is also accessible
+          if table_names.include?(fk[:to_table])
+            {
+              from_table: table_name,
+              to_table: fk[:to_table],
+              from_column: fk[:column],
+              to_column: fk[:primary_key],
+              name: fk[:name]
+            }
+          end
         end
       rescue => e
         Rails.logger.error("[DBViewer] Error fetching relationships for #{table_name}: #{e.message}")
         [] # Return empty array to continue processing other tables
+      end
+
+      # Override to filter relationships to only accessible tables
+      def fetch_table_relationships(tables)
+        table_names = tables.map { |t| t[:name] }
+
+        # Get all relationships from accessible tables
+        all_relationships = super(tables)
+
+        # Filter to only include relationships where both source and target tables are accessible
+        all_relationships.select do |relationship|
+          table_names.include?(relationship[:from_table]) &&
+          table_names.include?(relationship[:to_table])
+        end
       end
     end
   end

@@ -17,5 +17,17 @@ module Dbviewer
     def table_query_operations
       @table_query_operations ||= database_manager.table_query_operations
     end
+
+    def access_control
+      @access_control ||= Dbviewer::Security::AccessControl.new
+    end
+
+    def filter_accessible_tables(tables)
+      access_control.filter_accessible_tables(tables)
+    end
+
+    def filter_accessible_columns(table_name, columns)
+      access_control.filter_accessible_columns(table_name, columns)
+    end
   end
 end
