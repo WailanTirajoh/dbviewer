@@ -37,10 +37,115 @@ module Dbviewer
       private
 
       # Clean SQL by removing comments and normalizing whitespace
+      # Properly handles string literals to avoid removing content inside strings
       # @param sql [String] The SQL query to clean
       # @return [String] Cleaned SQL
       def clean_sql(sql)
-        sql.gsub(/--.*$/, "").gsub(/\/\*.*?\*\//m, "").squeeze(" ").strip
+        result = []
+        i = 0
+        in_single_quote = false
+        in_double_quote = false
+        in_single_line_comment = false
+        in_multi_line_comment = false
+
+        while i < sql.length
+          char = sql[i]
+          next_char = i + 1 < sql.length ? sql[i + 1] : nil
+
+          # Handle string literals first (highest priority)
+          if !in_single_line_comment && !in_multi_line_comment
+            case char
+            when "'"
+              if !in_double_quote
+                # Handle escaped single quotes
+                if in_single_quote && next_char == "'"
+                  result << char << next_char
+                  i += 2
+                  next
+                else
+                  in_single_quote = !in_single_quote
+                  result << char
+                end
+              else
+                result << char
+              end
+            when '"'
+              if !in_single_quote
+                # Handle escaped double quotes
+                if in_double_quote && next_char == '"'
+                  result << char << next_char
+                  i += 2
+                  next
+                else
+                  in_double_quote = !in_double_quote
+                  result << char
+                end
+              else
+                result << char
+              end
+            when "-"
+              # Check for single-line comment start
+              if !in_single_quote && !in_double_quote && next_char == "-"
+                in_single_line_comment = true
+                i += 2
+                next
+              else
+                result << char
+              end
+            when "/"
+              # Check for multi-line comment start
+              if !in_single_quote && !in_double_quote && next_char == "*"
+                in_multi_line_comment = true
+                i += 2
+                next
+              else
+                result << char
+              end
+            when "*"
+              # Check for multi-line comment end
+              if in_multi_line_comment && next_char == "/"
+                in_multi_line_comment = false
+                i += 2
+                next
+              elsif !in_single_line_comment && !in_multi_line_comment
+                result << char
+              end
+            when "\n", "\r"
+              # End single-line comment
+              if in_single_line_comment
+                in_single_line_comment = false
+                result << char
+              elsif !in_multi_line_comment
+                result << char
+              end
+            else
+              # Regular character
+              if !in_single_line_comment && !in_multi_line_comment
+                result << char
+              end
+            end
+          else
+            # Inside comment - handle comment end conditions
+            case char
+            when "*"
+              if in_multi_line_comment && next_char == "/"
+                in_multi_line_comment = false
+                i += 2
+                next
+              end
+            when "\n", "\r"
+              if in_single_line_comment
+                in_single_line_comment = false
+                result << char
+              end
+            end
+          end
+
+          i += 1
+        end
+
+        # Normalize whitespace and strip
+        result.join.squeeze(" ").strip
       end
 
       # Extract table names from a single SQL statement

@@ -190,6 +190,33 @@ RSpec.describe Dbviewer::Security::SqlParser do
         expect(parser.extract_table_names(sql)).to eq([])
       end
     end
+
+    describe 'string literal handling in comments' do
+      it 'preserves comment-like content inside string literals' do
+        sql = "SELECT 'user--name' FROM users -- real comment"
+        expect(parser.extract_table_names(sql)).to eq([ 'users' ])
+      end
+
+      it 'preserves multi-line comment-like content inside string literals' do
+        sql = "SELECT 'user/*not a comment*/' FROM users /* real comment */"
+        expect(parser.extract_table_names(sql)).to eq([ 'users' ])
+      end
+
+      it 'handles escaped quotes in string literals with comment-like content' do
+        sql = "SELECT 'user''s--name' FROM users -- comment"
+        expect(parser.extract_table_names(sql)).to eq([ 'users' ])
+      end
+
+      it 'handles double-quoted strings with comment-like content' do
+        sql = 'SELECT "user--name" FROM users -- comment'
+        expect(parser.extract_table_names(sql)).to eq([ 'users' ])
+      end
+
+      it 'handles complex mixed case with string literals and real comments' do
+        sql = "SELECT 'string with -- fake comment' AS col, \"another -- fake\" FROM users /* real comment */ WHERE name = 'user--name'"
+        expect(parser.extract_table_names(sql)).to eq([ 'users' ])
+      end
+    end
   end
 
   describe '.extract_table_names' do
