@@ -8,10 +8,8 @@ module Dbviewer
         copy_file "initializer.rb", "config/initializers/dbviewer.rb"
       end
 
-      def copy_pii_example
-        copy_file "pii_configuration_example.rb", "config/initializers/dbviewer_pii_example.rb"
-        say "Created example PII configuration at config/initializers/dbviewer_pii_example.rb", :green
-        say "Review and customize the PII masking rules, then rename to dbviewer_pii.rb to activate.", :yellow
+      def copy_pii
+        copy_file "dbviewer_pii.rb", "config/initializers/dbviewer_pii.rb"
       end
     end
   end
