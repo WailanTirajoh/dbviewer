@@ -1,5 +1,3 @@
-![dbviewer](https://github.com/user-attachments/assets/665c1a65-aab3-4a7e-aa54-b42e871cb3d0)
-
 # 👁️ DBViewer
 
 > **The fastest way to visualize and explore your database**
@@ -7,7 +5,7 @@
 DBViewer is a powerful Rails engine that provides a comprehensive interface to view and explore database tables, records, and schema.
 It's designed for development, debugging, and database analysis, offering a clean and intuitive way to interact with your application's database.
 
-<img width="1470" alt="image" src="https://github.com/user-attachments/assets/0d2719ad-f5b4-4818-891d-5bff7be6c5c3" />
+<img width="1470" alt="image" src="https://github.com/user-attachments/assets/6bc68cfa-903e-49fb-a450-425317d6cbc0" />
 
 ## ✨ Features
 
@@ -24,16 +22,6 @@ It's designed for development, debugging, and database analysis, offering a clea
 ## 🧪 Demo Application
 
 You can explore a live demo of DBViewer at [https://dbviewer-demo.wailantirajoh.tech/](https://dbviewer-demo.wailantirajoh.tech/). This demo showcases all the features of DBViewer on a sample database, allowing you to try out the tool before installing it in your own application.
-
-## 📸 Screenshots
-
-<details>
-  <summary>Click to see more screenshots</summary>
-
-  <img width="1470" alt="image" src="https://github.com/user-attachments/assets/7d708c14-5f78-42c4-b769-2167546b3aad" />
-  <img width="1470" alt="image" src="https://github.com/user-attachments/assets/f6d9a39a-a571-4328-908a-d96b3148f707" />
-
-</details>
 
 ## 📥 Installation
 
