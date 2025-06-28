@@ -84,26 +84,6 @@ module Dbviewer
       @configuration = Configuration.new
     end
 
-    # This class method will be called by the engine when it's appropriate
-    def setup
-      configure_query_logger
-      # Database connections will be validated when first accessed
-      Rails.logger.info "DBViewer: Initialized successfully (database connections will be validated on first access)"
-    end
-
-    # Validate database connections on-demand (called when first accessing DBViewer)
-    def validate_connections!
-      connection_errors = configuration.database_connections.filter_map do |key, config|
-        validate_single_connection(key, config)
-      end
-
-      if connection_errors.length == configuration.database_connections.length
-        raise "DBViewer could not connect to any configured database. Please check your database configuration."
-      end
-
-      connection_errors
-    end
-
     # Configure PII masking rules using a block
     #
     # @example
@@ -120,62 +100,14 @@ module Dbviewer
       yield(PiiConfigurator.new(configuration)) if block_given?
     end
 
-    private
-
-    # Configure the query logger with current configuration settings
-    def configure_query_logger
+    # This class method will be called by the engine when it's appropriate
+    def setup
       Dbviewer::Query::Logger.configure(
         enable_query_logging: configuration.enable_query_logging,
         query_logging_mode: configuration.query_logging_mode
       )
-    end
 
-    # Validate a single database connection
-    # @param key [Symbol] The connection key
-    # @param config [Hash] The connection configuration
-    # @return [Hash, nil] Error hash if validation failed, nil if successful
-    def validate_single_connection(key, config)
-      connection_class = resolve_connection_class(config)
-      return { key: key, error: "No valid connection configuration found for #{key}" } unless connection_class
-
-      test_connection(connection_class, config, key)
-      store_resolved_connection(config, connection_class)
-      nil
-    rescue => e
-      Rails.logger.error "DBViewer could not connect to #{config[:name] || key.to_s} database: #{e.message}"
-      { key: key, error: e.message }
-    end
-
-    # Resolve the connection class from configuration
-    # @param config [Hash] The connection configuration
-    # @return [Class, nil] The resolved connection class or nil
-    def resolve_connection_class(config)
-      return config[:connection] if config[:connection]
-      return nil unless config[:connection_class].is_a?(String)
-
-      begin
-        config[:connection_class].constantize
-      rescue NameError => e
-        Rails.logger.warn "DBViewer could not load connection class #{config[:connection_class]}: #{e.message}"
-        nil
-      end
-    end
-
-    # Test the database connection
-    # @param connection_class [Class] The connection class
-    # @param config [Hash] The connection configuration
-    # @param key [Symbol] The connection key
-    def test_connection(connection_class, config, key)
-      connection = connection_class.connection
-      adapter_name = connection.adapter_name
-      Rails.logger.info "DBViewer successfully connected to #{config[:name] || key.to_s} database (#{adapter_name})"
-    end
-
-    # Store the resolved connection class back in the config
-    # @param config [Hash] The connection configuration
-    # @param connection_class [Class] The resolved connection class
-    def store_resolved_connection(config, connection_class)
-      config[:connection] = connection_class
+      Rails.logger.info "DBViewer: Initialized successfully"
     end
   end
 end
