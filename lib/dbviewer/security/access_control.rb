@@ -75,14 +75,6 @@ module Dbviewer
           "Access denied: Table access is restricted"
         end
       end
-
-      private
-
-      # For backwards compatibility, we keep this method but delegate to SqlParser
-      # @deprecated Use SqlParser.extract_table_names directly
-      def extract_table_names_from_sql(sql)
-        @sql_parser.extract_table_names(sql)
-      end
     end
   end
 end
