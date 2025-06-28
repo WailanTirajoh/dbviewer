@@ -22,6 +22,7 @@ module Dbviewer
           return true if has_string_concatenation?(sql)
           return true if has_excessive_quotes?(sql)
           return true if has_hex_encoding?(sql)
+          return true if has_additional_suspicious_patterns?(sql)
 
           false
         end
@@ -33,7 +34,15 @@ module Dbviewer
         # @param sql [String] Raw SQL query (before normalization)
         # @return [Boolean] true if injection patterns found, false otherwise
         def has_injection_patterns?(sql)
-          ValidationConfig::INJECTION_PATTERNS.any? do |_name, pattern|
+          patterns_to_check = ValidationConfig::INJECTION_PATTERNS
+
+          # Filter out enhanced patterns if enhanced protection is disabled
+          unless enhanced_protection_enabled?
+            enhanced_patterns = [ :information_schema, :mysql_user, :pg_user ]
+            patterns_to_check = patterns_to_check.reject { |name, _| enhanced_patterns.include?(name) }
+          end
+
+          patterns_to_check.any? do |_name, pattern|
             sql =~ pattern
           end
         end
@@ -89,6 +98,16 @@ module Dbviewer
 
         private
 
+        # Check if enhanced SQL protection is enabled
+        def enhanced_protection_enabled?
+          if defined?(Dbviewer) && Dbviewer.respond_to?(:configuration) &&
+             Dbviewer.configuration.respond_to?(:enhanced_sql_protection)
+            Dbviewer.configuration.enhanced_sql_protection
+          else
+            true # Default to enabled for security
+          end
+        end
+
         # Check for comment injection attempts
         # Comments can be used to hide malicious SQL code
         #
@@ -126,6 +145,29 @@ module Dbviewer
         # @return [Boolean] true if suspicious hex encoding detected
         def has_hex_encoding?(sql)
           ValidationConfig::SUSPICIOUS_PATTERNS[:hex_encoding] =~ sql
+        end
+
+        # Check for additional suspicious patterns
+        # This method checks for newer and more sophisticated attack patterns
+        #
+        # @param sql [String] Raw SQL query
+        # @return [Boolean] true if additional suspicious patterns detected
+        def has_additional_suspicious_patterns?(sql)
+          additional_patterns = [
+            :char_function, :ascii_function, :substring_injection, :length_functions,
+            :conditional_comments, :encoded_spaces, :multiple_unions, :nested_selects,
+            :script_tags, :php_tags, :null_byte, :excessive_parentheses
+          ]
+
+          # Only check enhanced patterns if enhanced protection is enabled
+          unless enhanced_protection_enabled?
+            enhanced_suspicious_patterns = [ :ascii_function, :substring_injection, :length_functions, :char_function ]
+            additional_patterns = additional_patterns - enhanced_suspicious_patterns
+          end
+
+          additional_patterns.any? do |pattern_name|
+            ValidationConfig::SUSPICIOUS_PATTERNS[pattern_name] =~ sql
+          end
         end
       end
     end

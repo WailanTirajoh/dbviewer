@@ -100,6 +100,23 @@ module Dbviewer
     # :none - all tables accessible (current behavior)
     attr_accessor :access_control_mode
 
+    # Security-related configuration options
+
+    # Enable comprehensive security logging for all database operations
+    attr_accessor :log_queries
+
+    # Log security threats and blocked queries
+    attr_accessor :log_security_events
+
+    # Enhanced SQL injection detection patterns
+    attr_accessor :enhanced_sql_protection
+
+    # Enforce parameterized queries when possible
+    attr_accessor :enforce_parameterized_queries
+
+    # Maximum number of security events to keep in memory
+    attr_accessor :max_security_events
+
     def initialize
       @per_page_options = [ 10, 20, 50, 100 ]
       @default_per_page = 20
@@ -132,6 +149,13 @@ module Dbviewer
       @blocked_tables = []
       @blocked_columns = {}
       @access_control_mode = :none  # Default to current behavior
+
+      # Initialize security settings
+      @log_queries = true
+      @log_security_events = true
+      @enhanced_sql_protection = true
+      @enforce_parameterized_queries = false
+      @max_security_events = 1000
     end
   end
 end

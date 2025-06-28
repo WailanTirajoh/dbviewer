@@ -72,6 +72,22 @@ module Dbviewer
         Analyzer.generate_stats(queries)
       end
 
+      # Add a security event to the logger
+      def add_security_event(event)
+        # Store security events separately for analysis
+        @security_events ||= []
+        @security_events << event
+
+        # Keep only the last 1000 security events to prevent memory issues
+        @security_events = @security_events.last(1000) if @security_events.size > 1000
+      end
+
+      # Get recent security events
+      def recent_security_events(limit: 100)
+        @security_events ||= []
+        @security_events.last(limit)
+      end
+
       class << self
         extend Forwardable
 
@@ -86,6 +102,26 @@ module Dbviewer
             enable_query_logging: enable_query_logging,
             query_logging_mode: query_logging_mode
           )
+        end
+
+        # Log security events for monitoring and auditing
+        # @param event_type [String] Type of security event
+        # @param query_type [String] Type of query being executed
+        # @param sql [String] The SQL query
+        # @param timestamp [Time] When the event occurred
+        def log_security_event(event_type:, query_type:, sql:, timestamp:)
+          # Log to Rails logger with security prefix for easy filtering
+          Rails.logger.info("[DBViewer][Security] #{event_type.upcase}: #{query_type} - #{sql.truncate(200)}")
+
+          # Also store in memory for potential analysis
+          instance.add_security_event({
+            event_type: event_type,
+            query_type: query_type,
+            sql: sql,
+            timestamp: timestamp,
+            request_id: ActiveSupport::Notifications.instrumenter.id,
+            thread_id: Thread.current.object_id.to_s
+          })
         end
       end
 

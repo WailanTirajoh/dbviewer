@@ -46,24 +46,28 @@ module Dbviewer
           basic_validation_result = perform_basic_validation(sql)
           return basic_validation_result if basic_validation_result
 
-          # Step 2: Security threat detection (before normalization)
+          # Step 2: Normalize the query early for forbidden keyword checks
+          normalized_sql = QueryNormalizer.normalize(sql)
+
+          # Step 3: Check for forbidden keywords in multiple statements first
+          forbidden_keyword_result = validate_forbidden_keywords_in_statements(normalized_sql)
+          return forbidden_keyword_result if forbidden_keyword_result
+
+          # Step 4: Security threat detection (on original SQL before normalization)
           threat_validation_result = perform_threat_validation(sql)
           return threat_validation_result if threat_validation_result
 
-          # Step 3: Normalize the query
-          normalized_sql = QueryNormalizer.normalize(sql)
-
-          # Step 4: Handle special cases (PRAGMA) - only if allowed
+          # Step 5: Handle special cases (PRAGMA) - only if allowed
           if allow_pragma
             pragma_result = handle_pragma_statements(normalized_sql)
             return pragma_result if pragma_result
           end
 
-          # Step 5: Validate query structure and keywords
+          # Step 6: Validate query structure and keywords
           structure_validation_result = perform_structure_validation(normalized_sql)
           return structure_validation_result if structure_validation_result
 
-          # Step 6: Check for multiple statements
+          # Step 7: Check for multiple statements
           multiple_statements_result = validate_single_statement(normalized_sql)
           return multiple_statements_result if multiple_statements_result
 
@@ -97,6 +101,7 @@ module Dbviewer
         # Perform security threat detection
         def perform_threat_validation(sql)
           if ThreatDetector.has_suspicious_patterns?(sql)
+            log_security_threat("suspicious_patterns", sql)
             return ValidationResult.new(
               valid?: false,
               error_message: "Query contains suspicious patterns that may indicate SQL injection"
@@ -104,6 +109,7 @@ module Dbviewer
           end
 
           if ThreatDetector.has_injection_patterns?(sql)
+            log_security_threat("injection_patterns", sql)
             return ValidationResult.new(
               valid?: false,
               error_message: "Query contains patterns commonly associated with SQL injection attempts"
@@ -143,6 +149,32 @@ module Dbviewer
           end
 
           nil # Structure validation passed
+        end
+
+        # Validate forbidden keywords specifically in multiple statements
+        def validate_forbidden_keywords_in_statements(normalized_sql)
+          statements = normalized_sql.split(";").reject { |s| s.nil? || s.strip.empty? }
+
+          if statements.size > 1
+            # Check each statement for forbidden keywords
+            statements.each do |statement|
+              forbidden_keyword = detect_forbidden_keywords(statement.strip)
+              if forbidden_keyword
+                return ValidationResult.new(
+                  valid?: false,
+                  error_message: "Forbidden keyword '#{forbidden_keyword}' detected in query"
+                )
+              end
+            end
+
+            # If multiple statements but no forbidden keywords, still reject for multiple statements
+            return ValidationResult.new(
+              valid?: false,
+              error_message: "Multiple SQL statements are not allowed"
+            )
+          end
+
+          nil # Single statement, proceed with normal validation
         end
 
         # Validate that query contains only a single statement
@@ -203,6 +235,26 @@ module Dbviewer
 
         def respond_to_missing?(method_name, include_private = false)
           [ :has_suspicious_patterns?, :has_injection_patterns?, :normalize ].include?(method_name) || super
+        end
+
+        # Log security threats for monitoring and analysis
+        def log_security_threat(threat_type, sql)
+          if defined?(Rails) && Rails.logger
+            Rails.logger.warn("[DBViewer][Security] SQL threat detected - #{threat_type}: #{sql.truncate(200)}")
+          end
+
+          # Also log to query logger if available
+          if defined?(::Dbviewer::Query::Logger)
+            ::Dbviewer::Query::Logger.log_security_event(
+              event_type: "threat_detected",
+              query_type: threat_type,
+              sql: sql,
+              timestamp: Time.current
+            )
+          end
+        rescue => e
+          # Don't let logging errors break the validation
+          puts "[DBViewer] Security logging error: #{e.message}"
         end
       end
     end
