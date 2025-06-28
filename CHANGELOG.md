@@ -5,7 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.9.0] - 2025-06-27
+
+### Added
+
+- **Robust Table-Level Access Control System**
+
+  - Configurable access control modes: `:none`, `:whitelist`, `:blacklist`
+  - `allowed_tables` and `blocked_tables` configuration options
+  - Column-level access control with `blocked_columns` configuration
+  - SQL query validation to prevent unauthorized table access
+  - Integration across UI, API endpoints, and Entity Relationship Diagrams
+  - Optimized filtering to occur before expensive database queries
+
+- **Advanced SQL Parser for Security Validation**
+
+  - Dedicated `Dbviewer::Security::SqlParser` class for maintainability
+  - Comprehensive SQL parsing supporting CTEs, subqueries, joins, and DML operations
+  - Enhanced string literal handling to preserve comment-like content in strings
+  - Improved CTE name detection supporting quoted and schema-qualified identifiers
+  - Robust comment removal that respects string boundaries
+  - Extensive test coverage with 40+ test cases
+
+- **Enhanced Security Features**
+  - Access control validation in all controllers and API endpoints
+  - ERD filtering to show only accessible tables and relationships
+  - Proper error handling with informative access violation messages
+  - Performance optimizations for large database schemas
+
+### Improved
+
+- **SQL Comment Processing**: Fixed regex-based comment removal to properly handle string literals
+- **CTE Detection**: Enhanced regex to support quoted identifiers (`"name"`, `` `name` ``) and schema-qualified names
+- **Code Organization**: Refactored large methods into dedicated, testable classes
+- **Documentation**: Comprehensive documentation for SQL parser improvements and access control
+
+### Technical Details
+
+- Moved SQL parsing logic from `AccessControl` private methods into `SqlParser` class (~250 lines refactored)
+- Implemented character-by-character parser for accurate string literal detection
+- Added support for escaped quotes and complex SQL constructs
+- Enhanced CTE filtering to exclude CTE names from table extraction results
+- Created extensive test suites for both unit and integration testing
+
+## [0.8.0] - 2025-06-26
 
 ### Added
 
