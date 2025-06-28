@@ -9,15 +9,16 @@ It's designed for development, debugging, and database analysis, offering a clea
 
 ## ✨ Features
 
-- **Dashboard**
-- **Table Overview**
-- **Detailed Schema Information**
-- **Entity Relationship Diagram (ERD)**
-- **Data Browsing**
-- **SQL Queries**
-- **Multiple Database Connections**
-- **PII Data Masking** - Protect sensitive data with configurable masking rules
-- **Enhanced UI Features**
+- **Dashboard** - Comprehensive database overview with statistics
+- **Table Overview** - Complete table listing with metadata
+- **Detailed Schema Information** - Column details, indexes, and constraints
+- **Entity Relationship Diagram (ERD)** - Interactive database schema visualization
+- **Data Browsing** - Paginated record viewing with search and filtering
+- **SQL Queries** - Safe SQL query execution with validation
+- **Multiple Database Connections** - Support for multiple database sources
+- **PII Data Masking** - Configurable masking for sensitive data
+- **Access Control** - Table and column-level access restrictions
+- **Query Logging** - SQL query monitoring and performance analysis
 
 ## 🧪 Demo Application
 
@@ -126,34 +127,6 @@ You can also create this file manually if you prefer.
 
 The configuration is accessed through `Dbviewer.configuration` throughout the codebase. You can also access it via `Dbviewer.config` which is an alias for backward compatibility.
 
-### Disabling DBViewer Completely
-
-You can completely disable DBViewer access by setting the `disabled` configuration option to `true`. When disabled, all DBViewer routes will return 404 (Not Found) responses:
-
-```ruby
-# config/initializers/dbviewer.rb
-Dbviewer.configure do |config|
-  # Completely disable DBViewer in production
-  config.disabled = Rails.env.production?
-
-  # Or disable unconditionally
-  # config.disabled = true
-end
-```
-
-This is useful for:
-
-- **Production environments** where you want to completely disable access to database viewing tools
-- **Security compliance** where database admin tools must be disabled in certain environments
-- **Performance** where you want to eliminate any potential overhead from DBViewer routes
-
-When disabled:
-
-- All DBViewer routes return 404 (Not Found) responses
-- No database connections are validated
-- No DBViewer middleware or concerns are executed
-- The application behaves as if DBViewer was never mounted
-
 ### Multiple Database Connections
 
 DBViewer supports working with multiple database connections in your application. This is useful for applications that connect to multiple databases or use different connection pools.
@@ -214,23 +187,32 @@ config.query_logging_mode = :file         # Store queries in a log file
 config.query_log_path = "log/dbviewer.log" # Path where query log file will be stored
 ```
 
-The file format uses one JSON entry per line, making it easy to analyze with standard tools. Query Log collector are disabled by default on non development environtment.
+The file format uses one JSON entry per line, making it easy to analyze with standard tools.
+
+**Note**: Query logging is automatically disabled in non-development environments for performance.
 
 ## 🔒 Security Features
 
-DBViewer includes several security features to protect your database:
+DBViewer includes comprehensive security features to protect your database:
+
+### Core Security
 
 - **Read-only Mode**: Only SELECT queries are allowed; all data modification operations are blocked
 - **SQL Validation**: Prevents potentially harmful operations with comprehensive validation
 - **Query Limits**: Automatic LIMIT clause added to prevent excessive data retrieval
 - **Pattern Detection**: Detection of SQL injection patterns and suspicious constructs
 - **Error Handling**: Informative error messages without exposing sensitive information
-- **HTTP Basic Authentication**: Protect access with username and password authentication
-- **Complete Disabling**: Completely disable DBViewer in production or sensitive environments
+
+### Authentication & Access Control
+
+- **HTTP Basic Authentication**: Protect access with username and password
+- **Table-Level Access Control**: Whitelist/blacklist specific tables
+- **Column-Level Blocking**: Hide sensitive columns from display
+- **Complete Disabling**: Fully disable DBViewer in production environments
 
 ### Basic Authentication
 
-You can enable HTTP Basic Authentication to secure access to DBViewer:
+Enable HTTP Basic Authentication to secure access:
 
 ```ruby
 Dbviewer.configure do |config|
@@ -242,65 +224,43 @@ end
 ```
 
 When credentials are provided, all DBViewer routes will be protected by HTTP Basic Authentication.
-Without valid credentials, users will be prompted for a username and password before they can access any DBViewer page.
 
-### Complete Disabling
+### Complete Disabling for Production
 
-For maximum security in production environments, you can completely disable DBViewer:
+For maximum security in production environments, completely disable DBViewer:
 
 ```ruby
 Dbviewer.configure do |config|
   # Completely disable DBViewer in production
   config.disabled = Rails.env.production?
+
+  # Or disable unconditionally
+  # config.disabled = true
 end
 ```
 
-When disabled, all DBViewer routes return 404 responses, making it appear as if the tool was never installed. This is the recommended approach for production systems where database admin tools should not be accessible.
+When disabled, all DBViewer routes return 404 responses, making it appear as if the tool was never installed. This is the recommended approach for production systems.
+
+⚠️ **Security Warning**: This engine provides direct access to your database contents. In production:
+
+- Use long, randomly generated passwords (e.g., `SecureRandom.hex(16)`)
+- Access DBViewer over HTTPS connections only
+- Limit access to trusted administrators only
+- Consider completely disabling in production environments
 
 ### 🔐 PII Data Masking
 
 DBViewer includes built-in support for masking Personally Identifiable Information (PII) to protect sensitive data while allowing developers to browse database contents.
 
-#### Quick Setup
-
-Configure PII masking in your Rails initializer (e.g., `config/initializers/dbviewer.rb`):
+Enable PII masking in your Rails initializer:
 
 ```ruby
-# Enable PII masking (enabled by default)
 Dbviewer.configure do |config|
   config.enable_pii_masking = true
 end
-
-# Define masking rules
-Dbviewer.configure_pii do |pii|
-  # Built-in masking types
-  pii.mask 'users.email', with: :email           # john@example.com → jo***@example.com
-  pii.mask 'users.phone', with: :phone           # +1234567890 → +1***90
-  pii.mask 'users.ssn', with: :ssn               # 123456789 → ***-**-6789
-  pii.mask 'payments.card_number', with: :credit_card  # 1234567890123456 → ****-****-****-3456
-  pii.mask 'users.api_key', with: :full_redact   # any_value → ***REDACTED***
-
-  # Custom masking with lambda
-  pii.mask 'users.salary', with: ->(value) { value ? '$***,***' : value }
-
-  # Define reusable custom masks
-  pii.custom_mask :ip_mask, ->(value) {
-    return value if value.nil?
-    parts = value.split('.')
-    "#{parts[0]}.#{parts[1]}.***.***.***"
-  }
-  pii.mask 'logs.ip_address', with: :ip_mask
-end
 ```
 
-#### Built-in Masking Types
-
-- **`:email`** - Masks email addresses while preserving domain
-- **`:phone`** - Masks phone numbers keeping first and last digits
-- **`:ssn`** - Masks Social Security Numbers showing only last 4 digits
-- **`:credit_card`** - Masks credit card numbers showing only last 4 digits
-- **`:full_redact`** - Completely redacts the value
-- **`:partial`** - Partial masking (default behavior)
+For complete setup instructions, built-in masking types, and advanced configuration examples, see [PII_MASKING.md](docs/PII_MASKING.md).
 
 ### Table and Column Access Control
 
@@ -310,35 +270,39 @@ DBViewer includes granular access control features to restrict access to specifi
 
 DBViewer supports three access control modes:
 
-- **`:none`** (default) - All tables are accessible (current behavior)
+- **`:none`** (default) - All tables are accessible
 - **`:whitelist`** - Only explicitly allowed tables are accessible (most secure)
 - **`:blacklist`** - All tables except explicitly blocked ones are accessible
 
-#### Whitelist Mode (Recommended for Production)
+#### Configuration Examples
 
-Whitelist mode is the most secure approach, where only explicitly allowed tables can be accessed:
+```ruby
+# config/initializers/dbviewer.rb
+Dbviewer.configure do |config|
+  # Whitelist mode (recommended for production)
+  config.access_control_mode = :whitelist
+  config.allowed_tables = ['users', 'orders', 'products', 'categories']
 
-### Generate Example Configuration
+  # OR blacklist mode
+  # config.access_control_mode = :blacklist
+  # config.blocked_tables = ['admin_users', 'sensitive_data', 'audit_logs']
 
-Use the generator to create an example PII configuration:
-
-```bash
-rails generate dbviewer:install
+  # Hide sensitive columns from specific tables
+  config.blocked_columns = {
+    'users' => ['password_digest', 'api_key', 'secret_token'],
+    'orders' => ['internal_notes', 'admin_comments']
+  }
+end
 ```
 
-This creates `config/initializers/dbviewer_pii_example.rb` with comprehensive examples.
+When access control is enabled, DBViewer will:
+
+- Validate all table access in UI, API endpoints, and Entity Relationship Diagrams
+- Filter SQL queries to prevent unauthorized table access
+- Show only accessible tables and their relationships in ERDs
+- Provide informative error messages for access violations
 
 For detailed PII masking documentation, see [PII_MASKING.md](docs/PII_MASKING.md).
-
-## 📝 Security Note
-
-⚠️ **Warning**: This engine provides direct access to your database contents, which contains sensitive information. Always protect it with HTTP Basic Authentication by configuring strong credentials as shown above.
-
-When used in production, ensure:
-
-- You use long, randomly generated passwords (e.g., with `SecureRandom.hex(16)`)
-- You access DBViewer over HTTPS connections only
-- Access is limited to trusted administrators only
 
 ## 🔄 Updating DBViewer
 
@@ -355,7 +319,7 @@ The simplest way to update is using Bundler:
   gem "dbviewer"
 
   # Or specify a version
-  gem "dbviewer", "~> 0.7.2"
+  gem "dbviewer", "~> 0.9.0"
   ```
 
 - Run bundle update:
