@@ -106,7 +106,7 @@ module Dbviewer
       end
 
       content_tag(:td, class: "text-center action-column") do
-        content_tag(:div, class: "d-flex gap-1 justify-content-center") do
+        content_tag(:div, class: "d-flex flex-column flex-md-row gap-1 justify-content-center") do
           # View Record button (existing)
           view_button = button_tag(
             type: "button",

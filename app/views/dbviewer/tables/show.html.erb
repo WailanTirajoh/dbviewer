@@ -18,18 +18,22 @@
     </div>
     <div class="d-flex flex-wrap gap-2">
       <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#tableStructureModal">
-        <i class="bi bi-table me-1"></i> Table Structure
+        <i class="bi bi-table me-1"></i>
+        <span class="d-none d-sm-inline">Table Structure</span>
       </button>
       <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#miniErdModal">
-        <i class="bi bi-diagram-3 me-1"></i> View Relationships
+        <i class="bi bi-diagram-3 me-1"></i>
+        <span class="d-none d-sm-inline">View Relationships</span>
       </button>
       <% if Dbviewer.configuration.enable_data_export %>
           <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#csvExportModal">
-            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
+        <i class="bi bi-file-earmark-spreadsheet me-1"></i>
+        <span class="d-none d-sm-inline">Export CSV</span>
           </button>
       <% end %>
       <%= link_to query_table_path(@table_name), class: "btn btn-primary" do %>
-        <i class="bi bi-code-square me-1"></i> Run SQL Query
+        <i class="bi bi-code-square me-1"></i>
+        <span class="d-none d-sm-inline">Run SQL Query</span>
       <% end %>
     </div>
   </div>
@@ -99,25 +103,25 @@
 <div class="dbviewer-card card mb-4" id="table-section">
   <div class="card-header d-flex justify-content-between align-items-center">
     <h5 class="mb-0">
-      <select id="per-page-select" class="form-select form-select-sm" onchange="window.location.href='<%= table_path(@table_name) %>?<%= per_page_url_params(@table_name) %>'">
+      <select id="per-page-select" class="form-select form-select-sm pe-4" onchange="window.location.href='<%= table_path(@table_name) %>?<%= per_page_url_params(@table_name) %>'">
         <% Dbviewer.configuration.per_page_options.each do |option| %>
           <option value="<%= option %>" <%= 'selected' if @per_page == option %>><%= option %></option>
         <% end %>
       </select>
     </h5>
-    <div class="d-flex align-items-center table-actions">
+    <div class="d-none d-md-flex align-items-center table-actions">
       <% if @order_by.present? %>
         <span class="badge bg-primary me-2" title="Sort order">
           <i class="bi bi-sort-<%= @order_direction == "ASC" ? "up" : "down" %> me-1"></i>
           <%= @order_by %> (<%= @order_direction == "ASC" ? "ascending" : "descending" %>)
         </span>
       <% end %>
-      <span class="badge bg-secondary">Total: <%= @total_count %> records</span>
-      <% active_filters = @column_filters.reject { |_, v| v.blank? }.size %>
+      <span class="d-none d-md-block badge bg-secondary">Total: <%= @total_count %> records</span>
+      <% active_filters = @column_filters.reject { |k, v| v.blank? || k.to_s.ends_with?('_operator') }.size %>
       <% if active_filters > 0 %>
         <span class="badge bg-info ms-2" title="Active filters"><i class="bi bi-funnel-fill me-1"></i><%= active_filters %></span>
       <% end %>
-      <button type="button" class="btn btn-outline-secondary btn-sm ms-2" id="fullscreen-toggle" title="Toggle fullscreen">
+      <button type="button" class="d-none d-md-block btn btn-outline-secondary btn-sm ms-2" id="fullscreen-toggle" title="Toggle fullscreen">
         <i class="bi bi-fullscreen" id="fullscreen-icon"></i>
       </button>
     </div>

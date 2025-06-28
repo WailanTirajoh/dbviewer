@@ -125,14 +125,21 @@ tbody tr td.action-column {
 /* ========== ACTION COLUMN STYLING ========== */
 /* Action column styling */
 .action-column {
-  width: 100px; /* Increased from 60px to accommodate two buttons */
-  min-width: 100px; /* Ensure minimum width */
+  width: 100px; /* Default for desktop */
+  min-width: 100px;
   white-space: nowrap;
   position: sticky;
   left: 0;
-  z-index: 30; /* Higher z-index to ensure it stays on top */
-  background-color: var(--bs-body-bg, #fff); /* Use body background color */
+  z-index: 30;
+  background-color: var(--bs-body-bg, #fff);
   box-shadow: 2px 0 6px rgba(0, 0, 0, 0.04);
+}
+
+@media (max-width: 767.98px) {
+  .action-column {
+    width: 30px;
+    min-width: 30px;
+  }
 }
 
 .copy-factory-btn,
