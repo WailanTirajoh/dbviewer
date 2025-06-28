@@ -35,10 +35,10 @@ module Dbviewer
           string_concatenation: /\|\||CONCAT\s*\(/i,
           hex_encoding: /0x[0-9a-f]{16,}/i,
           # Additional suspicious patterns
-          char_function: /\bCHAR\s*\(\s*\d+/i,
+          char_function: /\bCHAR\s*\(\s*\d+(\s*,\s*\d+){4,}/i, # Only flag when many parameters like CHAR(65,68,77,73,78)
           ascii_function: /\bASCII\s*\(/i,
-          substring_injection: /\bSUBSTRING\s*\(/i,
-          length_functions: /\b(LENGTH|LEN|CHAR_LENGTH)\s*\(/i,
+          substring_injection: /\bSUBSTRING\s*\(\s*(@@|version|user|database)/i, # Only when extracting system info
+          length_functions: /\b(LENGTH|LEN|CHAR_LENGTH)\s*\(\s*(@@|version|user|database)/i, # Only on system functions
           conditional_comments: /\/\*!\d+/,
           encoded_spaces: /%20|%09|%0a|%0d/i,
           multiple_unions: /\bUNION\b.*\bUNION\b/i,

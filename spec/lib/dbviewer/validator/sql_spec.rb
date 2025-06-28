@@ -645,13 +645,33 @@ RSpec.describe Dbviewer::Validator::Sql do
     end
 
     context 'with information schema access' do
-      it 'allows legitimate schema queries' do
-        # These should be allowed as they are legitimate SELECT queries
-        expect(described_class.safe_query?("SELECT * FROM information_schema.tables")).to be true
-        expect(described_class.safe_query?("SELECT * FROM sqlite_master")).to be true
+      context 'when enhanced protection is enabled' do
+        before do
+          configuration = instance_double(Dbviewer::Configuration, enhanced_sql_protection: true)
+          allow(Dbviewer).to receive(:configuration).and_return(configuration)
+        end
+
+        it 'blocks potentially dangerous schema queries' do
+          # Information schema access is blocked when enhanced protection is enabled
+          expect(described_class.safe_query?("SELECT * FROM information_schema.tables")).to be false
+          expect(described_class.safe_query?("SELECT * FROM mysql.user")).to be false
+        end
       end
 
-      it 'prevents schema modifications' do
+      context 'when enhanced protection is disabled' do
+        before do
+          configuration = instance_double(Dbviewer::Configuration, enhanced_sql_protection: false)
+          allow(Dbviewer).to receive(:configuration).and_return(configuration)
+        end
+
+        it 'allows legitimate schema queries' do
+          # These should be allowed when enhanced protection is disabled
+          expect(described_class.safe_query?("SELECT * FROM information_schema.tables")).to be true
+          expect(described_class.safe_query?("SELECT * FROM sqlite_master")).to be true
+        end
+      end
+
+      it 'prevents schema modifications regardless of protection level' do
         # But we should prevent modifications
         expect(described_class.safe_query?("INSERT INTO information_schema.tables VALUES (...)")).to be false
       end

@@ -39,24 +39,24 @@ module Dbviewer
       # Sanitize query input to prevent basic injection attempts
       def sanitize_query_input(query)
         return nil if query.nil?
-        
+
         # Convert to string and strip whitespace
         sanitized = query.to_s.strip
-        
+
         # Remove any null bytes that could be used to bypass security
-        sanitized = sanitized.gsub(/\x00/, '')
-        
+        sanitized = sanitized.gsub(/\x00/, "")
+
         # Limit the query length as an additional safety measure
         max_length = 10000
         sanitized = sanitized.truncate(max_length) if sanitized.length > max_length
-        
+
         sanitized
       end
 
       # Log unsafe query attempts for security monitoring
       def log_unsafe_query_attempt(query)
         Rails.logger.warn("[DBViewer][Security] Unsafe query blocked: #{query.truncate(200)}") if defined?(Rails)
-        
+
         # Log to security monitoring system if available
         if defined?(::Dbviewer::Query::Logger)
           ::Dbviewer::Query::Logger.log_security_event(

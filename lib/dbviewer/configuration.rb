@@ -101,7 +101,7 @@ module Dbviewer
     attr_accessor :access_control_mode
 
     # Security-related configuration options
-    
+
     # Enable comprehensive security logging for all database operations
     attr_accessor :log_queries
 

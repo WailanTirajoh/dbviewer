@@ -77,7 +77,7 @@ module Dbviewer
         # Store security events separately for analysis
         @security_events ||= []
         @security_events << event
-        
+
         # Keep only the last 1000 security events to prevent memory issues
         @security_events = @security_events.last(1000) if @security_events.size > 1000
       end
@@ -112,7 +112,7 @@ module Dbviewer
         def log_security_event(event_type:, query_type:, sql:, timestamp:)
           # Log to Rails logger with security prefix for easy filtering
           Rails.logger.info("[DBViewer][Security] #{event_type.upcase}: #{query_type} - #{sql.truncate(200)}")
-          
+
           # Also store in memory for potential analysis
           instance.add_security_event({
             event_type: event_type,
