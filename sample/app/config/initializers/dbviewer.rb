@@ -40,7 +40,7 @@ Dbviewer.configure do |config|
 
   # Table and Column Access Control (Security Feature)
   # Access control mode: :whitelist (most secure), :blacklist, or :none (default)
-  config.access_control_mode = :whitelist
+  config.access_control_mode = :none
 
   # Whitelist mode: Only these tables will be accessible
   config.allowed_tables = [
