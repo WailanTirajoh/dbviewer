@@ -22,6 +22,7 @@ module Dbviewer
           return true if has_string_concatenation?(sql)
           return true if has_excessive_quotes?(sql)
           return true if has_hex_encoding?(sql)
+          return true if has_additional_suspicious_patterns?(sql)
 
           false
         end
@@ -126,6 +127,23 @@ module Dbviewer
         # @return [Boolean] true if suspicious hex encoding detected
         def has_hex_encoding?(sql)
           ValidationConfig::SUSPICIOUS_PATTERNS[:hex_encoding] =~ sql
+        end
+
+        # Check for additional suspicious patterns
+        # This method checks for newer and more sophisticated attack patterns
+        #
+        # @param sql [String] Raw SQL query
+        # @return [Boolean] true if additional suspicious patterns detected
+        def has_additional_suspicious_patterns?(sql)
+          additional_patterns = [
+            :char_function, :ascii_function, :substring_injection, :length_functions,
+            :conditional_comments, :encoded_spaces, :multiple_unions, :nested_selects,
+            :script_tags, :php_tags, :null_byte, :excessive_parentheses
+          ]
+
+          additional_patterns.any? do |pattern_name|
+            ValidationConfig::SUSPICIOUS_PATTERNS[pattern_name] =~ sql
+          end
         end
       end
     end

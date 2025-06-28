@@ -97,6 +97,7 @@ module Dbviewer
         # Perform security threat detection
         def perform_threat_validation(sql)
           if ThreatDetector.has_suspicious_patterns?(sql)
+            log_security_threat("suspicious_patterns", sql)
             return ValidationResult.new(
               valid?: false,
               error_message: "Query contains suspicious patterns that may indicate SQL injection"
@@ -104,6 +105,7 @@ module Dbviewer
           end
 
           if ThreatDetector.has_injection_patterns?(sql)
+            log_security_threat("injection_patterns", sql)
             return ValidationResult.new(
               valid?: false,
               error_message: "Query contains patterns commonly associated with SQL injection attempts"
@@ -203,6 +205,26 @@ module Dbviewer
 
         def respond_to_missing?(method_name, include_private = false)
           [ :has_suspicious_patterns?, :has_injection_patterns?, :normalize ].include?(method_name) || super
+        end
+
+        # Log security threats for monitoring and analysis
+        def log_security_threat(threat_type, sql)
+          if defined?(Rails) && Rails.logger
+            Rails.logger.warn("[DBViewer][Security] SQL threat detected - #{threat_type}: #{sql.truncate(200)}")
+          end
+          
+          # Also log to query logger if available
+          if defined?(::Dbviewer::Query::Logger)
+            ::Dbviewer::Query::Logger.log_security_event(
+              event_type: "threat_detected",
+              query_type: threat_type,
+              sql: sql,
+              timestamp: Time.current
+            )
+          end
+        rescue => e
+          # Don't let logging errors break the validation
+          puts "[DBViewer] Security logging error: #{e.message}"
         end
       end
     end

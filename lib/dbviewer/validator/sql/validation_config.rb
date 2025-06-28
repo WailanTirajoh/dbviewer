@@ -33,7 +33,20 @@ module Dbviewer
         SUSPICIOUS_PATTERNS = {
           comment_injection: /\s+--|\/\*/,
           string_concatenation: /\|\||CONCAT\s*\(/i,
-          hex_encoding: /0x[0-9a-f]{16,}/i
+          hex_encoding: /0x[0-9a-f]{16,}/i,
+          # Additional suspicious patterns
+          char_function: /\bCHAR\s*\(\s*\d+/i,
+          ascii_function: /\bASCII\s*\(/i,
+          substring_injection: /\bSUBSTRING\s*\(/i,
+          length_functions: /\b(LENGTH|LEN|CHAR_LENGTH)\s*\(/i,
+          conditional_comments: /\/\*!\d+/,
+          encoded_spaces: /%20|%09|%0a|%0d/i,
+          multiple_unions: /\bUNION\b.*\bUNION\b/i,
+          nested_selects: /\bSELECT\b.*\bSELECT\b.*\bSELECT\b/i,
+          script_tags: /<script|<\/script>/i,
+          php_tags: /<\?php|<\?=/i,
+          null_byte: /\x00/,
+          excessive_parentheses: /\({5,}|\){5,}/
         }.freeze
 
         # SQL injection attack patterns - these are definitive threats
@@ -46,7 +59,19 @@ module Dbviewer
           version_function: /version\(\)/i,
           file_access: /\bLOAD_FILE\s*\(/i,
           outfile_access: /\bINTO\s+OUTFILE\b/i,
-          dumpfile_access: /\bINTO\s+DUMPFILE\b/i
+          dumpfile_access: /\bINTO\s+DUMPFILE\b/i,
+          # Additional injection patterns for enhanced security
+          sleep_injection: /\b(SLEEP|WAITFOR|DELAY)\s*\(/i,
+          benchmark_injection: /\bBENCHMARK\s*\(/i,
+          information_schema: /\binformation_schema\./i,
+          mysql_user: /\bmysql\.user\b/i,
+          pg_user: /\bpg_user\b/i,
+          system_functions: /\b(system|exec|shell|cmd)\s*\(/i,
+          database_functions: /\b(database|schema|user|current_user)\s*\(\s*\)/i,
+          stacked_queries: /;\s*(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE)/i,
+          time_based_blind: /\bIF\s*\(\s*\d+\s*=\s*\d+\s*,\s*SLEEP\s*\(/i,
+          error_based: /\bCONVERT\s*\(\s*INT\s*,/i,
+          xpath_injection: /\bEXTRACTVALUE\s*\(/i
         }.freeze
 
         # Database feature detection patterns for query analysis
