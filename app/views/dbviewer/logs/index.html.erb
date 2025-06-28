@@ -240,27 +240,6 @@
     </div>
   <% end %>
   
-  <!-- Table Access Chart -->
-  <% if @stats[:tables_queried].present? %>
-  <div class="row mb-4">
-    <div class="col-md-12">
-      <div class="card <%= 'border-info' if @filtered_stats %>">
-        <div class="card-header <%= @filtered_stats ? 'bg-info-subtle' : '' %>">
-          <div class="d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">Table Access Frequency</h5>
-            <% if @filtered_stats %>
-              <span class="badge bg-info text-dark">Filtered</span>
-            <% end %>
-          </div>
-        </div>
-        <div class="card-body">
-          <canvas id="tablesChart" width="400" height="150"></canvas>
-        </div>
-      </div>
-    </div>
-  </div>
-  <% end %>
-  
   <!-- Filters -->
   <div class="card mb-4">
     <div class="card-header">
