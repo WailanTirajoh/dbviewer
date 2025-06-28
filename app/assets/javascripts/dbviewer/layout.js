@@ -24,7 +24,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   const toggleBtn = document.querySelector(".dbviewer-sidebar-toggle");
-  const closeBtn = document.querySelector(".dbviewer-sidebar-close");
   const sidebar = document.querySelector(".dbviewer-sidebar");
   const overlay = document.createElement("div");
 
@@ -59,10 +58,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (searchInput) searchInput.focus();
       }, 300); // Small delay to allow for animation
     }
-  });
-
-  closeBtn.addEventListener("click", function () {
-    hideSidebar();
   });
 
   overlay.addEventListener("click", function () {
