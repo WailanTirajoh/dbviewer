@@ -22,7 +22,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1>Query: <%= @table_name %></h1>
   <div>
-    <%= link_to table_path(@table_name), class: "btn btn-outline-primary" do %>
+    <%= link_to table_path(@table_name), class: "btn btn-outline-primary d-none d-md-inline-flex" do %>
       <i class="bi bi-arrow-left me-1"></i> Back to Table
     <% end %>
   </div>
@@ -41,8 +41,8 @@
         <%= form.hidden_field :query, id: "query-input", value: @query.to_s %>
       </div>
       
-      <div class="d-flex justify-content-between align-items-start">
-        <div class="form-text">
+      <div class="d-md-flex justify-content-between align-items-start">
+        <div class="form-text mb-3 mb-md-0">
           <strong>Examples:</strong><br>
           <div class="example-queries">
             <code class="example-query btn btn-sm btn-outline-secondary mb-1">SELECT * FROM <%= @table_name %> LIMIT 100</code>
