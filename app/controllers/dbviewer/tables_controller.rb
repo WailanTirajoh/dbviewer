@@ -45,12 +45,7 @@ module Dbviewer
       if record.save
         render json: { message: "Record created successfully" }
       else
-        @table_columns = filter_accessible_columns(@table_name, database_manager.table_columns(@table_name))
-        @metadata = database_manager.table_metadata(@table_name)
-        @errors = record.errors
-        @foreign_key_options = load_foreign_key_options(@metadata)
-
-        render :new_record, layout: false, status: :unprocessable_entity
+        render json: { errors: record.errors, messages: record.errors.full_messages }, status: :unprocessable_entity
       end
     end
 

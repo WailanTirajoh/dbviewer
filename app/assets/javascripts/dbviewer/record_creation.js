@@ -44,66 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  newRecordModal.addEventListener("submit", async function (event) {
-    const form = event.target;
-    if (form.id !== "newRecordForm") return;
-
-    event.preventDefault();
-
-    const submitButton = document.getElementById("createRecordButton");
-    const originalText = submitButton.innerHTML;
-    submitButton.disabled = true;
-    submitButton.innerHTML =
-      '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
-
-    const formData = new FormData(form);
-
-    try {
-      const response = await fetch(form.action, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "X-Requested-With": "XMLHttpRequest",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const modal = bootstrap.Modal.getInstance(newRecordModal);
-        modal.hide();
-
-        Toastify({
-          text: `<span class="toast-icon"><i class="bi bi-clipboard-check"></i></span> Record created successfully!`,
-          className: "toast-factory-bot",
-          duration: 3000,
-          gravity: "bottom",
-          position: "right",
-          escapeMarkup: false,
-          style: {
-            animation:
-              "slideInRight 0.3s ease-out, slideOutRight 0.3s ease-out 2.7s",
-          },
-        }).showToast();
-
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } else {
-        const html = await response.text();
-        const modalContent = newRecordModal.querySelector(".modal-content");
-        modalContent.innerHTML = html;
-        initializeFormElements();
-      }
-    } catch (error) {
-      const errorDiv = document.createElement("div");
-      errorDiv.className = "alert alert-danger";
-      errorDiv.textContent = `Error: ${error.message}`;
-      form.prepend(errorDiv);
-    } finally {
-      submitButton.disabled = false;
-      submitButton.innerHTML = originalText;
-    }
-  });
+  newRecordModal.addEventListener("submit", handleNewRecordSubmit);
 });
 
 // Initialize Select2 dropdowns and other form elements
@@ -116,4 +57,122 @@ function initializeFormElements() {
       width: "100%",
     });
   }
+}
+
+async function handleNewRecordSubmit(event) {
+  event.preventDefault();
+
+  const form = event.target;
+  const submitButton = document.getElementById("createRecordButton");
+  const originalText = submitButton.innerHTML;
+  const formData = new FormData(form);
+
+  disableSubmitButton(submitButton);
+
+  try {
+    const response = await fetch(form.action, {
+      method: "POST",
+      body: formData,
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      handleErrors(result, form);
+      return;
+    }
+
+    handleSuccess(result);
+  } catch (error) {
+    displayGenericError(form, error.message);
+  } finally {
+    enableSubmitButton(submitButton, originalText);
+  }
+}
+
+function disableSubmitButton(button) {
+  button.disabled = true;
+  button.innerHTML =
+    '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
+}
+
+function enableSubmitButton(button, originalText) {
+  button.disabled = false;
+  button.innerHTML = originalText;
+}
+
+function handleSuccess() {
+  const modal = bootstrap.Modal.getInstance(newRecordModal);
+  modal.hide();
+
+  Toastify({
+    text: `<span class="toast-icon"><i class="bi bi-clipboard-check"></i></span> Record created successfully!`,
+    className: "toast-factory-bot",
+    duration: 3000,
+    gravity: "bottom",
+    position: "right",
+    escapeMarkup: false,
+    style: {
+      animation: "slideInRight 0.3s ease-out, slideOutRight 0.3s ease-out 2.7s",
+    },
+  }).showToast();
+
+  setTimeout(() => {
+    window.location.reload();
+  }, 1000);
+}
+
+function handleErrors(result, form) {
+  if (result.errors) {
+    showToastErrors(result.messages);
+    showFieldErrors(result.errors, form);
+  }
+  initializeFormElements();
+}
+
+function showToastErrors(messages) {
+  const combinedMessages = Object.values(messages)
+    .flat()
+    .map((msg) => `<div>${msg}</div>`)
+    .join("");
+
+  Toastify({
+    text: `<span class="toast-icon"><i class="bi bi-exclamation-triangle"></i></span> ${combinedMessages}`,
+    className: "toast-factory-bot toast-error",
+    duration: 5000,
+    gravity: "bottom",
+    position: "right",
+    escapeMarkup: false,
+    style: {
+      animation: "slideInRight 0.3s ease-out, slideOutRight 0.3s ease-out 4.7s",
+      background: "#dc3545",
+    },
+  }).showToast();
+}
+
+function showFieldErrors(errors, form) {
+  form.querySelectorAll(".invalid-feedback").forEach((el) => el.remove());
+  Object.entries(errors).forEach(([field, messages]) => {
+    const input = document.getElementById(`record_${field}`);
+    if (!input) return;
+
+    let errorDiv = input.parentElement.querySelector(".invalid-feedback");
+    if (!errorDiv) {
+      errorDiv = document.createElement("div");
+      errorDiv.className = "invalid-feedback";
+      input.parentElement.appendChild(errorDiv);
+    }
+    errorDiv.innerHTML = messages.join("<br>");
+    input.classList.add("is-invalid");
+  });
+}
+
+function displayGenericError(form, message) {
+  const errorDiv = document.createElement("div");
+  errorDiv.className = "alert alert-danger";
+  errorDiv.textContent = `Error: ${message}`;
+  form.prepend(errorDiv);
 }
