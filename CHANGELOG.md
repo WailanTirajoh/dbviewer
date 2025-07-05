@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4-alpha.1] - 2025-07-05
+
+### Added
+
+- **Record Creation Feature**
+  - Added ability to create new records directly from the database viewer interface
+  - Implemented floating "Add Record" button and modal for record creation
+  - Added AJAX-based form loading and submission for record creation
+  - Integrated Select2 for searchable dropdowns in forms with dark mode support
+
+### Enhanced
+
+- **UI Improvements**
+  - Improved error handling and user feedback during record creation
+  - Added inline field errors and toast notifications
+  - Enhanced form styling with better user experience
+
+### Backend Changes
+
+- Added `new_record` and `create_record` actions in `TablesController`
+- Updated routing to include endpoints for new record creation
+- Added database schema validation and metadata integration
+
 ## [0.9.0] - 2025-06-27
 
 ### Added
