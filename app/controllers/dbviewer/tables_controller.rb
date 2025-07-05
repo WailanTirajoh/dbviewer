@@ -92,7 +92,13 @@ module Dbviewer
     private
 
     def record_params
-      params.require(:record).permit!
+      accessible_columns = filter_accessible_columns(@table_name, database_manager.table_columns(@table_name))
+
+      permitted_fields = accessible_columns
+        .reject { |col| %w[id created_at updated_at].include?(col[:name]) }
+        .map { |col| col[:name].to_sym }
+
+      params.require(:record).permit(*permitted_fields)
     end
 
     def set_table_name
