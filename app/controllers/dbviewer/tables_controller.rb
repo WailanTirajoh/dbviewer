@@ -178,7 +178,7 @@ module Dbviewer
                     .select([ foreign_key_column, display_column ].uniq)
                     .limit(100)
                     .order(display_column)
-                    .map { |r| [ r.send(display_column).to_s, r.send(foreign_key_column) ] }
+                    .map { |r| [ r[display_column].to_s, r[foreign_key_column] ] }
 
           options[fk[:column]] = records
         rescue => e
