@@ -30,22 +30,8 @@
       <div class="mb-3">
         <% 
           # Handle different field types
-          field_type = case column[:type]
-            when :boolean
-              :check_box
-            when :text
-              :text_area
-            when :date
-              :date_field
-            when :datetime, :timestamp
-              :datetime_local_field
-            else
-              :text_field
-          end
-          
-          # Check if this is a foreign key field
+          field_type = determine_field_type(column[:type])
           foreign_key = @metadata[:foreign_keys].find { |fk| fk[:column] == column_name }
-          
           field_id = "record_#{column_name}"
           required = !column[:null]
         %>

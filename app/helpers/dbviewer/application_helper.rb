@@ -6,6 +6,7 @@ module Dbviewer
 
     include DatatableUiHelper
     include DatatableUiFilterHelper
+    include DatatableUiFormHelper
     include DatatableUiPaginationHelper
     include DatatableUiSortingHelper
     include DatatableUiTableHelper
