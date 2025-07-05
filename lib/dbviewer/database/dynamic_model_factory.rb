@@ -80,7 +80,7 @@ module Dbviewer
 
           # Add validations from indexes
           table_metadata[:indexes].each do |index|
-            next unless index[:unique] || index[:columns].empty?
+            next unless index[:unique] && index[:columns].present?
 
             columns = index[:columns]
             column = columns.first
