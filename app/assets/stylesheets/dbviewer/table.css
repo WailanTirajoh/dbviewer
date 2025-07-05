@@ -1186,3 +1186,17 @@ span.flatpickr-weekday {
   .select2-search__field::placeholder {
   color: var(--bs-secondary-color);
 }
+
+/* Ensure select2 and form fields use Bootstrap default font size */
+.select2-container--bootstrap-5 .select2-selection,
+.select2-container--bootstrap-5 .select2-results__option,
+.select2-container--bootstrap-5 .select2-search__field,
+.form-control {
+  font-size: 1rem !important; /* Bootstrap default */
+  line-height: 1.5; /* Also aligns vertically */
+}
+
+/* Optional: improve vertical alignment of Select2 with input fields */
+.select2-container--bootstrap-5 .select2-selection {
+  padding: 0.375rem 0.75rem;
+}
