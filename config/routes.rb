@@ -4,6 +4,8 @@ Dbviewer::Engine.routes.draw do
       get "query"
       post "query"
       get "export_csv"
+      get "new_record"
+      post "create_record"
     end
   end
 

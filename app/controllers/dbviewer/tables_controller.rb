@@ -3,7 +3,7 @@ module Dbviewer
     include Dbviewer::AccessControlValidation
 
     before_action :set_table_name, except: [ :index ]
-    before_action :validate_table, only: [ :show, :query, :export_csv ]
+    before_action :validate_table, only: [ :show, :query, :export_csv, :new_record, :create_record ]
     before_action :set_query_filters, only: [ :show, :export_csv ]
     before_action :set_global_filters, only: [ :show, :export_csv ]
 
@@ -30,6 +30,30 @@ module Dbviewer
       @metadata = datatable_data[:metadata]
     end
 
+    def new_record
+      @table_columns = filter_accessible_columns(@table_name, database_manager.table_columns(@table_name))
+      @metadata = database_manager.table_metadata(@table_name)
+      @foreign_key_options = load_foreign_key_options(@metadata)
+
+      render layout: false
+    end
+
+    def create_record
+      model_class = database_manager.get_model_for(@table_name)
+      record = model_class.new(record_params)
+
+      if record.save
+        render json: { message: "Record created successfully" }
+      else
+        @table_columns = filter_accessible_columns(@table_name, database_manager.table_columns(@table_name))
+        @metadata = database_manager.table_metadata(@table_name)
+        @errors = record.errors
+        @foreign_key_options = load_foreign_key_options(@metadata)
+
+        render :new_record, layout: false, status: :unprocessable_entity
+      end
+    end
+
     def query
       all_columns = fetch_table_columns(@table_name)
       @columns = filter_accessible_columns(@table_name, all_columns)
@@ -45,8 +69,6 @@ module Dbviewer
       end
 
       @records = execute_query(@query)
-
-      render :query
     end
 
     def export_csv
@@ -56,7 +78,6 @@ module Dbviewer
         return
       end
 
-      include_headers = params[:include_headers] != "0"
       query_params = Dbviewer::Datatable::QueryParams.new(
         page: @current_page,
         per_page: (params[:limit] || 10000).to_i,
@@ -64,10 +85,9 @@ module Dbviewer
         direction: @order_direction,
         column_filters: @column_filters.reject { |_, v| v.blank? }
       )
-      csv_data = export_table_to_csv(@table_name, query_params, include_headers)
 
-      timestamp = Time.now.strftime("%Y%m%d%H%M%S")
-      filename = "#{@table_name}_#{timestamp}.csv"
+      csv_data = export_table_to_csv(@table_name, query_params, params[:include_headers] != "0")
+      filename = "#{@table_name}_#{Time.now.strftime('%Y%m%d%H%M%S')}.csv"
 
       send_data csv_data,
                 type: "text/csv; charset=utf-8; header=present",
@@ -75,6 +95,10 @@ module Dbviewer
     end
 
     private
+
+    def record_params
+      params.require(:record).permit!
+    end
 
     def set_table_name
       @table_name = params[:id]
@@ -86,78 +110,82 @@ module Dbviewer
 
     def set_query_filters
       @current_page = [ 1, params[:page].to_i ].max
-      @per_page = params[:per_page] ? params[:per_page].to_i : Dbviewer.configuration.default_per_page
-      @per_page = Dbviewer.configuration.default_per_page unless Dbviewer.configuration.per_page_options.include?(@per_page)
+      @per_page = Dbviewer.configuration.per_page_options.include?(params[:per_page].to_i) ? params[:per_page].to_i : Dbviewer.configuration.default_per_page
       @order_by = params[:order_by].presence || determine_default_order_column
-      @order_direction = params[:order_direction].upcase if params[:order_direction].present?
-      @order_direction = "DESC" unless %w[ASC DESC].include?(@order_direction)
+      @order_direction = %w[ASC DESC].include?(params[:order_direction].to_s.upcase) ? params[:order_direction].upcase : "DESC"
       @column_filters = params[:column_filters].presence ? params[:column_filters].to_enum.to_h : {}
     end
 
     def set_global_filters
-      # Store creation filter datetimes in session to persist between table navigation
-      if params[:creation_filter_start].present?
-        session[:creation_filter_start] = params[:creation_filter_start]
-      end
+      session[:creation_filter_start] = params[:creation_filter_start] if params[:creation_filter_start].present?
+      session[:creation_filter_end] = params[:creation_filter_end] if params[:creation_filter_end].present?
 
-      if params[:creation_filter_end].present?
-        session[:creation_filter_end] = params[:creation_filter_end]
-      end
-
-      # Clear filters if explicitly requested
       if params[:clear_creation_filter] == "true"
         session.delete(:creation_filter_start)
         session.delete(:creation_filter_end)
       end
 
-      # Set instance variables for view access
       @creation_filter_start = session[:creation_filter_start]
       @creation_filter_end = session[:creation_filter_end]
-
-      # Initialize column_filters if not present
       @column_filters ||= {}
 
-      # Apply creation filters to column_filters if the table has a created_at column
       if has_timestamp_column?(@table_name) && (@creation_filter_start.present? || @creation_filter_end.present?)
-        # Clear any existing created_at filters
         %w[created_at created_at_operator created_at_end].each { |key| @column_filters.delete(key) }
 
-        case
-        when @creation_filter_start.present? && @creation_filter_end.present?
-          @column_filters.merge!({
-            "created_at" => @creation_filter_start,
-            "created_at_end" => @creation_filter_end
-          })
-        when @creation_filter_start.present?
-          @column_filters.merge!({
-            "created_at" => @creation_filter_start,
-            "created_at_operator" => "gte"
-          })
-        when @creation_filter_end.present?
-          @column_filters.merge!({
-            "created_at" => @creation_filter_end,
-            "created_at_operator" => "lte"
-          })
+        if @creation_filter_start.present? && @creation_filter_end.present?
+          @column_filters.merge!("created_at" => @creation_filter_start, "created_at_end" => @creation_filter_end)
+        elsif @creation_filter_start.present?
+          @column_filters.merge!("created_at" => @creation_filter_start, "created_at_operator" => "gte")
+        elsif @creation_filter_end.present?
+          @column_filters.merge!("created_at" => @creation_filter_end, "created_at_operator" => "lte")
         end
       end
     end
 
-    # Determine the default order column using configurable ordering logic
     def determine_default_order_column
-      # Get the table columns to check what's available
       columns = @columns || fetch_table_columns(@table_name)
       column_names = columns.map { |col| col[:name] }
 
-      # Try the configured default order column first
-      default_column = Dbviewer.configuration.default_order_column
-      return default_column if default_column && column_names.include?(default_column)
+      Dbviewer.configuration.default_order_column.presence_in(column_names) ||
+        database_manager.primary_key(@table_name) ||
+        columns.first&.dig(:name)
+    end
 
-      # Fall back to primary key
-      primary_key = database_manager.primary_key(@table_name)
-      return primary_key if primary_key.present?
+    def find_display_column(columns)
+      column_names = columns.map { |c| c[:name] }
+      # Common display columns to check for (TODO: next we can add this to configuration for better dev control)
+      # If none found, fallback to first non-id column or id column
+      # This ensures we have a sensible default for display purposes
+      %w[name title label display_name username email description].find { |name| column_names.include?(name) } ||
+        columns.find { |c| [ :string, :text ].include?(c[:type]) && c[:name] != "id" }&.[](:name) ||
+        columns.find { |c| c[:name] != "id" }&.[](:name) || "id"
+    end
 
-      # Final fallback to first column
-      columns.first ? columns.first[:name] : nil
+    def load_foreign_key_options(metadata)
+      options = {}
+      metadata[:foreign_keys].each do |fk|
+        foreign_table = fk[:to_table]
+        foreign_key_column = fk[:primary_key] || "id"
+        next unless access_control.table_accessible?(foreign_table)
+
+        begin
+          foreign_columns = database_manager.table_columns(foreign_table)
+          display_column = find_display_column(foreign_columns)
+
+          foreign_model = database_manager.get_model_for(foreign_table)
+          records = foreign_model
+                    .select([ foreign_key_column, display_column ].uniq)
+                    .limit(100)
+                    .order(display_column)
+                    .map { |r| [ r.send(display_column).to_s, r.send(foreign_key_column) ] }
+
+          options[fk[:column]] = records
+        rescue => e
+          Rails.logger.error("Error fetching foreign key options for #{foreign_table}: #{e.message}")
+          options[fk[:column]] = []
+        end
+      end
+      options
     end
   end
 end

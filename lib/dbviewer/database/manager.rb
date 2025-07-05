@@ -12,7 +12,7 @@ module Dbviewer
         ensure_connection
         @cache_manager = ::Dbviewer::Cache::InMemory.new(configuration.cache_expiry)
         @table_metadata_manager = ::Dbviewer::Database::MetadataManager.new(@connection, @cache_manager)
-        @dynamic_model_factory = ::Dbviewer::Database::DynamicModelFactory.new(@connection, @cache_manager)
+        @dynamic_model_factory = ::Dbviewer::Database::DynamicModelFactory.new(@connection, @cache_manager, @table_metadata_manager)
         @query_executor = ::Dbviewer::Query::Executor.new(@connection, configuration)
         @table_query_operations = ::Dbviewer::Datatable::QueryOperations.new(
           @connection,
