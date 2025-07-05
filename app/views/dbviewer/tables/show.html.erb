@@ -361,6 +361,8 @@
 <% end %>
 
 <!-- Floating Add Record Button -->
+<%# TODO: move this to helpers so that we can have centralized creation check %>
+<% if @table_name != 'schema_migrations'%> 
 <div class="floating-add-record d-none d-lg-block">
   <button id="floatingAddRecordBtn"
           class="btn btn-success btn-lg shadow-lg rounded-circle" 
@@ -369,6 +371,7 @@
     <i class="bi bi-plus-lg"></i>
   </button>
 </div>
+<% end %>
 
 <!-- New Record Modal -->
 <div id="newRecordModal" class="modal fade" tabindex="-1" aria-labelledby="newRecordModalLabel" aria-hidden="true">
