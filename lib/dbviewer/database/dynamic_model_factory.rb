@@ -2,12 +2,13 @@ module Dbviewer
   module Database
     # DynamicModelFactory creates and manages ActiveRecord models for database tables
     class DynamicModelFactory
-      # Initialize with a connection and cache manager
+      # Initialize with a connection, cache manager, and metadata manager
       # @param connection [ActiveRecord::ConnectionAdapters::AbstractAdapter] Database connection
-      # @param cache_manager [Dbviewer::Database::CacheManager] Cache manager instance
-      def initialize(connection, cache_manager)
+      # @param cache_manager [Dbviewer::Cache::Base] Cache manager instance
+      def initialize(connection, cache_manager, metadata_manager)
         @connection = connection
         @cache_manager = cache_manager
+        @metadata_manager = metadata_manager
       end
 
       # Get or create an ActiveRecord model for a table
@@ -16,7 +17,7 @@ module Dbviewer
       def get_model_for(table_name)
         # Cache models for shorter time since they might need refreshing more frequently
         @cache_manager.fetch("model-#{table_name}", expires_in: 300) do
-          create_model_for(table_name)
+          find_or_create_model_for(table_name)
         end
       end
 
@@ -25,14 +26,15 @@ module Dbviewer
       # Create a new ActiveRecord model for a table
       # @param table_name [String] Name of the table
       # @return [Class] ActiveRecord model class for the table
-      def create_model_for(table_name)
+      def find_or_create_model_for(table_name)
         class_name = table_name.classify
 
         # Check if we can reuse an existing constant
         existing_model = handle_existing_constant(class_name, table_name)
         return existing_model if existing_model
 
-        model = create_active_record_model(class_name, table_name)
+        table_metadata = @metadata_manager.table_metadata(table_name)
+        model = create_active_record_model(class_name, table_name, table_metadata)
         model.establish_connection(@connection.instance_variable_get(:@config))
         model
       end
@@ -64,7 +66,7 @@ module Dbviewer
       # @param class_name [String] The constant name for the model
       # @param table_name [String] The table name this model should represent
       # @return [Class] New ActiveRecord model class
-      def create_active_record_model(class_name, table_name)
+      def create_active_record_model(class_name, table_name, table_metadata)
         Dbviewer.const_set(class_name, Class.new(ActiveRecord::Base) do
           self.table_name = table_name
 
@@ -76,25 +78,17 @@ module Dbviewer
             self.primary_key = "id"
           end
 
-          # Disable STI
-          self.inheritance_column = :_type_disabled
+          # Add validations from indexes
+          table_metadata[:indexes].each do |index|
+            next unless index[:unique] && index[:columns].present?
 
-          # Disable timestamps for better compatibility
-          self.record_timestamps = false
-
-          # Make the model read-only to prevent accidental data modifications
-          def readonly?
-            true
-          end
-
-          # Disable write operations at the class level
-          class << self
-            def delete_all(*)
-              raise ActiveRecord::ReadOnlyRecord, "#{name} is a read-only model"
-            end
-
-            def update_all(*)
-              raise ActiveRecord::ReadOnlyRecord, "#{name} is a read-only model"
+            columns = index[:columns]
+            column = columns.first
+            if columns.size == 1
+              validates column, uniqueness: true
+            elsif columns.size > 1
+              # Validate composite uniqueness using `scope`
+              validates column, uniqueness: { scope: columns[1..].map(&:to_sym) }
             end
           end
         end)

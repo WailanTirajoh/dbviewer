@@ -14,6 +14,7 @@ It's designed for development, debugging, and database analysis, offering a clea
 - **Detailed Schema Information** - Column details, indexes, and constraints
 - **Entity Relationship Diagram (ERD)** - Interactive database schema visualization
 - **Data Browsing** - Paginated record viewing with search and filtering
+- **Data Creation** - Create new database records directly from the interface
 - **SQL Queries** - Safe SQL query execution with validation
 - **Multiple Database Connections** - Support for multiple database sources
 - **PII Data Masking** - Configurable masking for sensitive data
@@ -197,7 +198,7 @@ DBViewer includes comprehensive security features to protect your database:
 
 ### Core Security
 
-- **Read-only Mode**: Only SELECT queries are allowed; all data modification operations are blocked
+- **Data Manipulation**: Create and read operations are supported through the UI with proper validation
 - **SQL Validation**: Prevents potentially harmful operations with comprehensive validation
 - **Query Limits**: Automatic LIMIT clause added to prevent excessive data retrieval
 - **Pattern Detection**: Detection of SQL injection patterns and suspicious constructs

@@ -61,7 +61,7 @@ module Dbviewer
       # @param event [ActiveSupport::Notifications::Event] The notification event
       # @return [Boolean] True if the query should be skipped
       def self.should_skip_internal_query?(event)
-        event.payload[:name].include?("Dbviewer::") ||
+        event.payload[:name]&.include?("Dbviewer::") ||
         # SQLite specific check for size queries
         event.payload[:sql].include?("PRAGMA") ||
         # PostgreSQL specific check for size queries

@@ -1,0 +1,70 @@
+<% if @errors.present? %>
+  <div class="alert alert-danger">
+    <ul class="mb-0">
+      <% @errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<div class="modal-header">
+  <h5 class="modal-title" id="newRecordModalLabel">
+    <i class="bi bi-plus-circle me-1"></i> Create New <%= @table_name.humanize.titleize %> Record
+  </h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<div class="modal-body">
+  <%= form_with url: create_record_table_path(@table_name), method: :post, id: "newRecordForm" do |form| %>
+    <% @table_columns.each do |column| %>
+      <% 
+        column_name = column[:name]
+        is_primary_key = @metadata[:primary_key] == column_name
+        skip_column = is_primary_key && %w[id].include?(column_name.downcase) 
+        
+        # Skip auto-increment primary keys and timestamps
+        next if skip_column || %w[created_at updated_at].include?(column_name)
+      %>
+      
+      <div class="mb-3">
+        <% 
+          # Handle different field types
+          field_type = determine_field_type(column[:type])
+          foreign_key = @metadata[:foreign_keys].find { |fk| fk[:column] == column_name }
+          field_id = "record_#{column_name}"
+          required = !column[:null]
+        %>
+        
+        <%= form.label "record[#{column_name}]", column_name.humanize, class: "form-label" %>
+        
+        <% if foreign_key && @foreign_key_options[column_name].present? %>
+          <%= form.select "record[#{column_name}]", 
+            options_for_select(@foreign_key_options[column_name]), 
+            { include_blank: column[:null] ? "-- Select --" : false }, 
+            { class: "form-select form-control select2-dropdown" } 
+          %>
+        <% elsif field_type == :check_box %>
+          <div class="form-check">
+            <%= form.check_box "record[#{column_name}]", class: "form-check-input", id: field_id %>
+          </div>
+        <% elsif field_type == :text_area %>
+          <%= form.text_area "record[#{column_name}]", class: "form-control", id: field_id, rows: 3, required: required %>
+        <% else %>
+          <%= form.send(field_type, "record[#{column_name}]", class: "form-control", id: field_id, required: required) %>
+        <% end %>
+        
+        <% if column[:default].present? && column[:default] != "NULL" %>
+          <div class="form-text text-muted">Default: <%= column[:default] %></div>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+  <button type="submit" form="newRecordForm" class="btn btn-primary" id="createRecordButton">
+    <i class="bi bi-plus-lg me-1"></i>Create Record
+  </button>
+</div>
