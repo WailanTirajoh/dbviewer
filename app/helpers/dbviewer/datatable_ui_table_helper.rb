@@ -138,7 +138,7 @@ module Dbviewer
           end
 
           # Edit Record button (only if enabled in configuration)
-          edit_button = if Dbviewer.configuration.enable_record_editing
+          edit_button = if Dbviewer.configuration.enable_record_editing && table_name != "schema_migrations"
             button_tag(
               type: "button",
               class: "btn btn-sm btn-outline-primary edit-record-btn",
@@ -156,7 +156,7 @@ module Dbviewer
           end
 
           # Delete Record button (only if enabled in configuration)
-          delete_button = if Dbviewer.configuration.enable_record_deletion
+          delete_button = if Dbviewer.configuration.enable_record_deletion && table_name != "schema_migrations"
             button_tag(
               type: "button",
               class: "btn btn-sm btn-outline-danger delete-record-btn",

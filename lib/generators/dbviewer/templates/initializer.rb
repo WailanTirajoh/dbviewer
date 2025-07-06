@@ -15,6 +15,8 @@ Dbviewer.configure do |config|
 
   # Data Management options
   config.enable_record_deletion = true               # Whether to allow record deletion functionality
+  config.enable_record_editing = true                # Whether to allow record editing functionality
+  config.enable_record_creation = true               # Whether to allow record creation functionality
 
   # Authentication options (Basic Auth)
   # config.admin_credentials = {

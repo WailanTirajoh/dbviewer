@@ -114,7 +114,7 @@ This will create a file at `config/initializers/dbviewer.rb` with the default co
 ```ruby
 # config/initializers/dbviewer.rb
 Dbviewer.configure do |config|
-  config.per_page_options = [10, 20, 50, 100, 250]  # Default pagination options
+  config.per_page_options = [10, 20, 50, 100, 250]   # Default pagination options
   config.default_per_page = 20                       # Default records per page
   config.max_query_length = 10000                    # Maximum SQL query length
   config.cache_expiry = 300                          # Cache expiration in seconds
@@ -130,6 +130,11 @@ Dbviewer.configure do |config|
   config.query_log_path = "log/dbviewer.log"         # Path for query log file when in :file mode
   config.max_memory_queries = 1000                   # Maximum number of queries to store in memory
 
+  # Data Management options
+  config.enable_record_deletion = true               # Whether to allow record deletion functionality
+  config.enable_record_editing = true                # Whether to allow record editing functionality
+  config.enable_record_creation = true               # Whether to allow record creation functionality
+
   # Authentication options
   # config.admin_credentials = { username: "admin", password: "your_secure_password" } # Basic HTTP auth credentials
 
@@ -143,7 +148,7 @@ Dbviewer.configure do |config|
   # }
 
   # Disable DBViewer completely
-  # config.disabled = Rails.env.production?  # Disable in production
+  # config.disabled = Rails.env.production?          # Disable in production
 end
 ```
 
