@@ -15,6 +15,9 @@
   <%= javascript_include_tag "dbviewer/table", "data-turbo-track": "reload" %>
   <%= javascript_include_tag "dbviewer/record_creation", "data-turbo-track": "reload" %>
   <%= javascript_include_tag "dbviewer/record_deletion", "data-turbo-track": "reload" %>
+  <% if Dbviewer.configuration.enable_record_editing %>
+  <%= javascript_include_tag "dbviewer/record_editing", "data-turbo-track": "reload" %>
+  <% end %>
 <% end %>
 
 <% content_for :sidebar_active do %>active<% end %>
@@ -193,6 +196,11 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <% if Dbviewer.configuration.enable_record_editing %>
+        <button type="button" class="btn btn-primary" id="recordDetailEditBtn" data-record-id="" data-primary-key="<%= @metadata[:primary_key] || 'id' %>">
+          <i class="bi bi-pencil me-1"></i>Edit Record
+        </button>
+        <% end %>
         <% if Dbviewer.configuration.enable_record_deletion %>
         <button type="button" class="btn btn-danger" id="recordDetailDeleteBtn" data-record-id="">
           <i class="bi bi-trash me-1"></i>Delete Record
@@ -425,8 +433,20 @@
 </div>
 <% end %>
 
+<!-- Edit Record Modal -->
+<% if Dbviewer.configuration.enable_record_editing %>
+<div id="editRecordModal" class="modal fade" tabindex="-1" aria-labelledby="editRecordModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <!-- Content will be loaded via AJAX -->
+    </div>
+  </div>
+</div>
+<% end %>
+
 <!-- Toast container for notifications -->
 <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
 <input type="hidden" id="mini_erd_table_path" name="mini_erd_table_path" value="<%= dbviewer.mini_erd_api_table_path(@table_name, format: :json) %>">
 <input type="hidden" id="table_name" name="table_name" value="<%= @table_name %>">
+<input type="hidden" id="table_primary_key" name="table_primary_key" value="<%= @metadata[:primary_key] || 'id' %>">

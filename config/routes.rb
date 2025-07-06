@@ -7,6 +7,8 @@ Dbviewer::Engine.routes.draw do
       get "new_record"
       post "create_record"
       delete "records/:record_id", to: "tables#destroy_record", as: :destroy_record
+      get "records/:record_id/edit", to: "tables#edit_record", as: :edit_record
+      patch "records/:record_id", to: "tables#update_record", as: :update_record
     end
   end
 

@@ -3,7 +3,7 @@ module Dbviewer
     include Dbviewer::AccessControlValidation
 
     before_action :set_table_name, except: [ :index ]
-    before_action :validate_table, only: [ :show, :query, :export_csv, :new_record, :create_record, :destroy_record ]
+    before_action :validate_table, only: [ :show, :query, :export_csv, :new_record, :create_record, :destroy_record, :edit_record, :update_record ]
     before_action :set_query_filters, only: [ :show, :export_csv ]
     before_action :set_global_filters, only: [ :show, :export_csv ]
 
@@ -108,6 +108,45 @@ module Dbviewer
       rescue => e
         Rails.logger.error("Error deleting record from #{@table_name}: #{e.message}")
         render json: { error: "Failed to delete record: #{e.message}" }, status: :internal_server_error
+      end
+    end
+
+    def edit_record
+      model_class = database_manager.get_model_for(@table_name)
+      primary_key = database_manager.primary_key(@table_name) || "id"
+      @record = model_class.find_by(primary_key => params[:record_id])
+
+      if @record.nil?
+        render json: { error: "Record not found" }, status: :not_found
+        return
+      end
+
+      @table_columns = filter_accessible_columns(@table_name, database_manager.table_columns(@table_name))
+      @metadata = database_manager.table_metadata(@table_name)
+      @foreign_key_options = load_foreign_key_options(@metadata)
+
+      render layout: false
+    end
+
+    def update_record
+      model_class = database_manager.get_model_for(@table_name)
+      primary_key = database_manager.primary_key(@table_name) || "id"
+      record = model_class.find_by(primary_key => params[:record_id])
+
+      if record.nil?
+        render json: { error: "Record not found" }, status: :not_found
+        return
+      end
+
+      begin
+        if record.update(record_params)
+          render json: { message: "Record updated successfully" }
+        else
+          render json: { errors: record.errors, messages: record.errors.full_messages }, status: :unprocessable_entity
+        end
+      rescue => e
+        Rails.logger.error("Error updating record in #{@table_name}: #{e.message}")
+        render json: { error: "Failed to update record: #{e.message}" }, status: :internal_server_error
       end
     end
 

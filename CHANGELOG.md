@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4-alpha.3] - 2025-07-06
+
+### Added
+
+- **Record Editing Feature**
+  - Added ability to edit records directly from the table interface
+  - Implemented edit buttons in both table rows and record detail modal
+  - Added AJAX-based form loading and submission for record editing
+  - Added toast notifications for edit success/failure
+  - Added `enable_record_editing` configuration option (enabled by default)
+  - Integrated field-specific inputs with Select2 and Flatpickr for improved UX
+
 ## [0.9.4-alpha.2] - 2025-07-06
 
 ### Added

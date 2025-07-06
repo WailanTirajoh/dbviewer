@@ -9,14 +9,17 @@
 <% end %>
 
 <div class="modal-header">
-  <h5 class="modal-title" id="newRecordModalLabel">
-    <i class="bi bi-plus-circle me-1"></i> Create New <%= @table_name.humanize.titleize %> Record
+  <h5 class="modal-title" id="editRecordModalLabel">
+    <i class="bi bi-pencil-square me-1"></i> Edit <%= @table_name.humanize.titleize %> Record
   </h5>
   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
 
 <div class="modal-body">
-  <%= form_with url: create_record_table_path(@table_name), method: :post, id: "newRecordForm" do |form| %>
+  <% primary_key = @metadata[:primary_key] || "id" %>
+  <% primary_key_value = @record[primary_key] %>
+
+  <%= form_with url: update_record_table_path(@table_name, record_id: primary_key_value), method: :patch, id: "editRecordForm" do |form| %>
     <% @table_columns.each do |column| %>
       <%= render partial: 'dbviewer/tables/record_form_fields', 
                  locals: { 
@@ -24,8 +27,8 @@
                    column: column, 
                    metadata: @metadata, 
                    foreign_key_options: @foreign_key_options, 
-                   record: nil, 
-                   is_edit_mode: false 
+                   record: @record, 
+                   is_edit_mode: true 
                  } %>
     <% end %>
   <% end %>
@@ -33,7 +36,7 @@
 
 <div class="modal-footer">
   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-  <button type="submit" form="newRecordForm" class="btn btn-primary" id="createRecordButton">
-    <i class="bi bi-plus-lg me-1"></i>Create Record
+  <button type="submit" form="editRecordForm" class="btn btn-primary" id="updateRecordButton">
+    <i class="bi bi-check-lg me-1"></i>Update Record
   </button>
 </div>

@@ -137,6 +137,24 @@ module Dbviewer
             content_tag(:i, "", class: "bi bi-clipboard")
           end
 
+          # Edit Record button (only if enabled in configuration)
+          edit_button = if Dbviewer.configuration.enable_record_editing
+            button_tag(
+              type: "button",
+              class: "btn btn-sm btn-outline-primary edit-record-btn",
+              title: "Edit Record",
+              data: {
+                record_data: data_attributes.to_json,
+                table_name: table_name,
+                primary_key: metadata && metadata[:primary_key] ? metadata[:primary_key] : "id"
+              }
+            ) do
+              content_tag(:i, "", class: "bi bi-pencil")
+            end
+          else
+            "".html_safe
+          end
+
           # Delete Record button (only if enabled in configuration)
           delete_button = if Dbviewer.configuration.enable_record_deletion
             button_tag(
@@ -157,7 +175,7 @@ module Dbviewer
           end
 
           # Concatenate all buttons
-          view_button + copy_factory_button + delete_button
+          view_button + copy_factory_button + edit_button + delete_button
         end
       end
     end
