@@ -165,7 +165,8 @@ module Dbviewer
                 bs_toggle: "modal",
                 bs_target: "#deleteConfirmModal",
                 record_data: data_attributes.to_json,
-                table_name: table_name
+                table_name: table_name,
+                primary_key: metadata && metadata[:primary_key] ? metadata[:primary_key] : "id"
               }
             ) do
               content_tag(:i, "", class: "bi bi-trash")

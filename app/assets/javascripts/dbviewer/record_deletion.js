@@ -87,9 +87,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
-      const pkName =
-        Object.keys(recordData).find((k) => k.toLowerCase() === "id") ||
-        Object.keys(recordData)[0];
+      // Get primary key from button's data attribute or from hidden field
+      const pkName = detailDeleteBtn.getAttribute("data-primary-key") || "id";
       const pkValue = recordData[pkName];
 
       setupDeleteConfirmModal(recordData, pkName, pkValue);
@@ -105,9 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".delete-record-btn").forEach((button) => {
     button.addEventListener("click", () => {
       const recordData = JSON.parse(button.dataset.recordData || "{}");
-      const pkName =
-        Object.keys(recordData).find((k) => k.toLowerCase() === "id") ||
-        Object.keys(recordData)[0];
+      // Get primary key from button's data attribute or from hidden field
+      const pkName = button.dataset.primaryKey || "id";
       const pkValue = recordData[pkName];
       setupDeleteConfirmModal(recordData, pkName, pkValue);
     });
