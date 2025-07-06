@@ -13,8 +13,12 @@
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <%= stylesheet_link_tag "dbviewer/table", "data-turbo-track": "reload" %>
   <%= javascript_include_tag "dbviewer/table", "data-turbo-track": "reload" %>
+  <% if Dbviewer.configuration.enable_record_creation %>
   <%= javascript_include_tag "dbviewer/record_creation", "data-turbo-track": "reload" %>
+  <% end %>
+  <% if Dbviewer.configuration.enable_record_deletion %>
   <%= javascript_include_tag "dbviewer/record_deletion", "data-turbo-track": "reload" %>
+  <% end %>
   <% if Dbviewer.configuration.enable_record_editing %>
   <%= javascript_include_tag "dbviewer/record_editing", "data-turbo-track": "reload" %>
   <% end %>
@@ -375,8 +379,7 @@
 <% end %>
 
 <!-- Floating Add Record Button -->
-<%# TODO: move this to helpers so that we can have centralized creation check %>
-<% if @table_name != 'schema_migrations'%> 
+<% if Dbviewer.configuration.enable_record_creation && @table_name != 'schema_migrations' %> 
 <div class="floating-add-record d-none d-lg-block">
   <button id="floatingAddRecordBtn"
           class="btn btn-success btn-lg shadow-lg rounded-circle" 
@@ -388,6 +391,7 @@
 <% end %>
 
 <!-- New Record Modal -->
+<% if Dbviewer.configuration.enable_record_creation %>
 <div id="newRecordModal" class="modal fade" tabindex="-1" aria-labelledby="newRecordModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -395,6 +399,7 @@
     </div>
   </div>
 </div>
+<% end %>
 
 <% if Dbviewer.configuration.enable_record_deletion %>
 <!-- Delete Confirmation Modal -->

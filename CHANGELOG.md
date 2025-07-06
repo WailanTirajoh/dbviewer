@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4] - 2025-07-06
+
+### Added
+
+- **Full CRUD Operations**
+  - Completed the implementation of Create, Read, Update, Delete operations for database records
+  - Enhanced user interface with intuitive controls for all record operations
+  - Added configuration options to enable/disable specific operations:
+    - `enable_record_creation` for creating new records
+    - `enable_record_editing` for updating existing records
+    - `enable_record_deletion` for removing records
+
 ## [0.9.4-alpha.3] - 2025-07-06
 
 ### Added
@@ -36,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added ability to create new records directly from the database viewer interface
   - Implemented floating "Add Record" button and modal for record creation
   - Added AJAX-based form loading and submission for record creation
+  - Added `enable_record_creation` configuration option (enabled by default)
   - Integrated Select2 for searchable dropdowns in forms with dark mode support
 
 ### Enhanced

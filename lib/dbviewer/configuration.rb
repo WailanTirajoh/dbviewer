@@ -123,6 +123,9 @@ module Dbviewer
     # Enable or disable record editing functionality
     attr_accessor :enable_record_editing
 
+    # Enable or disable record creation functionality
+    attr_accessor :enable_record_creation
+
     def initialize
       @per_page_options = [ 10, 20, 50, 100 ]
       @default_per_page = 20
@@ -132,6 +135,7 @@ module Dbviewer
       @enable_data_export = false
       @enable_record_deletion = true
       @enable_record_editing = true
+      @enable_record_creation = true
       @query_timeout = 30
       @query_logging_mode = :memory
       @query_log_path = "log/dbviewer.log"

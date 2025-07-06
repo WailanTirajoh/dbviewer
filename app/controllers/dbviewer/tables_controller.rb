@@ -4,6 +4,9 @@ module Dbviewer
 
     before_action :set_table_name, except: [ :index ]
     before_action :validate_table, only: [ :show, :query, :export_csv, :new_record, :create_record, :destroy_record, :edit_record, :update_record ]
+    before_action :check_record_creation_enabled, only: [ :new_record, :create_record ]
+    before_action :check_record_editing_enabled, only: [ :edit_record, :update_record ]
+    before_action :check_record_deletion_enabled, only: [ :destroy_record ]
     before_action :set_query_filters, only: [ :show, :export_csv ]
     before_action :set_global_filters, only: [ :show, :export_csv ]
 
@@ -248,6 +251,42 @@ module Dbviewer
         end
       end
       options
+    end
+
+    def check_record_creation_enabled
+      unless Dbviewer.configuration.enable_record_creation
+        respond_to do |format|
+          format.html { 
+            flash[:alert] = "Record creation is disabled in the configuration"
+            redirect_to table_path(@table_name) 
+          }
+          format.json { render json: { error: "Record creation is disabled" }, status: :forbidden }
+        end
+      end
+    end
+
+    def check_record_editing_enabled
+      unless Dbviewer.configuration.enable_record_editing
+        respond_to do |format|
+          format.html { 
+            flash[:alert] = "Record editing is disabled in the configuration"
+            redirect_to table_path(@table_name) 
+          }
+          format.json { render json: { error: "Record editing is disabled" }, status: :forbidden }
+        end
+      end
+    end
+
+    def check_record_deletion_enabled
+      unless Dbviewer.configuration.enable_record_deletion
+        respond_to do |format|
+          format.html { 
+            flash[:alert] = "Record deletion is disabled in the configuration"
+            redirect_to table_path(@table_name) 
+          }
+          format.json { render json: { error: "Record deletion is disabled" }, status: :forbidden }
+        end
+      end
     end
   end
 end
