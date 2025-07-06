@@ -58,25 +58,25 @@
                       "true", "false" %>
     </div>
     
-  <% elsif field_type == :datetime %>
+  <% elsif field_type == :datetime_local_field %>
     <!-- Date time picker -->
-    <div class="input-group flatpickr">
+    <div class="input-group datetime-picker">
       <%= form.text_field "record[#{column_name}]", 
                       value: current_value, 
-                      class: "form-control datetime-picker", 
+                      class: "form-control", 
                       id: field_id, 
                       required: required, 
                       data: { input: "" }, 
                       disabled: disabled %>
       <button type="button" class="input-group-text" data-toggle><i class="bi bi-calendar-event"></i></button>
     </div>
-    
-  <% elsif field_type == :date %>
+
+  <% elsif field_type == :date_field %>
     <!-- Date picker -->
-    <div class="input-group flatpickr">
+    <div class="input-group date-picker">
       <%= form.text_field "record[#{column_name}]", 
                       value: current_value, 
-                      class: "form-control date-picker", 
+                      class: "form-control", 
                       id: field_id, 
                       required: required, 
                       data: { input: "" }, 
@@ -85,6 +85,7 @@
     </div>
     
   <% else %>
+    <%= field_type %>
     <!-- Default text input -->
     <%= form.text_field "record[#{column_name}]", 
                     value: current_value, 
