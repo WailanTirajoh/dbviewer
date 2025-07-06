@@ -57,6 +57,20 @@ function initializeFormElements() {
       width: "100%",
     });
   }
+
+  if (typeof flatpickr !== "undefined") {
+    flatpickr(".datetime-picker", {
+      enableTime: true,
+      dateFormat: "Y-m-d H:i:S",
+      time_24hr: true,
+      wrap: true,
+    });
+
+    flatpickr(".date-picker", {
+      dateFormat: "Y-m-d",
+      wrap: true,
+    });
+  }
 }
 
 async function handleNewRecordSubmit(event) {
