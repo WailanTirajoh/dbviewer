@@ -6,6 +6,7 @@ Dbviewer::Engine.routes.draw do
       get "export_csv"
       get "new_record"
       post "create_record"
+      delete "records/:record_id", to: "tables#destroy_record", as: :destroy_record
     end
   end
 

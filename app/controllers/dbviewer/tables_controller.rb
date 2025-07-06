@@ -3,7 +3,7 @@ module Dbviewer
     include Dbviewer::AccessControlValidation
 
     before_action :set_table_name, except: [ :index ]
-    before_action :validate_table, only: [ :show, :query, :export_csv, :new_record, :create_record ]
+    before_action :validate_table, only: [ :show, :query, :export_csv, :new_record, :create_record, :destroy_record ]
     before_action :set_query_filters, only: [ :show, :export_csv ]
     before_action :set_global_filters, only: [ :show, :export_csv ]
 
@@ -87,6 +87,28 @@ module Dbviewer
       send_data csv_data,
                 type: "text/csv; charset=utf-8; header=present",
                 disposition: "attachment; filename=#{filename}"
+    end
+
+    def destroy_record
+      model_class = database_manager.get_model_for(@table_name)
+      primary_key = database_manager.primary_key(@table_name) || "id"
+      record = model_class.find_by(primary_key => params[:record_id])
+
+      if record.nil?
+        render json: { error: "Record not found" }, status: :not_found
+        return
+      end
+
+      begin
+        if record.destroy
+          render json: { message: "Record deleted successfully" }, status: :ok
+        else
+          render json: { errors: record.errors.full_messages, message: "Failed to delete record" }, status: :unprocessable_entity
+        end
+      rescue => e
+        Rails.logger.error("Error deleting record from #{@table_name}: #{e.message}")
+        render json: { error: "Failed to delete record: #{e.message}" }, status: :internal_server_error
+      end
     end
 
     private

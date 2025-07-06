@@ -117,6 +117,9 @@ module Dbviewer
     # Maximum number of security events to keep in memory
     attr_accessor :max_security_events
 
+    # Enable or disable record deletion functionality
+    attr_accessor :enable_record_deletion
+
     def initialize
       @per_page_options = [ 10, 20, 50, 100 ]
       @default_per_page = 20
@@ -124,6 +127,7 @@ module Dbviewer
       @max_query_length = 10000
       @cache_expiry = 300
       @enable_data_export = false
+      @enable_record_deletion = true
       @query_timeout = 30
       @query_logging_mode = :memory
       @query_log_path = "log/dbviewer.log"
