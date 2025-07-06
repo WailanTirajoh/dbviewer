@@ -11,7 +11,7 @@
   is_primary_key = metadata[:primary_key] == column_name
   
   # For new records, skip auto-increment primary keys
-  skip_column = !is_edit_mode && is_primary_key && %w[id].include?(column_name.downcase)
+  skip_column = !is_edit_mode && is_primary_key # Skip primary key in creation mode
   
   # Skip timestamps for both new and edit
   return if skip_column || %w[created_at updated_at].include?(column_name)

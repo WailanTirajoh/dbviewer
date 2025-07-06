@@ -7,7 +7,10 @@ document.addEventListener("DOMContentLoaded", function () {
   if (recordDetailEditBtn) {
     recordDetailEditBtn.addEventListener("click", () => {
       const recordData = extractRecordDataFromDetailModal();
-      const primaryKeyValue = extractPrimaryKeyValue(recordData);
+      // Use the primary key from the button's data attribute
+      const primaryKey =
+        recordDetailEditBtn.getAttribute("data-primary-key") || "id";
+      const primaryKeyValue = recordData[primaryKey];
       loadEditForm(primaryKeyValue);
     });
   }
@@ -41,6 +44,24 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function extractPrimaryKeyValue(recordData) {
+    // First try to get the primary key from the button data attribute
+    const clickedButton = document.activeElement;
+    if (
+      clickedButton &&
+      clickedButton.classList.contains("edit-record-btn") &&
+      clickedButton.dataset.primaryKey
+    ) {
+      const primaryKey = clickedButton.dataset.primaryKey;
+      return recordData[primaryKey];
+    }
+
+    // If not available, use the table-level metadata primary key from the hidden field
+    const primaryKeyMetaElement = document.getElementById("table_primary_key");
+    if (primaryKeyMetaElement && primaryKeyMetaElement.value) {
+      return recordData[primaryKeyMetaElement.value];
+    }
+
+    // Fallback: try to find 'id' or use the first key
     const primaryKey =
       Object.keys(recordData).find((key) => key.toLowerCase() === "id") ||
       Object.keys(recordData)[0];
