@@ -14,7 +14,7 @@ It's designed for development, debugging, and database analysis, offering a clea
 - **Detailed Schema Information** - Column details, indexes, and constraints
 - **Entity Relationship Diagram (ERD)** - Interactive database schema visualization
 - **Data Browsing** - Paginated record viewing with search and filtering
-- **Data Creation** - Create new database records directly from the interface
+- **Data Management** - Create and delete database records directly from the interface
 - **SQL Queries** - Safe SQL query execution with validation
 - **Multiple Database Connections** - Support for multiple database sources
 - **PII Data Masking** - Configurable masking for sensitive data
@@ -99,6 +99,7 @@ Dbviewer.configure do |config|
   config.cache_expiry = 300                          # Cache expiration in seconds
   config.max_records = 10000                         # Maximum records to return in any query
   config.enable_data_export = false                  # Whether to allow data exporting
+  config.enable_record_deletion = true               # Whether to allow record deletion
   config.query_timeout = 30                          # SQL query timeout in seconds
 
   # Query logging options

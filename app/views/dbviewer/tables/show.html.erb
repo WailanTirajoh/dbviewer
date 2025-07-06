@@ -14,6 +14,7 @@
   <%= stylesheet_link_tag "dbviewer/table", "data-turbo-track": "reload" %>
   <%= javascript_include_tag "dbviewer/table", "data-turbo-track": "reload" %>
   <%= javascript_include_tag "dbviewer/record_creation", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "dbviewer/record_deletion", "data-turbo-track": "reload" %>
 <% end %>
 
 <% content_for :sidebar_active do %>active<% end %>
@@ -192,6 +193,11 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <% if Dbviewer.configuration.enable_record_deletion %>
+        <button type="button" class="btn btn-danger" id="recordDetailDeleteBtn" data-record-id="">
+          <i class="bi bi-trash me-1"></i>Delete Record
+        </button>
+        <% end %>
       </div>
     </div>
   </div>
@@ -381,6 +387,46 @@
     </div>
   </div>
 </div>
+
+<% if Dbviewer.configuration.enable_record_deletion %>
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteConfirmModalLabel">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Deletion
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete this record from <strong><%= @table_name %></strong>?</p>
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <strong>Warning:</strong> This action cannot be undone.
+        </div>
+        
+        <!-- Primary key info will be inserted here -->
+        <div id="deleteRecordInfo" class="mt-3 mb-2 p-2 border-start border-4 border-danger ps-3">
+          <!-- Record info will be displayed here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <%= form_with(url: "#", method: :delete, id: "recordDeleteForm") do |form| %>
+          <input type="hidden" id="deleteRecordId" name="record_id" value="">
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash me-1"></i>Delete Record
+          </button>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+<% end %>
+
+<!-- Toast container for notifications -->
+<div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
 <input type="hidden" id="mini_erd_table_path" name="mini_erd_table_path" value="<%= dbviewer.mini_erd_api_table_path(@table_name, format: :json) %>">
 <input type="hidden" id="table_name" name="table_name" value="<%= @table_name %>">

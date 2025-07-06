@@ -137,8 +137,27 @@ module Dbviewer
             content_tag(:i, "", class: "bi bi-clipboard")
           end
 
-          # Concatenate both buttons
-          view_button + copy_factory_button
+          # Delete Record button (only if enabled in configuration)
+          delete_button = if Dbviewer.configuration.enable_record_deletion
+            button_tag(
+              type: "button",
+              class: "btn btn-sm btn-outline-danger delete-record-btn",
+              title: "Delete Record",
+              data: {
+                bs_toggle: "modal",
+                bs_target: "#deleteConfirmModal",
+                record_data: data_attributes.to_json,
+                table_name: table_name
+              }
+            ) do
+              content_tag(:i, "", class: "bi bi-trash")
+            end
+          else
+            "".html_safe
+          end
+
+          # Concatenate all buttons
+          view_button + copy_factory_button + delete_button
         end
       end
     end

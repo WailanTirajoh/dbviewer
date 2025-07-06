@@ -13,6 +13,9 @@ Dbviewer.configure do |config|
   config.query_log_path = "log/dbviewer.log"         # Path for query log file when in :file mode
   config.max_memory_queries = 1000                   # Maximum number of queries to store in memory
 
+  # Data Management options
+  config.enable_record_deletion = true               # Whether to allow record deletion functionality
+
   # Authentication options (Basic Auth)
   # config.admin_credentials = {
   #   username: "admin",
