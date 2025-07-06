@@ -256,9 +256,9 @@ module Dbviewer
     def check_record_creation_enabled
       unless Dbviewer.configuration.enable_record_creation
         respond_to do |format|
-          format.html { 
+          format.html {
             flash[:alert] = "Record creation is disabled in the configuration"
-            redirect_to table_path(@table_name) 
+            redirect_to table_path(@table_name)
           }
           format.json { render json: { error: "Record creation is disabled" }, status: :forbidden }
         end
@@ -268,9 +268,9 @@ module Dbviewer
     def check_record_editing_enabled
       unless Dbviewer.configuration.enable_record_editing
         respond_to do |format|
-          format.html { 
+          format.html {
             flash[:alert] = "Record editing is disabled in the configuration"
-            redirect_to table_path(@table_name) 
+            redirect_to table_path(@table_name)
           }
           format.json { render json: { error: "Record editing is disabled" }, status: :forbidden }
         end
@@ -280,9 +280,9 @@ module Dbviewer
     def check_record_deletion_enabled
       unless Dbviewer.configuration.enable_record_deletion
         respond_to do |format|
-          format.html { 
+          format.html {
             flash[:alert] = "Record deletion is disabled in the configuration"
-            redirect_to table_path(@table_name) 
+            redirect_to table_path(@table_name)
           }
           format.json { render json: { error: "Record deletion is disabled" }, status: :forbidden }
         end
