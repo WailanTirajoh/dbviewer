@@ -1,0 +1,105 @@
+<%
+  # Common variables:
+  # - form: The form builder
+  # - column: Current column hash with :name, :type, etc.
+  # - metadata: Table metadata with :foreign_keys etc.
+  # - foreign_key_options: Options for foreign key dropdowns
+  # - record: The record being edited (nil for new records)
+  # - is_edit_mode: Boolean flag indicating if this is an edit (vs create) operation
+  
+  column_name = column[:name]
+  is_primary_key = metadata[:primary_key] == column_name
+  
+  # For new records, skip auto-increment primary keys
+  skip_column = !is_edit_mode && is_primary_key && %w[id].include?(column_name.downcase)
+  
+  # Skip timestamps for both new and edit
+  return if skip_column || %w[created_at updated_at].include?(column_name)
+  
+  # Get current value for edit mode
+  current_value = record ? record[column_name] : nil
+  
+  # Common field properties
+  field_type = determine_field_type(column[:type])
+  foreign_key = metadata[:foreign_keys].find { |fk| fk[:column] == column_name }
+  field_id = "record_#{column_name}"
+  required = !column[:null]
+  disabled = is_edit_mode && is_primary_key # Disable editing of primary key in edit mode
+%>
+
+<div class="mb-3">
+  <%= form.label "record[#{column_name}]", column_name.humanize, class: "form-label" %>
+  
+  <% if foreign_key && foreign_key_options[column_name].present? %>
+    <!-- Foreign key dropdown -->
+    <%= form.select "record[#{column_name}]", 
+                options_for_select(foreign_key_options[column_name], current_value),
+                { include_blank: column[:null] ? "-- Select --" : false }, 
+                { class: "form-control select2-dropdown", id: field_id, disabled: disabled } %>
+                
+  <% elsif field_type == :text || field_type == :text_area %>
+    <!-- Text area for long text fields -->
+    <%= form.text_area "record[#{column_name}]", 
+                    value: current_value, 
+                    class: "form-control", 
+                    id: field_id, 
+                    rows: 3, 
+                    required: required, 
+                    disabled: disabled %>
+    
+  <% elsif field_type == :boolean || field_type == :check_box %>
+    <!-- Boolean field -->
+    <div class="form-check form-switch">
+      <%= form.check_box "record[#{column_name}]", 
+                      { class: "form-check-input", 
+                        id: field_id, 
+                        checked: current_value, 
+                        disabled: disabled }, 
+                      "true", "false" %>
+    </div>
+    
+  <% elsif field_type == :datetime %>
+    <!-- Date time picker -->
+    <div class="input-group flatpickr">
+      <%= form.text_field "record[#{column_name}]", 
+                      value: current_value, 
+                      class: "form-control datetime-picker", 
+                      id: field_id, 
+                      required: required, 
+                      data: { input: "" }, 
+                      disabled: disabled %>
+      <button type="button" class="input-group-text" data-toggle><i class="bi bi-calendar-event"></i></button>
+    </div>
+    
+  <% elsif field_type == :date %>
+    <!-- Date picker -->
+    <div class="input-group flatpickr">
+      <%= form.text_field "record[#{column_name}]", 
+                      value: current_value, 
+                      class: "form-control date-picker", 
+                      id: field_id, 
+                      required: required, 
+                      data: { input: "" }, 
+                      disabled: disabled %>
+      <button type="button" class="input-group-text" data-toggle><i class="bi bi-calendar-event"></i></button>
+    </div>
+    
+  <% else %>
+    <!-- Default text input -->
+    <%= form.text_field "record[#{column_name}]", 
+                    value: current_value, 
+                    class: "form-control", 
+                    id: field_id, 
+                    required: required, 
+                    disabled: disabled %>
+  <% end %>
+  
+  <% if disabled %>
+    <!-- Add a hidden field to preserve the primary key value -->
+    <%= form.hidden_field "record[#{column_name}]", value: current_value %>
+  <% end %>
+  
+  <% if !is_edit_mode && column[:default].present? && column[:default] != "NULL" %>
+    <div class="form-text text-muted">Default: <%= column[:default] %></div>
+  <% end %>
+</div>

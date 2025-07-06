@@ -21,70 +21,15 @@
 
   <%= form_with url: update_record_table_path(@table_name, record_id: primary_key_value), method: :patch, id: "editRecordForm" do |form| %>
     <% @table_columns.each do |column| %>
-      <% 
-        column_name = column[:name]
-        is_primary_key = primary_key == column_name
-        
-        # Skip timestamps
-        next if %w[created_at updated_at].include?(column_name)
-
-        # Get current value
-        current_value = @record[column_name]
-      %>
-      
-      <div class="mb-3">
-        <% 
-          # Handle different field types
-          field_type = determine_field_type(column[:type])
-          foreign_key = @metadata[:foreign_keys].find { |fk| fk[:column] == column_name }
-          field_id = "record_#{column_name}"
-          required = !column[:null]
-          disabled = is_primary_key # Disable editing of primary key
-        %>
-        
-        <%= form.label "record[#{column_name}]", column_name.humanize, class: "form-label" %>
-        
-        <% if foreign_key && @foreign_key_options[column_name].present? %>
-          <!-- Foreign key dropdown -->
-          <%= form.select "record[#{column_name}]", 
-                      options_for_select(@foreign_key_options[column_name], current_value),
-                      {  }, 
-                      { class: "form-control select2-dropdown", id: field_id, required: required, disabled: disabled } %>
-                      
-        <% elsif field_type == :text %>
-          <!-- Text area for long text fields -->
-          <%= form.text_area "record[#{column_name}]", value: current_value, class: "form-control", id: field_id, rows: 3, required: required, disabled: disabled %>
-          
-        <% elsif field_type == :boolean %>
-          <!-- Boolean field -->
-          <div class="form-check form-switch">
-            <%= form.check_box "record[#{column_name}]", { class: "form-check-input", id: field_id, checked: current_value, disabled: disabled }, "true", "false" %>
-          </div>
-          
-        <% elsif field_type == :datetime %>
-          <!-- Date time picker -->
-          <div class="input-group flatpickr">
-            <%= form.text_field "record[#{column_name}]", value: current_value, class: "form-control datetime-picker", id: field_id, required: required, data: { input: "" }, disabled: disabled %>
-            <button type="button" class="input-group-text" data-toggle><i class="bi bi-calendar-event"></i></button>
-          </div>
-          
-        <% elsif field_type == :date %>
-          <!-- Date picker -->
-          <div class="input-group flatpickr">
-            <%= form.text_field "record[#{column_name}]", value: current_value, class: "form-control date-picker", id: field_id, required: required, data: { input: "" }, disabled: disabled %>
-            <button type="button" class="input-group-text" data-toggle><i class="bi bi-calendar-event"></i></button>
-          </div>
-          
-        <% else %>
-          <!-- Default text input -->
-          <%= form.text_field "record[#{column_name}]", value: current_value, class: "form-control", id: field_id, required: required, disabled: disabled %>
-        <% end %>
-        
-        <% if disabled %>
-          <!-- Add a hidden field to preserve the primary key value -->
-          <%= form.hidden_field "record[#{column_name}]", value: current_value %>
-        <% end %>
-      </div>
+      <%= render partial: 'dbviewer/tables/record_form_fields', 
+                 locals: { 
+                   form: form, 
+                   column: column, 
+                   metadata: @metadata, 
+                   foreign_key_options: @foreign_key_options, 
+                   record: @record, 
+                   is_edit_mode: true 
+                 } %>
     <% end %>
   <% end %>
 </div>
