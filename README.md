@@ -14,7 +14,7 @@ It's designed for development, debugging, and database analysis, offering a clea
 - **Detailed Schema Information** - Column details, indexes, and constraints
 - **Entity Relationship Diagram (ERD)** - Interactive database schema visualization
 - **Data Browsing** - Paginated record viewing with search and filtering
-- **Data Management** - Create and delete database records directly from the interface
+- **Data Management** - Full CRUD operations (Create, Read, Update, Delete) for database records
 - **SQL Queries** - Safe SQL query execution with validation
 - **Multiple Database Connections** - Support for multiple database sources
 - **PII Data Masking** - Configurable masking for sensitive data
@@ -80,6 +80,27 @@ This is necessary because API-only Rails applications don't include the Flash mi
 - **ERD View** (`/dbviewer/entity_relationship_diagrams`): Interactive Entity Relationship Diagram of your database
 - **SQL Query Logs** (`/dbviewer/logs`): View and analyze logged SQL queries with performance metrics
 
+### Data Management Features
+
+DBViewer provides a complete set of CRUD (Create, Read, Update, Delete) operations for your database records:
+
+- **Create**: Add new records via a user-friendly modal form with field validation
+- **Read**: Browse and view detailed record information with relationship navigation
+- **Update**: Edit existing records through an intuitive form interface
+- **Delete**: Remove records with confirmation dialogs to prevent accidental deletion
+
+All data management features can be individually enabled or disabled through configuration options:
+
+```ruby
+# config/initializers/dbviewer.rb
+Dbviewer.configure do |config|
+  # Data management options
+  config.enable_data_export = false    # Enable CSV export feature
+  config.enable_record_deletion = true # Enable record deletion feature
+  config.enable_record_editing = true  # Enable record editing feature
+end
+```
+
 ## ⚙️ Configuration Options
 
 You can configure DBViewer by using our generator to create an initializer in your application:
@@ -100,6 +121,7 @@ Dbviewer.configure do |config|
   config.max_records = 10000                         # Maximum records to return in any query
   config.enable_data_export = false                  # Whether to allow data exporting
   config.enable_record_deletion = true               # Whether to allow record deletion
+  config.enable_record_editing = true                # Whether to allow record editing
   config.query_timeout = 30                          # SQL query timeout in seconds
 
   # Query logging options

@@ -1,0 +1,97 @@
+<% if @errors.present? %>
+  <div class="alert alert-danger">
+    <ul class="mb-0">
+      <% @errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<div class="modal-header">
+  <h5 class="modal-title" id="editRecordModalLabel">
+    <i class="bi bi-pencil-square me-1"></i> Edit <%= @table_name.humanize.titleize %> Record
+  </h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<div class="modal-body">
+  <% primary_key = @metadata[:primary_key] || "id" %>
+  <% primary_key_value = @record[primary_key] %>
+
+  <%= form_with url: update_record_table_path(@table_name, record_id: primary_key_value), method: :patch, id: "editRecordForm" do |form| %>
+    <% @table_columns.each do |column| %>
+      <% 
+        column_name = column[:name]
+        is_primary_key = primary_key == column_name
+        
+        # Skip timestamps
+        next if %w[created_at updated_at].include?(column_name)
+
+        # Get current value
+        current_value = @record[column_name]
+      %>
+      
+      <div class="mb-3">
+        <% 
+          # Handle different field types
+          field_type = determine_field_type(column[:type])
+          foreign_key = @metadata[:foreign_keys].find { |fk| fk[:column] == column_name }
+          field_id = "record_#{column_name}"
+          required = !column[:null]
+          disabled = is_primary_key # Disable editing of primary key
+        %>
+        
+        <%= form.label "record[#{column_name}]", column_name.humanize, class: "form-label" %>
+        
+        <% if foreign_key && @foreign_key_options[column_name].present? %>
+          <!-- Foreign key dropdown -->
+          <%= form.select "record[#{column_name}]", 
+                      options_for_select(@foreign_key_options[column_name], current_value),
+                      {  }, 
+                      { class: "form-control select2-dropdown", id: field_id, required: required, disabled: disabled } %>
+                      
+        <% elsif field_type == :text %>
+          <!-- Text area for long text fields -->
+          <%= form.text_area "record[#{column_name}]", value: current_value, class: "form-control", id: field_id, rows: 3, required: required, disabled: disabled %>
+          
+        <% elsif field_type == :boolean %>
+          <!-- Boolean field -->
+          <div class="form-check form-switch">
+            <%= form.check_box "record[#{column_name}]", { class: "form-check-input", id: field_id, checked: current_value, disabled: disabled }, "true", "false" %>
+          </div>
+          
+        <% elsif field_type == :datetime %>
+          <!-- Date time picker -->
+          <div class="input-group flatpickr">
+            <%= form.text_field "record[#{column_name}]", value: current_value, class: "form-control datetime-picker", id: field_id, required: required, data: { input: "" }, disabled: disabled %>
+            <button type="button" class="input-group-text" data-toggle><i class="bi bi-calendar-event"></i></button>
+          </div>
+          
+        <% elsif field_type == :date %>
+          <!-- Date picker -->
+          <div class="input-group flatpickr">
+            <%= form.text_field "record[#{column_name}]", value: current_value, class: "form-control date-picker", id: field_id, required: required, data: { input: "" }, disabled: disabled %>
+            <button type="button" class="input-group-text" data-toggle><i class="bi bi-calendar-event"></i></button>
+          </div>
+          
+        <% else %>
+          <!-- Default text input -->
+          <%= form.text_field "record[#{column_name}]", value: current_value, class: "form-control", id: field_id, required: required, disabled: disabled %>
+        <% end %>
+        
+        <% if disabled %>
+          <!-- Add a hidden field to preserve the primary key value -->
+          <%= form.hidden_field "record[#{column_name}]", value: current_value %>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+  <button type="submit" form="editRecordForm" class="btn btn-primary" id="updateRecordButton">
+    <i class="bi bi-check-lg me-1"></i>Update Record
+  </button>
+</div>
