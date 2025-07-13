@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
     modal.show();
 
     try {
-      const response = await fetch(`/dbviewer/tables/${tableName}/new_record`);
+      const response = await fetch(`${window.location.pathname}/new_record`);
       const html = await response.text();
       modalBody.innerHTML = html;
       initializeFormElements();
